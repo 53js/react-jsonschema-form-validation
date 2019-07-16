@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should match snapshot 1`] = `
+<ContextProvider
+  value={
+    Object {
+      "errorMessages": Object {},
+      "errors": Array [],
+      "getFieldErrors": [Function],
+      "isFieldInvalid": [Function],
+      "isFieldTouched": [Function],
+      "isInvalid": [Function],
+      "isSubmitted": false,
+      "isTouched": [Function],
+      "touch": [Function],
+      "touchedFields": Array [],
+      "valid": true,
+    }
+  }
+>
+  <form
+    className=""
+    noValidate={true}
+    onSubmit={[Function]}
+  />
+</ContextProvider>
+`;

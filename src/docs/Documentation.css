@@ -1,0 +1,14 @@
+.facultative-props mark {
+		background-color: #dcdcdc;
+		font-family: "consolas","Liberation Mono",courier,monospace;
+		font-style: italic;
+		font-weight: bold;
+		opacity: 0.8;
+}
+
+
+mark {
+	background-color: #dcdcdc;
+	font-family: "consolas","Liberation Mono",courier,monospace;
+	font-weight: bold;
+};

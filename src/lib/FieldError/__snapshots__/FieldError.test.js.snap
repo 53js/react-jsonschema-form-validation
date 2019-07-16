@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should match snapshot 1`] = `
+<FieldError
+  className=""
+  errorMessages={null}
+  name="username"
+>
+  <mockConstructor>
+    <div
+      className="Sjf_FieldError"
+    />
+  </mockConstructor>
+</FieldError>
+`;

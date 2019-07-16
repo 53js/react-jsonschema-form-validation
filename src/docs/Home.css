@@ -1,0 +1,27 @@
+.jumbotron-header {
+	padding-top: 2rem;
+	padding-bottom: 2rem;
+	background-color: #fff
+}
+.jumbotron-heading {
+	font-weight: 300
+}
+
+.jumbotron-header, .jumbotron-header p:last-child, .navbar {
+	margin-bottom: 0
+}
+
+.jumbotron-header .btn {
+	margin-right: 1rem;
+}
+
+.jumbotron-header .btn + .btn {
+	margin-right: 0;
+}
+
+@media (max-width: 543px) {
+	.jumbotron-header .btn {
+		display: block;
+		margin: 0 0 1rem 0;
+	}
+}

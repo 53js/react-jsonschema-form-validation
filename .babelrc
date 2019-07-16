@@ -1,0 +1,8 @@
+{
+	"ignore": [
+		"**/__mocks__"
+	],
+	"presets": [
+		["react-app", { "absoluteRuntime": false }]
+	]
+}

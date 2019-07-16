@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/react-jsonschema-form-validation/static/css/main.985d81cb.chunk.css",
+    "main.js": "/react-jsonschema-form-validation/static/js/main.a22f8ca6.chunk.js",
+    "main.js.map": "/react-jsonschema-form-validation/static/js/main.a22f8ca6.chunk.js.map",
+    "runtime~main.js": "/react-jsonschema-form-validation/static/js/runtime~main.238bfb2e.js",
+    "runtime~main.js.map": "/react-jsonschema-form-validation/static/js/runtime~main.238bfb2e.js.map",
+    "static/css/2.619dee99.chunk.css": "/react-jsonschema-form-validation/static/css/2.619dee99.chunk.css",
+    "static/js/2.441f7246.chunk.js": "/react-jsonschema-form-validation/static/js/2.441f7246.chunk.js",
+    "static/js/2.441f7246.chunk.js.map": "/react-jsonschema-form-validation/static/js/2.441f7246.chunk.js.map",
+    "index.html": "/react-jsonschema-form-validation/index.html",
+    "precache-manifest.252450efa3ae2f3e6361e9961f208cea.js": "/react-jsonschema-form-validation/precache-manifest.252450efa3ae2f3e6361e9961f208cea.js",
+    "service-worker.js": "/react-jsonschema-form-validation/service-worker.js",
+    "static/css/2.619dee99.chunk.css.map": "/react-jsonschema-form-validation/static/css/2.619dee99.chunk.css.map",
+    "static/css/main.985d81cb.chunk.css.map": "/react-jsonschema-form-validation/static/css/main.985d81cb.chunk.css.map"
+  }
+}

@@ -1,0 +1,23 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should match snapshot 1`] = `
+<ForwardRef
+  name="username"
+>
+  <Field
+    className=""
+    component="input"
+    forwardedRef={null}
+    name="username"
+    onBlur={null}
+  >
+    <mockConstructor>
+      <input
+        className="Sjf_Field"
+        name="username"
+        onBlur={[Function]}
+      />
+    </mockConstructor>
+  </Field>
+</ForwardRef>
+`;

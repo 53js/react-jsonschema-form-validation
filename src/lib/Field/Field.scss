@@ -1,0 +1,8 @@
+.Sjf_Field {
+	&.isInvalid {
+		&.isSubmitted,
+		&.isTouched {
+			border-color: $color-red;
+		}
+	}
+}

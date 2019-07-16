@@ -1,0 +1,12 @@
+.Sjf_FieldError {
+	display: none;
+	width: 100%;
+	margin-top: .25rem;
+	font-size: 80%;
+	color: $color-red;
+
+	&.isSubmitted {
+		display: block;
+		text-align: left;
+	}
+}

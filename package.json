@@ -1,0 +1,110 @@
+{
+	"name": "react-jsonschema-form-validation",
+	"description": "Simple form validation using JSON Schema and AJV",
+	"version": "0.2.0",
+	"author": "53JS",
+	"license": "MIT",
+	"scripts": {
+		"start": "react-scripts start",
+		"build": "react-scripts build",
+		"clean": "rm -rf dist",
+		"docs": "rm -rf docs && npm run build && mv build docs",
+		"dist": "npm-run-all clean dist:* minify:*",
+		"dist:css": "node-sass --output-style expanded src/lib/styles/main.scss dist/$npm_package_name.css",
+		"dist:js": "cross-env NODE_ENV=production babel src/lib --out-dir dist",
+		"minify:css": "cleancss --level 1 --source-map --source-map-inline-sources --output dist/$npm_package_name.min.css dist/$npm_package_name.css",
+		"test": "react-scripts test",
+		"eject": "react-scripts eject",
+		"prepublish": "npm test -- --bail --ci --runInBand --watchAll=false && npm run dist",
+		"preversion": "npm run docs && git add docs && (git commit -m \"update docs (v$npm_package_version)\" || echo \"No changes to commit\")"
+	},
+	"browserslist": [
+		">0.2%",
+		"not dead",
+		"not ie <= 11",
+		"not op_mini all"
+	],
+	"main": "dist/index.js",
+	"module": "dist/index.js",
+	"files": [
+		"dist",
+		"README.md"
+	],
+	"homepage": "https://53js.github.io/react-jsonschema-form-validation",
+	"bugs": {
+		"url": "https://github.com/53js/react-jsonschema-form-validation/issues"
+	},
+	"repository": "github:53js/react-jsonschema-form-validation",
+	"dependencies": {
+		"@babel/runtime": "^7.5.4",
+		"ajv": "^6.10.2",
+		"classnames": "^2.2.6",
+		"lodash.throttle": "^4.1.1",
+		"memoize-one": "^5.0.5",
+		"prop-types": "^15.7.2",
+		"scroll-to-element": "^2.0.3"
+	},
+	"devDependencies": {
+		"@babel/cli": "^7.5.0",
+		"bootstrap": "^4.3.1",
+		"clean-css-cli": "^4.3.0",
+		"cross-env": "^5.2.0",
+		"enzyme": "^3.10.0",
+		"enzyme-adapter-react-16": "^1.14.0",
+		"enzyme-to-json": "^3.3.5",
+		"eslint-config-53js": "^1.1.1",
+		"eslint-config-airbnb": "^17.1.1",
+		"eslint-plugin-import": "^2.18.0",
+		"eslint-plugin-jest": "^22.8.0",
+		"eslint-plugin-react": "^7.14.2",
+		"node-sass": "^4.12.0",
+		"npm-run-all": "^4.1.5",
+		"react": "^16.8.6",
+		"react-dom": "^16.8.6",
+		"react-prism": "^4.3.2",
+		"react-router-dom": "^5.0.1",
+		"react-scripts": "^3.0.1",
+		"react-select": "^3.0.4",
+		"react-test-renderer": "^16.8.6",
+		"reactstrap": "^8.0.1"
+	},
+	"peerDependencies": {
+		"react": ">=15"
+	},
+	"jest": {
+		"collectCoverageFrom": [
+			"src/lib/**/*.{js,jsx,ts,tsx}"
+		],
+		"watchPathIgnorePatterns": [
+			"/build/",
+			"/dist/",
+			"/docs/",
+			"/node_modules/"
+		],
+		"snapshotSerializers": [
+			"enzyme-to-json/serializer"
+		]
+	},
+	"keywords": [
+		"JSON",
+		"ajv",
+		"component",
+		"form",
+		"input",
+		"html5",
+		"json-schema",
+		"json-schema-validation",
+		"json-schema-validator",
+		"jsonschema",
+		"react",
+		"react-component",
+		"sanitization",
+		"sanitize",
+		"sanitizer",
+		"schema",
+		"validate",
+		"validation",
+		"validator",
+		"ui"
+	]
+}
