@@ -1,0 +1,11 @@
+$color: #dc3545; //bootstrap danger color
+
+.Jfv_Field.isInvalid {
+	&.isSubmitted,
+	&.isTouched {
+		.Jvf_Select__control {
+			border-color: $color;
+			box-shadow: none;
+		}
+	}
+}

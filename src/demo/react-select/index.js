@@ -1,10 +1,12 @@
 import React from 'react';
+/* eslint-disable import/no-extraneous-dependencies */
 import {
 	Col,
 	FormGroup,
 	Label,
 	Row,
 } from 'reactstrap';
+/* eslint-enable import/no-extraneous-dependencies */
 
 import {
 	Field,
@@ -13,7 +15,7 @@ import {
 } from '../../lib';
 
 import Submit from '../components/Submit';
-import SelectWrapper from '../components/react-select/selectWrapper';
+import Select from '../components/Select/Select';
 
 import reactSelectFormSchema from './react-select-form.schema';
 
@@ -66,7 +68,7 @@ class ReactSelectForm extends React.Component {
 					<Label>Pick a french movie (max: 1)</Label>
 					<Field
 						className=""
-						component={SelectWrapper}
+						component={Select}
 						name="movies"
 						isClearable
 						onChange={(newVal, handleFieldChange) => handleFieldChange('movies', newVal)}
@@ -114,7 +116,7 @@ class ReactSelectForm extends React.Component {
 				<FormGroup>
 					<Label>Pick some books (min: 2)</Label>
 					<Field
-						component={SelectWrapper}
+						component={Select}
 						name="books"
 						isClearable
 						isMulti
@@ -173,7 +175,7 @@ class ReactSelectForm extends React.Component {
 				<FormGroup>
 					<Label>Pick a TV show (facultative)</Label>
 					<Field
-						component={SelectWrapper}
+						component={Select}
 						name="tvshow"
 						onChange={(newVal, handleFieldChange) => {
 							handleFieldChange({
