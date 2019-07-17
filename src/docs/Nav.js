@@ -1,4 +1,5 @@
 import React from 'react';
+/* eslint-disable import/no-extraneous-dependencies */
 import { Link } from 'react-router-dom';
 import {
 	NavbarToggler,
@@ -10,6 +11,7 @@ import {
 	NavItem,
 	NavLink,
 } from 'reactstrap';
+/* eslint-enable import/no-extraneous-dependencies */
 
 export default class UINav extends React.Component {
 	constructor(props) {

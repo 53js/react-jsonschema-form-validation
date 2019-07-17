@@ -1,5 +1,7 @@
 import React from 'react';
+/* eslint-disable import/no-extraneous-dependencies */
 import { Container, Row, Col } from 'reactstrap';
+/* eslint-enable import/no-extraneous-dependencies */
 
 import './Footer.css';
 

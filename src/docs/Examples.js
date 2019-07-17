@@ -1,4 +1,5 @@
 import React from 'react';
+/* eslint-disable import/no-extraneous-dependencies */
 import { Link, Route } from 'react-router-dom';
 import {
 	Container,
@@ -8,6 +9,7 @@ import {
 	NavItem,
 	NavLink,
 } from 'reactstrap';
+/* eslint-enable import/no-extraneous-dependencies */
 
 import './Examples.css';
 
@@ -50,9 +52,16 @@ const Examples = () => (
 	<Container className="content">
 		<Header />
 		<Row>
+			<Col>
+			</Col>
+		</Row>
+		<Row>
 			<Col tag="main" md={{ size: 3, order: 2 }}>
 				<div className="docs-sidebar mb-3">
 					<h1 className="h5">Examples</h1>
+					<p>
+						<a href="https://github.com/53js/react-jsonschema-form-validation/tree/master/src/demo">Sources</a>
+					</p>
 					<Nav className="flex-column">
 						{items.map(item => (
 							<NavItem key={item.to}>

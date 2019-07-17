@@ -112,7 +112,7 @@ import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
 ### Examples
 We’ve got many examples, from the most simple to the most advanced.
 
-Live examples are available : [here](https://53js.github.io/react-jsonschema-form-validation "examples")
+Live examples are available : [here](https://53js.github.io/react-jsonschema-form-validation/#/examples/ "examples")
 
 ## Documentation
 

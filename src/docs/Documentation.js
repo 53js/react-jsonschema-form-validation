@@ -1,4 +1,5 @@
 import React, { PureComponent } from 'react';
+/* eslint-disable import/no-extraneous-dependencies */
 import { PrismCode } from 'react-prism';
 import { Link } from 'react-router-dom';
 import {
@@ -6,7 +7,7 @@ import {
 	Container,
 	Row,
 } from 'reactstrap';
-
+/* eslint-enable import/no-extraneous-dependencies */
 
 import Header from './Header';
 

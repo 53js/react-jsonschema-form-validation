@@ -1,4 +1,5 @@
 import React, { PureComponent } from 'react';
+/* eslint-disable import/no-extraneous-dependencies */
 import {
 	Button,
 	Col,
@@ -7,6 +8,7 @@ import {
 	Row,
 } from 'reactstrap';
 import { Link } from 'react-router-dom';
+/* eslint-enable import/no-extraneous-dependencies */
 
 class Header extends PureComponent {
 	render() {

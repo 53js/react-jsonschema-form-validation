@@ -1,7 +1,9 @@
 import React from 'react';
+/* eslint-disable import/no-extraneous-dependencies */
 import { PrismCode } from 'react-prism';
 import { Container, Row, Col } from 'reactstrap';
 import { Link } from 'react-router-dom';
+/* eslint-enable import/no-extraneous-dependencies */
 
 import './Home.css';
 import './prism.css';
