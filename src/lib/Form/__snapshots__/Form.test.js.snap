@@ -1,28 +1,29 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`should match snapshot 1`] = `
-<ContextProvider
-  value={
+<Form
+  ajv={null}
+  className=""
+  component="form"
+  data={Object {}}
+  errorMessages={Object {}}
+  onChange={null}
+  onSubmit={[Function]}
+  schema={Object {}}
+  scrollOptions={
     Object {
-      "errorMessages": Object {},
-      "errors": Array [],
-      "getFieldErrors": [Function],
-      "handleFieldChange": [Function],
-      "isFieldInvalid": [Function],
-      "isFieldTouched": [Function],
-      "isInvalid": [Function],
-      "isSubmitted": false,
-      "isTouched": [Function],
-      "touch": [Function],
-      "touchedFields": Array [],
-      "valid": true,
+      "align": "middle",
+      "duration": 900,
+      "offset": 0,
     }
   }
+  scrollToError={true}
+  throttleDuration={200}
 >
   <form
     className=""
     noValidate={true}
     onSubmit={[Function]}
   />
-</ContextProvider>
+</Form>
 `;

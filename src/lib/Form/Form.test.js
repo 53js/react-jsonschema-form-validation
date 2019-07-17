@@ -15,7 +15,7 @@ const testSchema = {
 };
 
 it('should match snapshot', () => {
-	const wrapper = shallow(<Form onSubmit={() => { }} schema={{}} />);
+	const wrapper = mount(<Form onSubmit={() => { }} schema={{}} />);
 	expect(wrapper).toMatchSnapshot();
 });
 
@@ -23,7 +23,7 @@ it('should call onSubmit handler when form submitted', () => {
 	const onSubmit = jest.fn();
 	const data = { type: 'te' };
 
-	const wrapper = shallow(
+	const wrapper = mount(
 		<Form
 			data={data}
 			onSubmit={onSubmit}
@@ -39,7 +39,7 @@ it('should not call onSubmit handler as the form is not valid', () => {
 	const onSubmit = jest.fn();
 	const data = { type: 'pioiv' };
 
-	const wrapper = shallow(
+	const wrapper = mount(
 		<Form
 			data={data}
 			onSubmit={onSubmit}
@@ -55,7 +55,7 @@ describe('Form.getFieldErrors()', () => {
 	it('should return a list of fields having errors', () => {
 		let data = { type: 'uuu' };
 
-		let wrapper = shallow(
+		let wrapper = mount(
 			<Form
 				data={data}
 				onSubmit={() => {}}
@@ -66,7 +66,7 @@ describe('Form.getFieldErrors()', () => {
 		expect(wrapper.instance().getFieldErrors('type').length).toStrictEqual(1);
 
 		data = { type: 'te' };
-		wrapper = shallow(
+		wrapper = mount(
 			<Form
 				data={data}
 				onSubmit={() => {}}
@@ -76,7 +76,7 @@ describe('Form.getFieldErrors()', () => {
 		expect(wrapper.instance().getFieldErrors('type').length).toStrictEqual(0);
 
 		data = { type: null };
-		wrapper = shallow(
+		wrapper = mount(
 			<Form
 				data={data}
 				onSubmit={() => {}}
@@ -91,7 +91,7 @@ describe('Form.handleFieldChange(event, value)', () => {
 	it('should call onChange props with updated data based on event', () => {
 		const data = { type: 'uuu' };
 		const handleChange = jest.fn();
-		const wrapper = shallow(
+		const wrapper = mount(
 			<Form
 				data={data}
 				onChange={handleChange}
@@ -114,7 +114,7 @@ describe('Form.handleFieldChange(event, value)', () => {
 	it('should create an event like object if event param is a string', () => {
 		const data = { type: 'uuu' };
 		const handleChange = jest.fn();
-		const wrapper = shallow(
+		const wrapper = mount(
 			<Form
 				data={data}
 				onChange={handleChange}
@@ -136,7 +136,7 @@ describe('Form.handleFieldChange(event, value)', () => {
 
 	it('should not fail if onChange handler is not present', () => {
 		const data = { type: 'uuu' };
-		const wrapper = shallow(
+		const wrapper = mount(
 			<Form
 				data={data}
 				onSubmit={() => {}}
@@ -214,7 +214,7 @@ describe('Form.isFieldInvalid(fieldNames)', () => {
 			],
 		};
 
-		let wrapper = shallow(
+		let wrapper = mount(
 			<Form
 				data={data}
 				onSubmit={() => {}}
@@ -230,7 +230,7 @@ describe('Form.isFieldInvalid(fieldNames)', () => {
 			name: 'HE',
 		};
 
-		wrapper = shallow(
+		wrapper = mount(
 			<Form
 				data={newData}
 				onSubmit={() => {}}
@@ -262,7 +262,7 @@ describe('Form.isInvalid()', () => {
 			],
 		};
 
-		const wrapper = shallow(
+		const wrapper = mount(
 			<Form
 				data={data}
 				onSubmit={() => {}}
