@@ -3,6 +3,7 @@ import { mount } from 'enzyme';
 
 import FormContext from '../Form/Context';
 import Field from './Field';
+import Form from '..';
 
 jest.mock('../Form/Context');
 
@@ -14,6 +15,7 @@ it('should match snapshot', () => {
 it('should call form.touch when blurred', () => {
 	const context = {
 		getFieldErrors: jest.fn(() => []),
+		handleFieldChange: jest.fn(),
 		isFieldInvalid: jest.fn(),
 		isFieldTouched: jest.fn(),
 		touch: jest.fn(),
@@ -81,4 +83,26 @@ it('Default component input can be changed', () => {
 	const Component = () => 'component';
 	const field = mount(<Field component={Component} name="username" />);
 	expect(field.exists(Component)).toBe(true);
+});
+
+it('should call form.handleFieldChange() when field value changes', () => {
+	const context = {
+		handleFieldChange: jest.fn(),
+		isFieldInvalid: jest.fn(),
+		isFieldTouched: jest.fn(),
+	};
+	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+
+	const field = mount(<Field type="text" name="username" />);
+	const input = field.find('input');
+	input.getDOMNode().value = 'newvalue';
+	input.simulate('change');
+	expect(context.handleFieldChange).toHaveBeenCalledWith(
+		expect.objectContaining({
+			target: expect.objectContaining({
+				name: 'username',
+				value: 'newvalue',
+			}),
+		}),
+	);
 });

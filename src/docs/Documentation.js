@@ -72,6 +72,11 @@ class Documentation extends PureComponent {
 								Object data the user will fill out through the form, and submit for validation
 							</p>
 							<p>
+								<mark>onChange</mark> <i>function</i> <br />
+								It is called with the updated data object.
+								Use it to update the form data (which may be stored in the state of your component).
+							</p>
+							<p>
 								<mark>onSubmit</mark> <i>function</i> <br />
 								Your function which handle the submit
 							</p>
@@ -128,6 +133,7 @@ const simpleJsonSchema = {
 <Form
 	schema={simpleJsonSchema}
 	data={formData}
+	onChange={this.handleChange}
 	onSubmit={this.handleSubmit}
 	errorMessages={{
 		required: () => 'You must fill out all required fields',
@@ -218,7 +224,6 @@ scrollOptions: {
 <Field
 	component={Input}
 	name="ageCustom"
-	onChange={this.handleChange}
 	type="number"
 	value={formData.ageCustom}
 />

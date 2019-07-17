@@ -36,16 +36,11 @@ class SimpleForm extends React.Component {
 		this.setState(state => ({ ...state, success: true }));
 	}
 
-	handleChange(e) {
-		const { target } = e;
-		const { name, value } = target;
-		let { formData } = this.state;
-		formData = { ...formData, [name]: value };
-		this.setState(state => ({
-			...state,
-			formData,
+	handleChange(newData) {
+		this.setState({
+			formData: newData,
 			success: false,
-		}));
+		});
 	}
 
 	render() {
@@ -57,6 +52,7 @@ class SimpleForm extends React.Component {
 		return (
 			<Form
 				data={formData}
+				onChange={this.handleChange}
 				onSubmit={this.handleSubmit}
 				schema={simpleJsonSchema}
 			>
@@ -65,7 +61,6 @@ class SimpleForm extends React.Component {
 					<Field
 						className="form-control"
 						name="email"
-						onChange={this.handleChange}
 						value={formData.email}
 					/>
 					<FieldError name="email" />

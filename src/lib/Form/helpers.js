@@ -1,4 +1,5 @@
 import Ajv from 'ajv';
+import immutable from 'dot-prop-immutable';
 
 /**
  * Returns a default Ajv instance
@@ -22,7 +23,7 @@ export const empty = value => (
 /**
  * Formats data for Ajv validation
  * @param  {Object} data data to format
- * @return {Object}      formatted data
+ * @returns {Object}      formatted data
  */
 export const formatData = (data) => {
 	if (data instanceof Array) {
@@ -88,4 +89,43 @@ export const filterByFieldNameWithWildcard = (fields, fieldName) => {
 		}
 		return e.field === fieldName;
 	});
+};
+
+/**
+ * Returns a value from any type of input (text, checkbox, file...)
+ * @param {Object} target - A target object from an event (ex: change)
+ * @returns {Object} Typed value of target
+ */
+export const getFieldValue = (target) => {
+	switch (target.type) {
+	case 'number':
+		return target.value !== '' ? +target.value : '';
+	case 'checkbox':
+		return target.checked;
+	case 'file': {
+		if (target.value === '') return target.value;
+		return target.multiple ? Array.from(target.files) : target.files[0];
+	}
+	default:
+		return target.value;
+	}
+};
+
+/**
+ * Copy the data object and modify the updated values coming from events
+ * It uses the 'dot-prop-immutable' module to change object references of each nested object
+ * which contains a property that changed.
+ * @param {Object} data - The original data object
+ * @param {SyntheticEvent|SyntheticEvent[]} events - A single event or an array of events
+ * @returns {Object} A copy of the data object if modified or data
+ */
+export const updateDataFromEvents = (data, events) => {
+	if (!events) return data;
+	if (!Array.isArray(events)) events = [events];
+
+	events.forEach((event) => {
+		data = immutable.set(data, event.target.name, getFieldValue(event.target));
+	});
+
+	return data;
 };

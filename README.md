@@ -64,14 +64,14 @@ Pass your schema to the Form as props.
 ```js
 // ...
 <Form
-	schema={demoSchema}
 	data={this.state.formData}
+	onChange={this.handleChange}
 	onSubmit={this.handleSubmit}
+	schema={demoSchema}
 >
 	<label>Email :</label>
 	<Field
 		name="email"
-		onChange={this.handleChange}
 		value={formData.email}
 	/>
 	<FieldError name="email" />
@@ -94,14 +94,14 @@ import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
 
 // ...
 <Form
-	schema={demoSchema}
 	data={this.state.formData}
+	onChange={this.handleChange}
 	onSubmit={this.handleSubmit}
+	schema={demoSchema}
 >
 	<label>Email :</label>
 	<Field
 		name="email"
-		onChange={this.handleChange}
 		value={formData.email}
 	/>
 	<FieldError name="email" />
@@ -126,9 +126,9 @@ MIT
 
 📬 contact : contact@53js.fr
 
-<i class="fa fa-twitter fa-lg" style="color: #007bff"></i> follow us : [@53jsdev](https://twitter.com/53jsdev "https://twitter.com/53jsdev")
+follow us : [@53jsdev](https://twitter.com/53jsdev "https://twitter.com/53jsdev")
 
-<i class="fa fa-github fa-lg"></i> github repos : [/53js](https://github.com/53js "https://github.com/53js")
+github repos : [/53js](https://github.com/53js "https://github.com/53js")
 
 
 🚀 website : [53js.fr](https://53js.fr "https://www.53js.fr")

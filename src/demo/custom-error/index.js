@@ -37,27 +37,8 @@ class CustomMessageForm extends React.Component {
 		this.handleSubmit = this.handleSubmit.bind(this);
 	}
 
-	handleChange(e) {
-		let value;
-		const { target } = e;
-		const { name } = target;
-		let { formData } = this.state;
-
-		switch (target.type) {
-		case 'checkbox':
-			value = !!target.checked;
-			break;
-		case 'number':
-			value = target.value !== '' ? +target.value : '';
-			break;
-		default:
-			// eslint-disable-next-line
-				value = target.value;
-		}
-
-		formData = { ...formData, [name]: value };
-
-		this.setState({ formData, success: false });
+	handleChange(data) {
+		this.setState({ formData: data, success: false });
 	}
 
 	handleSubmit() {
@@ -74,6 +55,7 @@ class CustomMessageForm extends React.Component {
 			<Form
 				schema={customErrorFormSchema}
 				data={formData}
+				onChange={this.handleChange}
 				onSubmit={this.handleSubmit}
 				errorMessages={{
 					required: () => formData.defaultMessage,
@@ -84,10 +66,8 @@ class CustomMessageForm extends React.Component {
 					<Col md="6">
 						<Field
 							component={Input}
-							disabled
 							id="client-minAgeCustomMessage"
 							name="minAgeCustomMessage"
-							onChange={this.handleChange}
 							type="text"
 							value={formData.minAgeCustomMessage}
 						/>
@@ -98,10 +78,8 @@ class CustomMessageForm extends React.Component {
 					<Col md="6">
 						<Field
 							component={Input}
-							disabled
 							id="client-maxAgeCustomMessage"
 							name="maxAgeCustomMessage"
-							onChange={this.handleChange}
 							type="text"
 							value={formData.maxAgeCustomMessage}
 						/>
@@ -112,10 +90,8 @@ class CustomMessageForm extends React.Component {
 					<Col md="6">
 						<Field
 							component={Input}
-							disabled
 							id="client-defaultMessage"
 							name="defaultMessage"
-							onChange={this.handleChange}
 							type="text"
 							value={formData.defaultMessage}
 						/>
@@ -129,7 +105,6 @@ class CustomMessageForm extends React.Component {
 							component={Input}
 							id="client-ageCustom"
 							name="ageCustom"
-							onChange={this.handleChange}
 							type="number"
 							value={formData.ageCustom}
 						/>

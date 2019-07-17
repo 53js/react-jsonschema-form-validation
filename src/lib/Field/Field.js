@@ -11,12 +11,23 @@ class Field extends PureComponent {
 		if (onBlur) onBlur(event);
 	});
 
+	getOnChangeHandler = memoize((onChange, handleFieldChange) => (event) => {
+		if (onChange) {
+			// Pass Form.handleFieldChange handler as extra parameter to the onChange handler
+			onChange(event, handleFieldChange);
+			return;
+		}
+
+		handleFieldChange(event);
+	});
+
 	render() {
 		const {
 			children,
 			className,
 			component: Component,
 			onBlur,
+			onChange,
 			name,
 			forwardedRef,
 			...props
@@ -40,9 +51,10 @@ class Field extends PureComponent {
 						}
 						name={name}
 						onBlur={this.getOnBlurHandler(form.touch, name, onBlur)}
+						onChange={this.getOnChangeHandler(onChange, form.handleFieldChange)}
 						ref={forwardedRef}
 					>
-						{ children }
+						{children}
 					</Component>
 				)}
 			</Context.Consumer>
@@ -59,6 +71,7 @@ Field.propTypes = {
 		PropTypes.func,
 	]),
 	onBlur: PropTypes.func,
+	onChange: PropTypes.func,
 	name: PropTypes.string.isRequired,
 };
 
@@ -68,6 +81,7 @@ Field.defaultProps = {
 	component: 'input',
 	forwardedRef: null,
 	onBlur: null,
+	onChange: null,
 };
 
 // eslint-disable-next-line react/no-multi-comp

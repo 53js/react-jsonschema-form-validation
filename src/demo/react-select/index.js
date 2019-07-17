@@ -34,16 +34,11 @@ class ReactSelectForm extends React.Component {
 		this.handleSubmit = this.handleSubmit.bind(this);
 	}
 
-	handleChange(e) {
-		const { target } = e;
-		const { name, value } = target;
-		let { formData } = this.state;
-		formData = { ...formData, [name]: value };
-		this.setState(state => ({
-			...state,
-			formData,
+	handleChange(data) {
+		this.setState({
+			formData: data,
 			success: false,
-		}));
+		});
 	}
 
 	handleSubmit() {
@@ -52,7 +47,6 @@ class ReactSelectForm extends React.Component {
 			this.setState({ loading: false, success: true });
 		}, 1500);
 	}
-
 
 	render() {
 		const {
@@ -64,6 +58,7 @@ class ReactSelectForm extends React.Component {
 		return (
 			<Form
 				data={formData}
+				onChange={this.handleChange}
 				onSubmit={this.handleSubmit}
 				schema={reactSelectFormSchema}
 			>
@@ -73,15 +68,8 @@ class ReactSelectForm extends React.Component {
 						className=""
 						component={SelectWrapper}
 						name="movies"
-						onChange={(newVal) => {
-							this.handleChange({
-								target: {
-									name: 'movies',
-									value: newVal,
-								},
-							});
-						}}
 						isClearable
+						onChange={(newVal, handleFieldChange) => handleFieldChange('movies', newVal)}
 						options={[
 							{
 								name: 'Astérix : Le Secret de la Potion Magique - A.Astier',
@@ -128,16 +116,9 @@ class ReactSelectForm extends React.Component {
 					<Field
 						component={SelectWrapper}
 						name="books"
-						onChange={(newVal) => {
-							this.handleChange({
-								target: {
-									name: 'books',
-									value: newVal,
-								},
-							});
-						}}
 						isClearable
 						isMulti
+						onChange={(newVal, handleFieldChange) => handleFieldChange('books', newVal)}
 						options={[
 							{
 								name: 'Crime on the Orient Express - A.Christie',
@@ -194,8 +175,8 @@ class ReactSelectForm extends React.Component {
 					<Field
 						component={SelectWrapper}
 						name="tvshow"
-						onChange={(newVal) => {
-							this.handleChange({
+						onChange={(newVal, handleFieldChange) => {
+							handleFieldChange({
 								target: {
 									name: 'tvshow',
 									value: newVal,

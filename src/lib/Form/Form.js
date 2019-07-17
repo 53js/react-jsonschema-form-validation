@@ -12,6 +12,7 @@ import {
 	filterByFieldNameWithWildcard,
 	formatData,
 	formatErrors,
+	updateDataFromEvents,
 } from './helpers';
 
 class Form extends PureComponent {
@@ -46,13 +47,14 @@ class Form extends PureComponent {
 		/* eslint-disable react/no-unused-state */
 		this.state = {
 			errors: [],
+			errorMessages: props.errorMessages,
 			getFieldErrors: this.getFieldErrors.bind(this),
+			handleFieldChange: this.handleFieldChange.bind(this),
 			isFieldTouched: this.isFieldTouched.bind(this),
 			isFieldInvalid: this.isFieldInvalid.bind(this),
 			isInvalid: this.isInvalid.bind(this),
 			isSubmitted: false,
 			isTouched: this.isTouched.bind(this),
-			errorMessages: props.errorMessages,
 			touch: this.touch.bind(this),
 			touchedFields: [],
 			valid: true,
@@ -84,6 +86,22 @@ class Form extends PureComponent {
 			...fieldsErrors,
 			...filterByFieldNameWithWildcard(errors, fieldName),
 		], []);
+	}
+
+	handleFieldChange(event, value) {
+		const { data, onChange } = this.props;
+		if (onChange) {
+			if (typeof event === 'string') {
+				event = {
+					target: {
+						name: event,
+						value,
+					},
+				};
+			}
+			const newData = updateDataFromEvents(data, event);
+			onChange(newData, event);
+		}
 	}
 
 	handleSubmit(event) {
@@ -176,6 +194,7 @@ class Form extends PureComponent {
 			data,
 			throttleDuration,
 			errorMessages,
+			onChange,
 			onSubmit,
 			schema,
 			scrollOptions,
@@ -213,6 +232,7 @@ Form.propTypes = {
 	data: PropTypes.shape({}),
 	throttleDuration: PropTypes.number,
 	errorMessages: PropTypes.shape({}),
+	onChange: PropTypes.func,
 	onSubmit: PropTypes.func.isRequired,
 	schema: PropTypes.shape({}).isRequired,
 	scrollToError: PropTypes.bool,
@@ -225,14 +245,15 @@ Form.defaultProps = {
 	className: '',
 	component: 'form',
 	data: {},
-	throttleDuration: 200,
 	errorMessages: {},
+	onChange: null,
 	scrollToError: true,
 	scrollOptions: {
 		offset: 0,
 		align: 'middle',
 		duration: 900,
 	},
+	throttleDuration: 200,
 };
 
 export default Form;

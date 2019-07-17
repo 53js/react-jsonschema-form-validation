@@ -14,7 +14,6 @@ const testSchema = {
 	],
 };
 
-
 it('should match snapshot', () => {
 	const wrapper = shallow(<Form onSubmit={() => { }} schema={{}} />);
 	expect(wrapper).toMatchSnapshot();
@@ -85,6 +84,76 @@ describe('Form.getFieldErrors()', () => {
 			/>,
 		);
 		expect(wrapper.instance().getFieldErrors('type').length).toStrictEqual(1);
+	});
+});
+
+describe('Form.handleFieldChange(event, value)', () => {
+	it('should call onChange props with updated data based on event', () => {
+		const data = { type: 'uuu' };
+		const handleChange = jest.fn();
+		const wrapper = shallow(
+			<Form
+				data={data}
+				onChange={handleChange}
+				onSubmit={() => {}}
+				schema={testSchema}
+			/>,
+		);
+		const form = wrapper.instance();
+		const event = {
+			target: {
+				name: 'type',
+				value: 'aaa',
+			},
+		};
+		form.handleFieldChange(event);
+		const expected = { type: 'aaa' };
+		expect(handleChange).toHaveBeenCalledWith(expect.objectContaining(expected), event);
+	});
+
+	it('should create an event like object if event param is a string', () => {
+		const data = { type: 'uuu' };
+		const handleChange = jest.fn();
+		const wrapper = shallow(
+			<Form
+				data={data}
+				onChange={handleChange}
+				onSubmit={() => {}}
+				schema={testSchema}
+			/>,
+		);
+		const form = wrapper.instance();
+		const event = {
+			target: {
+				name: 'type',
+				value: 'aaa',
+			},
+		};
+		form.handleFieldChange(event.target.name, event.target.value);
+		const expected = { type: 'aaa' };
+		expect(handleChange).toHaveBeenCalledWith(expect.objectContaining(expected), event);
+	});
+
+	it('should not fail if onChange handler is not present', () => {
+		const data = { type: 'uuu' };
+		const wrapper = shallow(
+			<Form
+				data={data}
+				onSubmit={() => {}}
+				schema={testSchema}
+			/>,
+		);
+
+		const form = wrapper.instance();
+		const event = {
+			target: {
+				name: 'type',
+				value: 'aaa',
+			},
+		};
+		expect(() => {
+			form.handleFieldChange(event);
+		}).not.toThrow();
 	});
 });
 

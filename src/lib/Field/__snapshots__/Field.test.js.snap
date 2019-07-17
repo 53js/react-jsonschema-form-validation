@@ -10,12 +10,14 @@ exports[`should match snapshot 1`] = `
     forwardedRef={null}
     name="username"
     onBlur={null}
+    onChange={null}
   >
     <mockConstructor>
       <input
         className="Sjf_Field"
         name="username"
         onBlur={[Function]}
+        onChange={[Function]}
       />
     </mockConstructor>
   </Field>

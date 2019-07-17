@@ -1,4 +1,5 @@
 import React from 'react';
+// eslint-disable-next-line import/no-extraneous-dependencies
 import {
 	Alert,
 	Col,
@@ -26,59 +27,19 @@ class ErrorMakerForm extends React.Component {
 			formData: {
 				lastName: '',
 				firstName: '',
+				email: '',
+				emailVerification: '',
 			},
 			success: false,
 			loading: false,
 		};
 
 		this.handleChange = this.handleChange.bind(this);
-		this.handleChangeInterests = this.handleChangeInterests.bind(this);
 		this.handleSubmit = this.handleSubmit.bind(this);
 	}
 
-	handleChange(e) {
-		let value;
-		const { target } = e;
-		const { name } = target;
-		let { formData } = this.state;
-
-		switch (target.type) {
-		case 'checkbox':
-			value = !!target.checked;
-			break;
-		case 'number':
-			value = target.value !== '' ? +target.value : '';
-			break;
-		default:
-			// eslint-disable-next-line
-			value = target.value;
-		}
-
-		formData = { ...formData, [name]: value };
-
-		this.setState({ formData, success: false });
-	}
-
-	handleChangeInterests(e) {
-		const { target } = e;
-		const { name } = target;
-		const { formData } = this.state;
-		let { interests } = formData;
-
-		interests = interests || [];
-
-		if (target.checked) {
-			interests = [...interests, target.value];
-		} else {
-			interests = interests.filter(v => v !== target.value);
-		}
-
-		this.handleChange({
-			target: {
-				name,
-				value: interests,
-			},
-		});
+	handleChange(data) {
+		this.setState({ formData: data, success: false });
 	}
 
 	handleSubmit() {
@@ -97,9 +58,10 @@ class ErrorMakerForm extends React.Component {
 
 		return (
 			<Form
-				schema={errorMakerSchema}
 				data={formData}
+				onChange={this.handleChange}
 				onSubmit={this.handleSubmit}
+				schema={errorMakerSchema}
 			>
 				<FieldError name="*">
 					<Alert color="danger">
@@ -112,13 +74,12 @@ class ErrorMakerForm extends React.Component {
 					</Alert>
 				</FieldError>
 				<FormGroup className="row">
-					<Label className="col-md-4" htmlFor="client-lastName">Last Name :</Label>
+					<Label className="col-md-4" htmlFor="client-lastName">Last Name:</Label>
 					<Col md="6">
 						<Field
 							component={Input}
 							id="client-lastName"
 							name="lastName"
-							onChange={this.handleChange}
 							type="input"
 							value={formData.lastName}
 						/>
@@ -132,7 +93,6 @@ class ErrorMakerForm extends React.Component {
 							component={Input}
 							id="client-firstName"
 							name="firstName"
-							onChange={this.handleChange}
 							type="input"
 							value={formData.firstName}
 						/>
@@ -146,7 +106,6 @@ class ErrorMakerForm extends React.Component {
 							component={Input}
 							id="client-email"
 							name="email"
-							onChange={this.handleChange}
 							type="input"
 							value={formData.email}
 						/>
@@ -160,75 +119,10 @@ class ErrorMakerForm extends React.Component {
 							component={Input}
 							id="client-emailVerification"
 							name="emailVerification"
-							onChange={this.handleChange}
 							type="input"
 							value={formData.emailVerification}
 						/>
 						<FieldError name="emailVerification" />
-					</Col>
-				</FormGroup>
-				<FormGroup className="row">
-					<Label className="col-md-4" htmlFor="client-age">Age {'( 18 < age < 100)'}</Label>
-					<Col md="6">
-						<Field
-							component={Input}
-							id="client-age"
-							name="age"
-							onChange={this.handleChange}
-							type="number"
-							value={formData.age}
-						/>
-						<FieldError name="age" />
-					</Col>
-				</FormGroup>
-				<FormGroup className="row">
-					<Label className="col-md-4">Gender</Label>
-					<Col md="6">
-						<ul>
-							<li>
-								<Label>
-									<Field
-										component={Input}
-										name="gender"
-										onChange={this.handleChange}
-										type="radio"
-										value="male"
-										checked={formData.gender === 'male'}
-									/>
-									&nbsp;Male
-								</Label>
-							</li>
-							<li>
-								<Label>
-									<Field
-										component={Input}
-										name="gender"
-										onChange={this.handleChange}
-										type="radio"
-										value="female"
-										checked={formData.gender === 'female'}
-									/>
-									&nbsp;Female
-								</Label>
-							</li>
-						</ul>
-						<FieldError name="gender" />
-					</Col>
-				</FormGroup>
-				<FormGroup className="row">
-					<Label className="col-md-4">Did you read entirely the CGUs ?</Label>
-					<Col md="6">
-						<Label>
-							<Field
-								component={Input}
-								name="cgu"
-								onChange={this.handleChange}
-								type="checkbox"
-								checked={formData.cgu}
-							/>
-							&nbsp;Yes, loved it !
-						</Label>
-						<FieldError name="cgu" />
 					</Col>
 				</FormGroup>
 				<Row className="mb-4">

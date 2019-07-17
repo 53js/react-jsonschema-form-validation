@@ -25,6 +25,13 @@ class BasicForm extends React.Component {
 			formData: {
 				lastName: '',
 				firstName: '',
+				email: '',
+				emailVerification: '',
+				age: '',
+				ageCustom: '',
+				cgu: false,
+				interests: [],
+				gender: '',
 			},
 			success: false,
 			loading: false,
@@ -35,30 +42,11 @@ class BasicForm extends React.Component {
 		this.handleSubmit = this.handleSubmit.bind(this);
 	}
 
-	handleChange(e) {
-		let value;
-		const { target } = e;
-		const { name } = target;
-		let { formData } = this.state;
-
-		switch (target.type) {
-		case 'checkbox':
-			value = !!target.checked;
-			break;
-		case 'number':
-			value = target.value !== '' ? +target.value : '';
-			break;
-		default:
-			// eslint-disable-next-line
-			value = target.value;
-		}
-
-		formData = { ...formData, [name]: value };
-
-		this.setState({ formData, success: false });
+	handleChange(data) {
+		this.setState({ formData: data, success: false });
 	}
 
-	handleChangeInterests(e) {
+	handleChangeInterests(e, handleFieldChange) {
 		const { target } = e;
 		const { name } = target;
 		const { formData } = this.state;
@@ -72,7 +60,7 @@ class BasicForm extends React.Component {
 			interests = interests.filter(v => v !== target.value);
 		}
 
-		this.handleChange({
+		handleFieldChange({
 			target: {
 				name,
 				value: interests,
@@ -98,6 +86,7 @@ class BasicForm extends React.Component {
 			<Form
 				schema={simpleJsonSchema}
 				data={formData}
+				onChange={this.handleChange}
 				onSubmit={this.handleSubmit}
 			>
 				<FormGroup className="row">
@@ -107,7 +96,6 @@ class BasicForm extends React.Component {
 							component={Input}
 							id="client-lastName"
 							name="lastName"
-							onChange={this.handleChange}
 							type="input"
 							value={formData.lastName}
 						/>
@@ -121,7 +109,6 @@ class BasicForm extends React.Component {
 							component={Input}
 							id="client-firstName"
 							name="firstName"
-							onChange={this.handleChange}
 							type="input"
 							value={formData.firstName}
 						/>
@@ -135,8 +122,7 @@ class BasicForm extends React.Component {
 							component={Input}
 							id="client-email"
 							name="email"
-							onChange={this.handleChange}
-							type="input"
+							type="email"
 							value={formData.email}
 						/>
 						<FieldError name="email" />
@@ -149,8 +135,7 @@ class BasicForm extends React.Component {
 							component={Input}
 							id="client-emailVerification"
 							name="emailVerification"
-							onChange={this.handleChange}
-							type="input"
+							type="email"
 							value={formData.emailVerification}
 						/>
 						<FieldError name="emailVerification" />
@@ -163,7 +148,6 @@ class BasicForm extends React.Component {
 							component={Input}
 							id="client-age"
 							name="age"
-							onChange={this.handleChange}
 							type="number"
 							value={formData.age}
 						/>
@@ -177,7 +161,6 @@ class BasicForm extends React.Component {
 							component={Input}
 							id="client-ageCustom"
 							name="ageCustom"
-							onChange={this.handleChange}
 							type="number"
 							value={formData.ageCustom}
 						/>
@@ -232,7 +215,6 @@ class BasicForm extends React.Component {
 									<Field
 										component={Input}
 										name="gender"
-										onChange={this.handleChange}
 										type="radio"
 										value="male"
 										checked={formData.gender === 'male'}
@@ -245,7 +227,6 @@ class BasicForm extends React.Component {
 									<Field
 										component={Input}
 										name="gender"
-										onChange={this.handleChange}
 										type="radio"
 										value="female"
 										checked={formData.gender === 'female'}
@@ -264,7 +245,6 @@ class BasicForm extends React.Component {
 							<Field
 								component={Input}
 								name="cgu"
-								onChange={this.handleChange}
 								type="checkbox"
 								checked={formData.cgu}
 							/>

@@ -50,12 +50,21 @@ import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
 
 
 /* ... */
+	state = {
+		formData: {
+			email: '',
+		},
+	}
 
+	handleChange = (data) => {
+		this.setState({ formData: data });
+	}
 
 	render() {
 		return (
 			<Form
 				data={this.state.formData}
+				onChange={this.handleChange}
 				onSubmit={this.handleSubmit}
 				schema={simpleJsonSchema}
 			>
@@ -65,7 +74,6 @@ import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
 						component="input"
 						id="client-email"
 						name="email"
-						onChange={this.handleChange}
 						type="input"
 						value={this.state.formData.email}
 					/>
