@@ -14,7 +14,7 @@ exports[`should match snapshot 1`] = `
   >
     <mockConstructor>
       <input
-        className="Sjf_Field"
+        className="Jfv_Field"
         name="username"
         onBlur={[Function]}
         onChange={[Function]}

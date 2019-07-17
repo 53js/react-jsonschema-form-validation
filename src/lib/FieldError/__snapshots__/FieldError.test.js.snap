@@ -8,7 +8,7 @@ exports[`should match snapshot 1`] = `
 >
   <mockConstructor>
     <div
-      className="Sjf_FieldError"
+      className="Jfv_FieldError"
     />
   </mockConstructor>
 </FieldError>

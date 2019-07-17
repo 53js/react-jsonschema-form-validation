@@ -40,7 +40,7 @@ class Field extends PureComponent {
 						{...props}
 						className={
 							classnames(
-								'Sjf_Field',
+								'Jfv_Field',
 								className,
 								{
 									isInvalid: form.isFieldInvalid(name),

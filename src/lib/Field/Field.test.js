@@ -41,12 +41,12 @@ it('should add class isSubmitted if form is submitted', () => {
 	};
 
 	let field = mount(<Field name="username" />);
-	expect(field.find('.Sjf_Field').hasClass('isSubmitted')).toBe(false);
+	expect(field.find('.Jfv_Field').hasClass('isSubmitted')).toBe(false);
 
 	context.isSubmitted = true;
 	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
 	field = mount(<Field name="username" />);
-	expect(field.find('.Sjf_Field').hasClass('isSubmitted')).toBe(true);
+	expect(field.find('.Jfv_Field').hasClass('isSubmitted')).toBe(true);
 });
 
 it('should add class isTouched if field is touched', () => {
@@ -56,12 +56,12 @@ it('should add class isTouched if field is touched', () => {
 	};
 
 	let field = mount(<Field name="username" />);
-	expect(field.find('.Sjf_Field').hasClass('isTouched')).toBe(false);
+	expect(field.find('.Jfv_Field').hasClass('isTouched')).toBe(false);
 
 	context.isFieldTouched.mockImplementation(() => true);
 	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
 	field = mount(<Field name="username" />);
-	expect(field.find('.Sjf_Field').hasClass('isTouched')).toBe(true);
+	expect(field.find('.Jfv_Field').hasClass('isTouched')).toBe(true);
 });
 
 it('should add class isInvalid if field is invalid', () => {
@@ -71,12 +71,12 @@ it('should add class isInvalid if field is invalid', () => {
 	};
 
 	let field = mount(<Field name="username" />);
-	expect(field.find('.Sjf_Field').hasClass('isInvalid')).toBe(false);
+	expect(field.find('.Jfv_Field').hasClass('isInvalid')).toBe(false);
 
 	context.isFieldInvalid.mockImplementation(() => true);
 	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
 	field = mount(<Field name="username" />);
-	expect(field.find('.Sjf_Field').hasClass('isInvalid')).toBe(true);
+	expect(field.find('.Jfv_Field').hasClass('isInvalid')).toBe(true);
 });
 
 it('Default component input can be changed', () => {

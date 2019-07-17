@@ -93,12 +93,12 @@ it('should add class isSubmitted if form is submitted', () => {
 	};
 	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
 	let fieldError = mount(<FieldError name="username" />);
-	expect(fieldError.find('.Sjf_FieldError').hasClass('isSubmitted')).toBe(false);
+	expect(fieldError.find('.Jfv_FieldError').hasClass('isSubmitted')).toBe(false);
 
 	context.isSubmitted = true;
 	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
 	fieldError = mount(<FieldError name="username" />);
-	expect(fieldError.find('.Sjf_FieldError').hasClass('isSubmitted')).toBe(true);
+	expect(fieldError.find('.Jfv_FieldError').hasClass('isSubmitted')).toBe(true);
 });
 
 it('should add class isTouched if field is touched', () => {
@@ -108,10 +108,10 @@ it('should add class isTouched if field is touched', () => {
 	};
 	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
 	let fieldError = mount(<FieldError name="username" />);
-	expect(fieldError.find('.Sjf_FieldError').hasClass('isTouched')).toBe(false);
+	expect(fieldError.find('.Jfv_FieldError').hasClass('isTouched')).toBe(false);
 
 	context.isFieldTouched.mockImplementation(() => true);
 	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
 	fieldError = mount(<FieldError name="username" />);
-	expect(fieldError.find('.Sjf_FieldError').hasClass('isTouched')).toBe(true);
+	expect(fieldError.find('.Jfv_FieldError').hasClass('isTouched')).toBe(true);
 });

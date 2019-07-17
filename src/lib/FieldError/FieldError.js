@@ -21,7 +21,7 @@ class FieldError extends PureComponent {
 					const fieldErrorMessages = { ...form.errorMessages, ...errorMessages };
 
 					const classes = classnames(
-						'Sjf_FieldError',
+						'Jfv_FieldError',
 						className,
 						{
 							isSubmitted: form.isSubmitted,
