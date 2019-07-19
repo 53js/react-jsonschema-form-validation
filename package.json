@@ -15,7 +15,7 @@
 		"minify:css": "cleancss --level 1 --source-map --source-map-inline-sources --output dist/$npm_package_name.min.css dist/$npm_package_name.css",
 		"test": "react-scripts test",
 		"eject": "react-scripts eject",
-		"prepublish": "npm test -- --bail --ci --runInBand --watchAll=false && npm run dist",
+		"prepublishOnly": "npm test -- --bail --ci --runInBand --watchAll=false && npm run dist",
 		"preversion": "npm run docs && git add docs && (git commit -m \"update docs (v$npm_package_version)\" || echo \"No changes to commit\")"
 	},
 	"browserslist": [
