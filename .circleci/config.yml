@@ -47,5 +47,11 @@ jobs:
           command: |
             # run tests!
             npm test -- --coverage
+
+      - run:
+          name: Build
+          command: |
+            # build library!
+            npm run dist
             # upload test report to Code Climate using `after-build`
             ./cc-test-reporter after-build -t lcov
