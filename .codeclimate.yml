@@ -1,0 +1,9 @@
+exclude_patterns:
+- "docs/"
+- "src/demo/"
+- "src/docs/"
+- "**/__snapshots__/"
+- "**/__mocks__/"
+- "**/__tests__/"
+- "**/*.test.js"
+- src/setupTest.js
