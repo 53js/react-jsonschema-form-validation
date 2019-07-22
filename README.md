@@ -14,7 +14,7 @@ This library links JSON Schema, Ajv and Form to :
 - display & customize error messages
 - use your own graphical components to build friendly user forms.
 
-## Why us ?
+## Why RJFV ?
 - Simplicity (no extraneous features, just what you need)
 - Performance (AJV is extremely fast _:zap:_)
 - Actively maintained
@@ -55,7 +55,7 @@ const demoSchema = {
 };
 ```
 
-Then import as ES6 Module :
+Then import modules :
 ```js
 import React from 'react';
 import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
@@ -64,22 +64,24 @@ import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
 ```
 
 Then declare your __Form__, __Field__ and __FieldError__ components.
-Pass your schema to the Form as props.
+Pass your schema to the Form props.
 
 ```jsx
-class ExampleForm extends PureComponent {
+class DemoForm extends PureComponent {
 	// ...
 	state = {
-		formData,
-	};
+		formData: {
+			email: '',
+		},
+	}
 	
 	handleChange = (data) => {
-		// data is a of the object formData with properties (and nested properties)
+		// data is a copy of the object formData with properties (and nested properties)
 		// updated using immutability pattern for each change occured in the form.
 		this.setState({ formData: data });
 	}
 	
-	handleSubmit() {
+	handleSubmit = () => {
 		const { doWhateverYouWant } = this.props;
 		const { formData } = this.state;
 		doWhateverYouWant(formData); // Do whatever you want with the form data
@@ -126,6 +128,5 @@ MIT
 follow us : [@53jsdev](https://twitter.com/53jsdev "https://twitter.com/53jsdev")
 
 github repos : [/53js](https://github.com/53js "https://github.com/53js")
-
 
 🚀 website : [53js.fr](https://53js.fr "https://www.53js.fr")
