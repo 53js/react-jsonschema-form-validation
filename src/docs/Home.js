@@ -81,7 +81,7 @@ import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
 					/>
 					<FieldError name="email" />
 				</div>
-				<button type="submit" onClick={this.handleSubmit}>
+				<button type="submit">
 					Envoyer
 				</button>
 			</Form>

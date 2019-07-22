@@ -62,55 +62,49 @@ import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
 
 // ...
 ```
+
 Then declare your __Form__, __Field__ and __FieldError__ components.
 Pass your schema to the Form as props.
-```js
-// ...
-<Form
-	data={this.state.formData}
-	onChange={this.handleChange}
-	onSubmit={this.handleSubmit}
-	schema={demoSchema}
->
-	<label>Email :</label>
-	<Field
-		name="email"
-		value={formData.email}
-	/>
-	<FieldError name="email" />
-</Form>
-```
-At last, put a submit button inside your Form.  
 
-```js
-		***
-	<button>Submit</button>
-</Form>
+```jsx
+class ExampleForm extends PureComponent {
+	// ...
+	state = {
+		formData,
+	};
+	
+	handleChange = (data) => {
+		// data is a of the object formData with properties (and nested properties)
+		// updated using immutability pattern for each change occured in the form.
+		this.setState({ formData: data });
+	}
+	
+	handleSubmit() {
+		const { doWhateverYouWant } = this.props;
+		const { formData } = this.state;
+		doWhateverYouWant(formData); // Do whatever you want with the form data
+	}
+
+	render() {
+		<Form
+			data={this.state.formData}
+			onChange={this.handleChange}
+			onSubmit={this.handleSubmit}
+			schema={demoSchema}
+		>
+			<label>Email :</label>
+			<Field
+				name="email"
+				value={formData.email}
+			/>
+			<FieldError name="email" />
+			<button type="submit">Submit</button>
+		</Form>
+	}
+}
 ```
 
 🎵 _That's all folks !_ 
-
-#### Let's recap 
-
-```js
-import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
-
-// ...
-<Form
-	data={this.state.formData}
-	onChange={this.handleChange}
-	onSubmit={this.handleSubmit}
-	schema={demoSchema}
->
-	<label>Email :</label>
-	<Field
-		name="email"
-		value={formData.email}
-	/>
-	<FieldError name="email" />
-	<button>Save</button> 
-</Form>
-```
 
 ### Examples
 We’ve got many examples, from the most simple to the most advanced.
