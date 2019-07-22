@@ -1,7 +1,7 @@
 {
 	"name": "react-jsonschema-form-validation",
 	"description": "Simple form validation using JSON Schema and AJV",
-	"version": "0.3.1",
+	"version": "0.3.2",
 	"author": "53JS",
 	"license": "MIT",
 	"scripts": {
