@@ -23,11 +23,11 @@ class Header extends PureComponent {
 							}
 							<h1 className="jumbotron-heading display-4">React JSON Schema Form Validation</h1>
 							<p className="lead">
-								Easy to use Form with JSON Schema & React
+								Easy to use Form with JSON Schema and React
 							</p>
 							<p>
+								<Button color="danger" tag={Link} to="/docs/">API</Button>
 								<Button outline color="danger" href="https://github.com/53js/react-jsonschema-form-validation">GitHub</Button>
-								<Button color="danger" tag={Link} to="/docs/">Docs</Button>
 							</p>
 						</Col>
 					</Row>

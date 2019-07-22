@@ -17,10 +17,11 @@ export default () => (
 				<Col sm={8} className="docSearch-content">
 					<h2>Installation</h2>
 					<hr />
-					<h3 className="mt-5">npm</h3>
-					<p>Install react-jsonschema-form-validation and peer dependencies via NPM</p>
 					<pre>
-						<PrismCode className="language-bash">npm install --save react-jsonschema-form-validation</PrismCode>
+						<PrismCode className="language-bash">npm install react-jsonschema-form-validation</PrismCode>
+					</pre>
+					<pre>
+						<PrismCode className="language-bash">yarn add react-jsonschema-form-validation</PrismCode>
 					</pre>
 					<h2 className="mt-5">Getting started</h2>
 					<hr />

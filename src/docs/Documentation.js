@@ -64,7 +64,7 @@ class Documentation extends PureComponent {
 								</PrismCode>
 							</pre>
 							<h3 className="mt-5">Components</h3>
-							<h4 className="mt-5">• Form</h4>
+							<h4 className="mt-5">Form</h4>
 							<p>Wrapper for html form tag. It support usual html5 props + ours described below</p>
 							<p className="lead"><b>required props</b></p>
 
@@ -171,17 +171,23 @@ scrollOptions: {
 									Default is 200ms.
 								</p>
 							</div>
-							<h4 className="mt-5">• Field</h4>
+							<h4 className="mt-5">Field</h4>
 							<p>
 								Wrapper for components. Feel free to use any component you want. <br />
 								e.g input, React-Select, Custom component, etc. <br />
 								Check out our working examples <Link to="/examples/">here</Link>
-
 							</p>
 							<p className="lead"><b>required props</b></p>
 							<p>
 								<mark>name</mark> <i>string</i><br />
-								The name of the input field (should match with the field in your formData)
+								The name of the input field (should match with the field in your formData).
+								<br />
+								<u>Nested properties:</u><br />
+								Use the dot notation to link nested properties of form data:<br />
+								<PrismCode className="language-jsx">{`"user.name"`}</PrismCode><br />
+								<u>Array elements:</u><br />
+								Use also the dot notation to link array elements with the Field:<br />
+								<PrismCode className="language-jsx">{`"addresses.0.zipCode"`}</PrismCode>
 							</p>
 							<p>
 								<mark>onChange</mark> <i>function</i><br />
@@ -232,13 +238,21 @@ scrollOptions: {
 									</PrismCode>
 								</pre>
 							</div>
-							<h4 className="mt-5">• FieldError</h4>
+							<h4 className="mt-5">FieldError</h4>
 							<p>
 								Component that display errors relative to a  <PrismCode className="language-jsx">{'<Field>'}</PrismCode>
 							</p>
 							<p className="lead"><b>required props</b></p>
 							<p>
 								<mark>name</mark> <i>string</i><br /> the name of the related input field
+								<br />
+								<u>Nested properties and array elements:</u><br />
+								Use the dot notation like in Field usage. See Field for details.<br />
+								<u>Getting errors of multiple elements:</u><br />
+								Examples:<br />
+								<b>Using array:</b> <PrismCode className="language-jsx">{`name={['email', 'emailConfirmation']}`}</PrismCode><br />
+								<b>Using wildcards:</b> <PrismCode className="language-jsx">{`name="email*"`}</PrismCode><br />
+								<b>Using both:</b> <PrismCode className="language-jsx">{`name={['email', 'addresses*']}`}</PrismCode><br />
 							</p>
 							<p className="lead"><em>facultative props</em></p>
 							<div className="facultative-props">
@@ -273,65 +287,6 @@ errorMessages={{
 									<PrismCode className="language-jsx">
 										{`
 <FieldError name="ageCustom" />
-									`}
-									</PrismCode>
-								</pre>
-							</div>
-							<h4 className="mt-5">• ErrorMarker</h4>
-							<p>
-									Using this component you may add one more information when the user does
-								not fill out the form correctly. <br />
-									It’ll display how many errors encountered during the submit phase. <br />
-									Must be placed within the Form component.
-								Check out our working example <Link to="/examples/error-marker-form">here</Link>
-							</p>
-							<div className="facultative-props">
-								<p className="lead"><em>facultative props</em></p>
-								<p>
-									<mark>className</mark> <i>string</i><br />
-									Pass any css class you want to be added to the component.
-									Use your own css classes to customize the component
-								</p>
-								<p>
-									<mark>color</mark>  <i>string</i><br />
-									Default color is danger, a bootstrap color.
-								You can specify another one among those of bootstrap. <br />
-								</p>
-								<p>
-									<mark>customtext</mark> <i>string</i><br />
-									Add your own message. Number of errors still remains at the start of the string
-								</p>
-								<p>
-									<mark>fade</mark> <i>boolean</i><br />
-									Keep/Remove the animation when the component is rendered on screen
-									Default is true
-								</p>
-								<p>
-									<mark>isOpen</mark> <i>boolean</i><br />
-									Default is true
-								</p>
-								<p>
-									<mark>tag</mark> <i>boolean</i><br />
-									Specify a html tag to add into the component
-								</p>
-								<p>
-									<mark>toggle</mark> <i>function</i><br />
-									Handle display with a function
-								</p>
-								<p>
-									<mark>transition</mark> <i>object</i><br />
-									Controls the transition of the component fading in and out. <br />
-									See reactstrap’s <a href="https://reactstrap.github.io/components/fade/">documentation </a> about Fade for more details
-								</p>
-								<pre>
-									<p className="text-danger">Example</p>
-									<PrismCode className="language-jsx">
-										{`
-/* keep in mind that you must put it inside the <Form> ... </Form> */
-<ErrorMarker
-	color="warning"
-	customtext="this is a custom message, with a custom color"
-/>
 									`}
 									</PrismCode>
 								</pre>
