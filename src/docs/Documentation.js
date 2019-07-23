@@ -73,9 +73,10 @@ class Documentation extends PureComponent {
 								Object data the user will fill out through the form, and submit for validation
 							</p>
 							<p>
-								<mark>onChange</mark> <i>function</i> <br />
-								It is called with the updated data object.
-								Use it to update the form data (which may be stored in the state of your component).
+								<mark>onChange</mark> <i>function(data, event)</i> <br />
+								It is called with the updated data object. Use it to update the form data{' '}
+								(which may be stored in the state of your component).<br />
+								The second argument is the original event.
 							</p>
 							<p>
 								<mark>onSubmit</mark> <i>function</i> <br />
@@ -190,8 +191,44 @@ scrollOptions: {
 								<PrismCode className="language-jsx">{`"addresses.0.zipCode"`}</PrismCode>
 							</p>
 							<p>
-								<mark>onChange</mark> <i>function</i><br />
-								Your function which handle any change that occur in your component
+								<mark>onChange</mark> <i>function(event, handleFieldChange)</i><br />
+								Your function which handle any change that occur in your component.<br />
+								If you want to trigger the onChange event of the Form to update your{' '}
+								form data, you must call with an event-like object the callback{' '}
+								<b>handleFieldChange</b> passed in second argument.<br />
+								<br />
+								<u>[event-like object]</u><br />
+								It can be an (or an array of) event-like object with the following properties:<br />
+								<pre>
+									<PrismCode className="language-js">
+										{`
+const event = {
+	target: {
+		name: 'email',
+		value: 'test@test.com',
+	},
+};
+										`}
+									</PrismCode>
+								</pre>
+								Example:<br />
+								<pre>
+									<PrismCode className="language-js">
+										{`
+function handleChange(event, handleFieldChange) {
+	const lowercaseEvent = {
+		...event,
+		target: {
+			...event.target,
+			value: (event.target.value || '').toLowerCase(),
+		},
+	};
+
+	handleFieldChange(lowercaseEvent);
+}
+										`}
+									</PrismCode>
+								</pre>
 							</p>
 							<p>
 								<mark>value</mark> <br />
