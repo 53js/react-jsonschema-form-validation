@@ -101,6 +101,11 @@ import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
 						</PrismCode>
 					</pre>
 					<p>This example can be found here : <Link to="/examples/simple">example</Link></p>
+					<h2 className="mt-5">API</h2>
+					<hr />
+					<p>
+						See details of components props in <Link to="/docs">API docs</Link>
+					</p>
 					<h2 className="mt-5">Debug</h2>
 					<hr />
 					<p>
