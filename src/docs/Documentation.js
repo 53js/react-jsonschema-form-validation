@@ -30,7 +30,6 @@ class Documentation extends PureComponent {
 								<i>More details about JSONSchema ? check out <a href="https://json-schema.org/understanding-json-schema/">here</a></i>
 							</p>
 							<pre>
-								<p className="text-danger">Example</p>
 								<PrismCode className="language-jsx">
 									{`
 // basic-form.schema.js
@@ -90,7 +89,11 @@ class Documentation extends PureComponent {
 							<div className="facultative-props">
 								<p className="lead"><em>facultative props</em></p>
 								<p>
-									<mark>children</mark>  <i>node</i><br />
+									<mark>ajv</mark> <i>Ajv instance</i><br />
+									An Ajv instance to override the default one if needed.
+								</p>
+								<p>
+									<mark>children</mark> <i>node</i><br />
 									You can pass any sort of data as long as React can understand it before rendering
 								</p>
 								<p>
@@ -98,25 +101,29 @@ class Documentation extends PureComponent {
 									Use your own css classes to customize the component
 								</p>
 								<p>
+									<mark>component</mark> <i>node</i><br />
+									The component to use as form. By default it renders an html form element.
+								</p>
+								<p>
 									<mark>errorMessages</mark>  <i>object</i> <br />
 									Customize global error message, like required property
 								</p>
+								<p>Example:</p>
 								<pre>
 									<PrismCode className="language-javascript">
 										{`
-// custom-error-form.mesages.js
-errorMessages={{
+// custom-error-form.messages.js
+export default messages = {
 	required: () => 'You must fill out all required fields',
-}}
+}
 									`}
 									</PrismCode>
 								</pre>
-								<pre className="">
-									<p className="text-danger">JSON Schema related</p>
+								<pre>
 									<PrismCode className="language-jsx">
 										{`
 // custom-error-form.schema.js
-const simpleJsonSchema = {
+export default schema = {
 	type: 'object',
 	properties: {
 		ageCustom: { type: 'integer', minimum: 18, maximum: 100 },
@@ -129,17 +136,19 @@ const simpleJsonSchema = {
 									</PrismCode>
 								</pre>
 								<pre className="mb-4">
-									<p className="text-danger">Form Example</p>
 									<PrismCode className="language-jsx">
 										{`
+import messages from './custom-error-form.messages';
+import schema from './custom-error-form.schema';
+
+// ...
+
 <Form
-	schema={simpleJsonSchema}
+	schema={schema}
 	data={formData}
 	onChange={this.handleChange}
 	onSubmit={this.handleSubmit}
-	errorMessages={{
-		required: () => 'You must fill out all required fields',
-	}}
+	errorMessages={messages}
 >
 									`}
 									</PrismCode>
@@ -154,10 +163,9 @@ const simpleJsonSchema = {
 									You can customize the scrolling options
 								</p>
 								<pre className="mb-4">
-									<p className="text-danger">Default values</p>
 									<PrismCode className="language-jsx">
 										{`
-/*      ***      */
+// defaults
 scrollOptions: {
 	offset: 0,
 	align: 'middle',
@@ -261,7 +269,6 @@ function handleChange(event, handleFieldChange) {
 									<a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#Form_%3Cinput%3E_types">List of types</a>
 								</p>
 								<pre>
-									<p className="text-danger">ageCustom Field input</p>
 									<PrismCode className="language-jsx">
 										{`
 // Input component from reactstrap
@@ -303,27 +310,21 @@ function handleChange(event, handleFieldChange) {
 									Use your own css classes to customize the component
 								</p>
 								<p>
-									<mark>errorMessages</mark>  <i>object</i> <br />
-									Customize every single error message for each input properties
+									<mark>errorMessages</mark> <i>object</i> <br />
+									Customize errors messages for this FieldError only.
 								</p>
+								<p>Example:</p>
 								<pre className="mb-4">
-									<p className="text-danger">Example</p>
 									<PrismCode className="language-jsx">
 										{`
-errorMessages={{
-	enum: () => 'Value does not match any value among those allowed'
-	minimum: () => 'You must be over 18',
-	maximum: () => 'Too old',
-	/*      ***      */
-}}
-									`}
-									</PrismCode>
-								</pre>
-								<pre>
-									<p className="text-danger">Related to ageCustom field input</p>
-									<PrismCode className="language-jsx">
-										{`
-<FieldError name="ageCustom" />
+<FieldError
+	errorMessages={{
+		enum: () => 'Value does not match any value among those allowed'
+		minimum: () => 'You must be over 18',
+		maximum: () => 'Too old',
+	}}
+	name="ageCustom"
+/>
 									`}
 									</PrismCode>
 								</pre>

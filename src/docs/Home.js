@@ -31,8 +31,8 @@ export default () => (
 							{`const simpleJsonSchema = {
 	type: 'object',
 	properties: {
-		email: { type: 'string', format: 'email', maxLength: 30 },
-		name: { type: 'string' }
+		email: { type: 'string', format: 'email' },
+		name: { type: 'string', maxLength: 30 }
 	},
 	required: [
 		'email',
@@ -56,6 +56,7 @@ import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
 	state = {
 		formData: {
 			email: '',
+			name: '',
 		},
 	}
 
@@ -72,18 +73,26 @@ import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
 				schema={simpleJsonSchema}
 			>
 				<div className="form-group">
+					<label htmlFor="client-name">Name :</label>
+					<Field
+						id="client-name"
+						name="name"
+						value={this.state.formData.name}
+					/>
+					<FieldError name="name" />
+				</div>
+				<div className="form-group">
 					<label htmlFor="client-email">Email :</label>
 					<Field
-						component="input"
 						id="client-email"
 						name="email"
-						type="input"
+						type="email"
 						value={this.state.formData.email}
 					/>
 					<FieldError name="email" />
 				</div>
 				<button type="submit">
-					Envoyer
+					Submit
 				</button>
 			</Form>
 		);
