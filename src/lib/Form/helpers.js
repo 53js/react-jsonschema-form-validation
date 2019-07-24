@@ -92,6 +92,32 @@ export const filterByFieldNameWithWildcard = (fields, fieldName) => {
 };
 
 /**
+ * Returns true if the checkbox is checked, false otherwise.
+ * It checkbox is used to create array of checked values, you must
+ * create your own change handler
+ * @param {HTMLInputElement} target
+ * @returns {boolean}
+ */
+export const getInputCheckboxValue = target => target.checked;
+
+/**
+ * Returns a file or an array of files if the attribute "multiple" is set.
+ * @param {HTMLInputElement} target
+ * @returns {string|File|File[]}
+ */
+export const getInputFileValue = (target) => {
+	if (target.value === '') return target.value;
+	return target.multiple ? Array.from(target.files) : target.files[0];
+};
+
+/**
+ * Returns the input value as a number
+ * @param {HTMLInputElement} target
+ * @returns {string|Number}
+ */
+export const getInputNumberValue = target => (target.value !== '' ? +target.value : '');
+
+/**
  * Returns a value from any type of input (text, checkbox, file...)
  * @param {Object} target - A target object from an event (ex: change)
  * @returns {Object} Typed value of target
@@ -99,13 +125,11 @@ export const filterByFieldNameWithWildcard = (fields, fieldName) => {
 export const getFieldValue = (target) => {
 	switch (target.type) {
 	case 'number':
-		return target.value !== '' ? +target.value : '';
+		return getInputNumberValue(target);
 	case 'checkbox':
-		return target.checked;
-	case 'file': {
-		if (target.value === '') return target.value;
-		return target.multiple ? Array.from(target.files) : target.files[0];
-	}
+		return getInputCheckboxValue(target);
+	case 'file':
+		return getInputFileValue(target);
 	default:
 		return target.value;
 	}

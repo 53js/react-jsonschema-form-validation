@@ -1,47 +1,62 @@
 import classnames from 'classnames';
+import memoize from 'memoize-one';
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 
-import Context from '../Form/Context';
+import { withContext } from '../Form/Context';
 import getErrorMessage from './getErrorMessage';
 
 class FieldError extends PureComponent {
+	memoGetClassnames = memoize((className, isSubmitted, isTouched) => classnames(
+		'Jfv_FieldError',
+		className,
+		{
+			isSubmitted,
+			isTouched,
+		},
+	))
+
+	memoGetFieldErrorMessage = memoize((error, formErrorMessages, fieldErrorMessages) => {
+		const errorMessages = { ...formErrorMessages, ...fieldErrorMessages };
+		return getErrorMessage(error, errorMessages);
+	})
+
+	getClassnames = (form) => {
+		const { className, name } = this.props;
+		const { isFieldTouched, isSubmitted } = form;
+
+		return this.memoGetClassnames(
+			className,
+			isSubmitted,
+			isFieldTouched(name),
+		);
+	}
+
+	getFieldErrorMessage = (error, form) => {
+		const { errorMessages: fieldErrorMessages } = this.props;
+		const { errorMessages: formErrorMessages } = form;
+		return this.memoGetFieldErrorMessage(error, formErrorMessages, fieldErrorMessages);
+	}
+
 	render() {
 		const {
 			children,
-			className,
-			errorMessages,
 			name,
 		} = this.props;
 
-		return (
-			<Context.Consumer>
-				{(form) => {
-					const fieldErrors = form.getFieldErrors(name);
-					const fieldErrorMessages = { ...form.errorMessages, ...errorMessages };
+		return withContext((form) => {
+			const fieldErrors = form.getFieldErrors(name);
+			if (!fieldErrors.length) return null;
 
-					const classes = classnames(
-						'Jfv_FieldError',
-						className,
-						{
-							isSubmitted: form.isSubmitted,
-							isTouched: form.isFieldTouched(name),
-						},
-					);
-
-					return fieldErrors.length
-						? (
-							<div className={classes}>
-								{
-									children
-									|| getErrorMessage(fieldErrors[0], fieldErrorMessages)
-								}
-							</div>
-						)
-						: null;
-				}}
-			</Context.Consumer>
-		);
+			return (
+				<div className={this.getClassnames(form)}>
+					{
+						children
+						|| this.getFieldErrorMessage(fieldErrors[0], form)
+					}
+				</div>
+			);
+		});
 	}
 }
 

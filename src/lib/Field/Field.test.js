@@ -3,7 +3,6 @@ import { mount } from 'enzyme';
 
 import FormContext from '../Form/Context';
 import Field from './Field';
-import Form from '..';
 
 jest.mock('../Form/Context');
 
@@ -105,4 +104,28 @@ it('should call form.handleFieldChange() when field value changes', () => {
 			}),
 		}),
 	);
+});
+
+it('should call onChange handler passed as prop when field value changes', () => {
+	const context = {
+		handleFieldChange: jest.fn(),
+		isFieldInvalid: jest.fn(),
+		isFieldTouched: jest.fn(),
+	};
+	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	const handleChange = jest.fn();
+	const field = mount(<Field type="text" onChange={handleChange} name="username" />);
+	const input = field.find('input');
+	input.getDOMNode().value = 'newvalue';
+	input.simulate('change');
+	expect(handleChange).toHaveBeenCalledWith(
+		expect.objectContaining({
+			target: expect.objectContaining({
+				name: 'username',
+				value: 'newvalue',
+			}),
+		}),
+		context.handleFieldChange,
+	);
+	expect(context.handleFieldChange).not.toHaveBeenCalled();
 });

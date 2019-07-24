@@ -3,15 +3,25 @@ import memoize from 'memoize-one';
 import PropTypes from 'prop-types';
 import React, { PureComponent } from 'react';
 
-import Context from '../Form/Context';
+import { withContext } from '../Form/Context';
 
 class Field extends PureComponent {
-	getOnBlurHandler = memoize((touch, name, onBlur) => (event) => {
+	memoGetClassnames = memoize((className, isInvalid, isSubmitted, isTouched) => classnames(
+		'Jfv_Field',
+		className,
+		{
+			isInvalid,
+			isSubmitted,
+			isTouched,
+		},
+	))
+
+	memoGetOnBlurHandler = memoize((touch, name, onBlur) => (event) => {
 		touch(name);
 		if (onBlur) onBlur(event);
-	});
+	})
 
-	getOnChangeHandler = memoize((onChange, handleFieldChange) => (event) => {
+	memoGetOnChangeHandler = memoize((onChange, handleFieldChange) => (event) => {
 		if (onChange) {
 			// Pass Form.handleFieldChange handler as extra parameter to the onChange handler
 			onChange(event, handleFieldChange);
@@ -19,7 +29,19 @@ class Field extends PureComponent {
 		}
 
 		handleFieldChange(event);
-	});
+	})
+
+	getClassnames = (form) => {
+		const { className, name } = this.props;
+		const { isFieldInvalid, isFieldTouched, isSubmitted } = form;
+
+		return this.memoGetClassnames(
+			className,
+			isFieldInvalid(name),
+			isSubmitted,
+			isFieldTouched(name),
+		);
+	}
 
 	render() {
 		const {
@@ -33,32 +55,18 @@ class Field extends PureComponent {
 			...props
 		} = this.props;
 
-		return (
-			<Context.Consumer>
-				{form => (
-					<Component
-						{...props}
-						className={
-							classnames(
-								'Jfv_Field',
-								className,
-								{
-									isInvalid: form.isFieldInvalid(name),
-									isSubmitted: form.isSubmitted,
-									isTouched: form.isFieldTouched(name),
-								},
-							)
-						}
-						name={name}
-						onBlur={this.getOnBlurHandler(form.touch, name, onBlur)}
-						onChange={this.getOnChangeHandler(onChange, form.handleFieldChange)}
-						ref={forwardedRef}
-					>
-						{children}
-					</Component>
-				)}
-			</Context.Consumer>
-		);
+		return withContext(form => (
+			<Component
+				className={this.getClassnames(form)}
+				name={name}
+				onBlur={this.memoGetOnBlurHandler(form.touch, name, onBlur)}
+				onChange={this.memoGetOnChangeHandler(onChange, form.handleFieldChange)}
+				ref={forwardedRef}
+				{...props}
+			>
+				{children}
+			</Component>
+		));
 	}
 }
 
@@ -84,7 +92,6 @@ Field.defaultProps = {
 	onChange: null,
 };
 
-// eslint-disable-next-line react/no-multi-comp
 export default React.forwardRef((props, ref) => (
 	<Field {...props} forwardedRef={ref} />
 ));

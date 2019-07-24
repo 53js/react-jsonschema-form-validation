@@ -15,7 +15,7 @@ const testSchema = {
 };
 
 it('should match snapshot', () => {
-	const wrapper = mount(<Form onSubmit={() => { }} schema={{}} />);
+	const wrapper = mount(<Form onSubmit={() => {}} schema={{}} />);
 	expect(wrapper).toMatchSnapshot();
 });
 
@@ -243,37 +243,6 @@ describe('Form.isFieldInvalid(fieldNames)', () => {
 	});
 });
 
-describe('Form.isInvalid()', () => {
-	it('should return true if there is an error on the form, false otherwise', () => {
-		const data = {
-			type: 'sbbzrg',
-			name: 'ee',
-		};
-
-		const newSchema = {
-			type: 'object',
-			properties: {
-				type: { type: 'string', enum: ['te', 'ta'] },
-				name: { type: 'string', minLength: 6 },
-			},
-			required: [
-				'type',
-				'name',
-			],
-		};
-
-		const wrapper = mount(
-			<Form
-				data={data}
-				onSubmit={() => {}}
-				schema={newSchema}
-			/>,
-		);
-
-		expect(wrapper.instance().isInvalid()).toBe(true);
-	});
-});
-
 describe('Form.isFieldTouched(fieldName)', () => {
 	it('should return true if the field of name "fieldName" is touched, false otherwise', () => {
 		const wrapper = mount(
@@ -362,4 +331,15 @@ describe('Form.touch(fieldName)', () => {
 		wrapper.instance().touch('description');
 		expect(wrapper.state().touchedFields).toEqual(['type', 'name', 'description']);
 	});
+});
+
+it('should clean the event loop when unmounting', () => {
+	const wrapper = mount(<Form onSubmit={() => {}} schema={{}} />);
+	const componentWillUnmountSpy = jest.spyOn(Form.prototype, 'componentWillUnmount');
+	const cancelSpy = jest.spyOn(wrapper.instance().throttledValidator, 'cancel');
+	wrapper.unmount();
+	expect(componentWillUnmountSpy).toHaveBeenCalled();
+	expect(cancelSpy).toHaveBeenCalled();
+	componentWillUnmountSpy.mockRestore();
+	cancelSpy.mockRestore();
 });

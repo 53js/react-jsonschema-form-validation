@@ -15,70 +15,83 @@ import {
 	updateDataFromEvents,
 } from './helpers';
 
+const DefaultFormComponent = props => <form noValidate {...props} />;
+
+const initialState = {
+	errors: [],
+	isSubmitted: false,
+	touchedFields: [],
+	valid: true,
+};
+
 class Form extends PureComponent {
-	constructor(props) {
-		super(props);
+	state = { ...initialState }
 
-		const defaultAjv = props.ajv || createAjv();
+	memoGetClassnames = memoize((className, isSubmitted) => classnames(
+		'Jfv_Form',
+		className,
+		{ isSubmitted },
+	))
 
-		this.getValidator = memoize((ajv, schema, throttleDuration) => {
-			ajv = ajv || defaultAjv;
-			const validate = ajv.compile(schema);
+	memoGetContext = memoize((state, errorMessages) => ({
+		...state,
+		errorMessages,
+		getFieldErrors: this.getFieldErrors,
+		handleFieldChange: this.handleFieldChange,
+		isFieldTouched: this.isFieldTouched,
+		isFieldInvalid: this.isFieldInvalid,
+		isTouched: this.isTouched,
+		touch: this.touch,
+	}))
 
-			const validator = (data) => {
-				const formattedData = formatData(data);
-				const valid = validate(formattedData);
-				const errors = formatErrors(validate.errors);
+	memoGetValidator = memoize((ajv, schema, throttleDuration) => {
+		const validate = ajv.compile(schema);
 
-				this.setState({
-					valid,
-					errors,
-				});
-			};
+		const validator = (data) => {
+			const formattedData = formatData(data);
+			const valid = validate(formattedData);
+			const errors = formatErrors(validate.errors);
 
-			if (this.throttledValidator) this.throttledValidator.cancel();
-			this.throttledValidator = throttle(validator, throttleDuration);
-
-			return memoize(this.throttledValidator);
-		});
-
-		this.handleSubmit = this.handleSubmit.bind(this);
-
-		/* eslint-disable react/no-unused-state */
-		this.state = {
-			errors: [],
-			errorMessages: props.errorMessages,
-			getFieldErrors: this.getFieldErrors.bind(this),
-			handleFieldChange: this.handleFieldChange.bind(this),
-			isFieldTouched: this.isFieldTouched.bind(this),
-			isFieldInvalid: this.isFieldInvalid.bind(this),
-			isInvalid: this.isInvalid.bind(this),
-			isSubmitted: false,
-			isTouched: this.isTouched.bind(this),
-			touch: this.touch.bind(this),
-			touchedFields: [],
-			valid: true,
+			this.setState({
+				valid,
+				errors,
+			});
 		};
-		/* eslint-enable react/no-unused-state */
-	}
+
+		if (this.throttledValidator) this.throttledValidator.cancel();
+		this.throttledValidator = throttle(validator, throttleDuration);
+
+		return memoize(this.throttledValidator);
+	})
 
 	componentDidMount() {
-		const { ajv, data, schema } = this.props;
-		const validate = this.getValidator(ajv, schema);
-		validate(data);
+		this.validate();
 	}
 
 	componentDidUpdate() {
-		const { ajv, data, schema } = this.props;
-		const validate = this.getValidator(ajv, schema);
-		validate(data);
+		this.validate();
 	}
 
 	componentWillUnmount() {
 		if (this.throttledValidator) this.throttledValidator.cancel();
 	}
 
-	getFieldErrors(fieldNames) {
+	getClassnames = () => {
+		const { className } = this.props;
+		const { isSubmitted } = this.state;
+
+		return this.memoGetClassnames(
+			className,
+			isSubmitted,
+		);
+	}
+
+	getContext = () => {
+		const { errorMessages } = this.props;
+		return this.memoGetContext(this.state, errorMessages);
+	}
+
+	getFieldErrors = (fieldNames) => {
 		fieldNames = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
 		const { errors } = this.state;
 
@@ -88,7 +101,16 @@ class Form extends PureComponent {
 		], []);
 	}
 
-	handleFieldChange(event, value) {
+	getValidator = () => {
+		const {
+			ajv,
+			schema,
+			throttleDuration,
+		} = this.props;
+		return this.memoGetValidator(ajv, schema, throttleDuration);
+	}
+
+	handleFieldChange = (event, value) => {
 		const { data, onChange } = this.props;
 		if (onChange) {
 			if (typeof event === 'string') {
@@ -104,45 +126,30 @@ class Form extends PureComponent {
 		}
 	}
 
-	handleSubmit(event) {
+	handleSubmit = (event) => {
 		event.preventDefault();
 		this.submit(event);
 	}
 
-	scrollToFirstError() {
-		const { scrollOptions } = this.props;
+	handleSubmitError = () => {
+		const { scrollToError } = this.props;
 		const { errors } = this.state;
-		const firstError = errors[0];
-		const element = document.getElementsByName(firstError.field)[0];
-
-		scrollToElement(element, scrollOptions);
+		if (process.env.REACT_APP_JFV_DEBUG === 'true') console.log(errors); // eslint-disable-line no-console
+		if (scrollToError) this.scrollToFirstError();
 	}
 
-	submit(event) {
-		const {
-			onSubmit,
-			scrollToError,
-		} = this.props;
-
-		const {
-			errors,
-			valid,
-		} = this.state;
-
-		this.setState({ isSubmitted: true });
-
-		if (valid) {
-			this.reset();
-			onSubmit(event);
-		} else if (errors.length) {
-			if (process.env.REACT_APP_JFV_DEBUG === 'true') console.log(errors); // eslint-disable-line no-console
-			if (scrollToError) {
-				this.scrollToFirstError();
-			}
-		}
+	handleSubmitSuccess = (event) => {
+		const { onSubmit } = this.props;
+		this.reset();
+		onSubmit(event);
 	}
 
-	isFieldTouched(fieldNames) {
+	isFieldInvalid = (fieldNames) => {
+		fieldNames = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
+		return this.getFieldErrors(...fieldNames).length > 0;
+	}
+
+	isFieldTouched = (fieldNames) => {
 		fieldNames = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
 		const { touchedFields } = this.state;
 		return !!fieldNames.find(fieldName => (
@@ -150,29 +157,31 @@ class Form extends PureComponent {
 		));
 	}
 
-	isTouched() {
+	isTouched = () => {
 		const { touchedFields } = this.state;
 		return !!touchedFields.length;
 	}
 
-	isFieldInvalid(fieldNames) {
-		fieldNames = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
-		return this.getFieldErrors(...fieldNames).length > 0;
-	}
+	reset = () => this.setState(initialState)
 
-	isInvalid() {
+	scrollToFirstError = () => {
+		const { scrollOptions } = this.props;
 		const { errors } = this.state;
-		return !!errors.length;
+		const firstError = errors[0];
+		const element = document.getElementsByName(firstError.field)[0];
+		scrollToElement(element, scrollOptions);
 	}
 
-	reset() {
-		this.setState({
-			isSubmitted: false,
-			touchedFields: [],
-		});
+	submit = (event) => {
+		const { valid } = this.state;
+
+		this.setState({ isSubmitted: true });
+
+		if (valid) this.handleSubmitSuccess(event);
+		else this.handleSubmitError();
 	}
 
-	touch(fieldNames) {
+	touch = (fieldNames) => {
 		fieldNames = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
 		const { touchedFields } = this.state;
 		this.setState({
@@ -183,6 +192,12 @@ class Form extends PureComponent {
 				]),
 			],
 		});
+	}
+
+	validate = () => {
+		const { data } = this.props;
+		const validate = this.getValidator();
+		validate(data);
 	}
 
 	render() {
@@ -199,23 +214,15 @@ class Form extends PureComponent {
 			schema,
 			scrollOptions,
 			scrollToError,
-			...rest
+			...props
 		} = this.props;
 
-		const { isSubmitted } = this.state;
-
-		const classes = classnames(
-			className,
-			{ isSubmitted },
-		);
-
 		return (
-			<Context.Provider value={this.state}>
+			<Context.Provider value={this.getContext()}>
 				<FormComponent
-					className={classes}
+					className={this.getClassnames()}
 					onSubmit={this.handleSubmit}
-					noValidate
-					{...rest}
+					{...props}
 				>
 					{ children }
 				</FormComponent>
@@ -240,10 +247,10 @@ Form.propTypes = {
 };
 
 Form.defaultProps = {
-	ajv: null,
+	ajv: createAjv(),
 	children: null,
 	className: '',
-	component: 'form',
+	component: DefaultFormComponent,
 	data: {},
 	errorMessages: {},
 	onChange: null,

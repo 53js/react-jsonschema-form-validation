@@ -111,6 +111,73 @@ describe('.filterByFieldNameWithWildcard(fields, fieldName)', () => {
 	});
 });
 
+describe('.getInputCheckboxValue(target)', () => {
+	it('should return a boolean depending on checked attribute', () => {
+		const input = mount(<input name="field" type="checkbox" />);
+		input.instance().checked = true;
+		const checkbox = input.getDOMNode();
+		expect(helpers.getInputCheckboxValue(checkbox)).toBe(true);
+		input.instance().checked = false;
+		expect(helpers.getInputCheckboxValue(checkbox)).toBe(false);
+		input.instance().checked = undefined;
+		expect(helpers.getInputCheckboxValue(checkbox)).toBe(false);
+	});
+});
+
+describe('.getInputFileValue(target)', () => {
+	it('should return a File if a file is selected and multiple attribute is false', () => {
+		const input = mount(<input name="field" type="file" />);
+		const file = input.getDOMNode();
+		Object.defineProperty(file, 'files', { value: ['file1'], configurable: true });
+		Object.defineProperty(file, 'value', { value: 'path/file1' });
+		expect(helpers.getInputFileValue(file)).toBe('file1');
+		Object.defineProperty(file, 'files', { value: ['file1', 'file2'], configurable: true });
+		expect(helpers.getInputFileValue(file)).toBe('file1');
+	});
+
+	it('should return a list of File if a file is selected and multiple attribute is true', () => {
+		const input = mount(<input name="field" type="file" />);
+		const file = input.getDOMNode();
+		file.multiple = true;
+		Object.defineProperty(file, 'files', { value: ['file1'], configurable: true });
+		Object.defineProperty(file, 'value', { value: 'path/file1' });
+		expect(helpers.getInputFileValue(file)).toEqual(['file1']);
+		Object.defineProperty(file, 'files', { value: ['file1', 'file2'], configurable: true });
+		expect(helpers.getInputFileValue(file)).toEqual(['file1', 'file2']);
+	});
+
+	it('should an empty string if no file is selected', () => {
+		const input = mount(<input name="field" type="file" />);
+		const file = input.getDOMNode();
+		expect(helpers.getInputFileValue(file)).toBe('');
+		file.multiple = true;
+		expect(helpers.getInputFileValue(file)).toBe('');
+	});
+});
+
+describe('.getInputNumberValue(target)', () => {
+	it('should return a Number if input is not empty', () => {
+		const input = mount(<input name="field" type="number" />);
+		const number = input.getDOMNode();
+		number.value = 3;
+		expect(helpers.getInputNumberValue(number)).toBe(3);
+		number.value = Math.PI;
+		expect(helpers.getInputNumberValue(number)).toBe(Math.PI);
+		number.value = '3.14';
+		expect(helpers.getInputNumberValue(number)).toBeCloseTo(Math.PI);
+		number.value = -753141.43;
+		expect(helpers.getInputNumberValue(number)).toBeCloseTo(-753141.43);
+		number.value = 0;
+		expect(helpers.getInputNumberValue(number)).toBeCloseTo(0);
+	});
+
+	it('should an empty string if input is empty', () => {
+		const input = mount(<input name="field" type="number" />);
+		const number = input.getDOMNode();
+		expect(helpers.getInputNumberValue(number)).toBe('');
+	});
+});
+
 describe('.getFieldValue(target)', () => {
 	it('should return string value for text input type text', (done) => {
 		const handleChange = ({ target }) => {
@@ -215,6 +282,17 @@ describe('.updateDataFromEvents(data, events)', () => {
 		const result = helpers.updateDataFromEvents(data, event);
 		expect(result).toEqual({ field: 'newval' });
 		expect(result).not.toBe(data);
+	});
+
+	it('should allow to pass events as a single Event or an array of Events', () => {
+		const spy = jest.spyOn(Array.prototype, 'forEach');
+		const data = { field: 'val' };
+		const event = { target: { name: 'field', value: 'newval' } };
+		helpers.updateDataFromEvents(data, [event]);
+		expect(spy).toHaveBeenCalled();
+		helpers.updateDataFromEvents(data, event);
+		expect(spy).toHaveBeenCalled();
+		spy.mockRestore();
 	});
 
 	it('should return data object if not modified', () => {
