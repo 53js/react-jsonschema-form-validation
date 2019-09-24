@@ -12,7 +12,7 @@ it('should match snapshot', () => {
 		isFieldTouched: jest.fn(),
 	};
 
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	const fieldError = mount(<FieldError name="username" />);
 	expect(fieldError).toMatchSnapshot();
 });
@@ -32,7 +32,7 @@ it('should call error message of first error only if field has errors', () => {
 		isFieldTouched: jest.fn(),
 	};
 
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	mount(<FieldError name="username" />);
 	expect(context.errorMessages.bad1).toHaveBeenCalled();
 	expect(context.errorMessages.bad2).not.toHaveBeenCalled();
@@ -48,7 +48,7 @@ it('should allow to extend and override error messages defined in form', () => {
 		isFieldTouched: jest.fn(),
 	};
 
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	const bad1Override = jest.fn();
 	mount(
 		<FieldError
@@ -60,7 +60,7 @@ it('should allow to extend and override error messages defined in form', () => {
 	expect(context.errorMessages.bad1).not.toHaveBeenCalled();
 
 	context.getFieldErrors = jest.fn(() => [{ keyword: 'bad3' }]);
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	const bad3 = jest.fn();
 	mount(
 		<FieldError
@@ -77,7 +77,7 @@ it('should render children if providen', () => {
 		getFieldErrors: jest.fn(() => [{ keyword: 'bad1' }]),
 		isFieldTouched: jest.fn(),
 	};
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	const fieldError = mount(
 		<FieldError name="username">
 			<span id="message" />
@@ -91,12 +91,12 @@ it('should add class isSubmitted if form is submitted', () => {
 		getFieldErrors: jest.fn(() => [{ keyword: 'bad1' }]),
 		isFieldTouched: jest.fn(),
 	};
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	let fieldError = mount(<FieldError name="username" />);
 	expect(fieldError.find('.Jfv_FieldError').hasClass('isSubmitted')).toBe(false);
 
 	context.isSubmitted = true;
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	fieldError = mount(<FieldError name="username" />);
 	expect(fieldError.find('.Jfv_FieldError').hasClass('isSubmitted')).toBe(true);
 });
@@ -106,12 +106,12 @@ it('should add class isTouched if field is touched', () => {
 		getFieldErrors: jest.fn(() => [{ keyword: 'bad1' }]),
 		isFieldTouched: jest.fn(),
 	};
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	let fieldError = mount(<FieldError name="username" />);
 	expect(fieldError.find('.Jfv_FieldError').hasClass('isTouched')).toBe(false);
 
 	context.isFieldTouched.mockImplementation(() => true);
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	fieldError = mount(<FieldError name="username" />);
 	expect(fieldError.find('.Jfv_FieldError').hasClass('isTouched')).toBe(true);
 });

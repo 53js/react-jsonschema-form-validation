@@ -20,7 +20,7 @@ it('should call form.touch when blurred', () => {
 		touch: jest.fn(),
 	};
 
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	const field = mount(<Field name="username" />);
 	field.find('input').simulate('blur');
 	expect(context.touch).toHaveBeenCalled();
@@ -43,7 +43,7 @@ it('should add class isSubmitted if form is submitted', () => {
 	expect(field.find('.Jfv_Field').hasClass('isSubmitted')).toBe(false);
 
 	context.isSubmitted = true;
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	field = mount(<Field name="username" />);
 	expect(field.find('.Jfv_Field').hasClass('isSubmitted')).toBe(true);
 });
@@ -58,7 +58,7 @@ it('should add class isTouched if field is touched', () => {
 	expect(field.find('.Jfv_Field').hasClass('isTouched')).toBe(false);
 
 	context.isFieldTouched.mockImplementation(() => true);
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	field = mount(<Field name="username" />);
 	expect(field.find('.Jfv_Field').hasClass('isTouched')).toBe(true);
 });
@@ -73,7 +73,7 @@ it('should add class isInvalid if field is invalid', () => {
 	expect(field.find('.Jfv_Field').hasClass('isInvalid')).toBe(false);
 
 	context.isFieldInvalid.mockImplementation(() => true);
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	field = mount(<Field name="username" />);
 	expect(field.find('.Jfv_Field').hasClass('isInvalid')).toBe(true);
 });
@@ -90,7 +90,7 @@ it('should call form.handleFieldChange() when field value changes', () => {
 		isFieldInvalid: jest.fn(),
 		isFieldTouched: jest.fn(),
 	};
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 
 	const field = mount(<Field type="text" name="username" />);
 	const input = field.find('input');
@@ -112,7 +112,7 @@ it('should call onChange handler passed as prop when field value changes', () =>
 		isFieldInvalid: jest.fn(),
 		isFieldTouched: jest.fn(),
 	};
-	FormContext.Consumer.mockImplementationOnce(props => props.children(context));
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	const handleChange = jest.fn();
 	const field = mount(<Field type="text" onChange={handleChange} name="username" />);
 	const input = field.find('input');

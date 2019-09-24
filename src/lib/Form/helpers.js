@@ -16,7 +16,7 @@ export const createAjv = () => new Ajv({
  * Values undefined, null, or '' are equivalent in a form input.
  * @param {string} value
  */
-export const empty = value => (
+export const empty = (value) => (
 	(value === '' || value === null) ? undefined : value
 );
 
@@ -55,7 +55,7 @@ export const formatData = (data) => {
  * based on a normalized path
  * @param {Array} errors Array of Ajv's errors
  */
-export const formatErrors = errors => (errors || []).map((error) => {
+export const formatErrors = (errors) => (errors || []).map((error) => {
 	error.field = error.dataPath;
 
 	if (error.keyword === 'required') {
@@ -98,7 +98,7 @@ export const filterByFieldNameWithWildcard = (fields, fieldName) => {
  * @param {HTMLInputElement} target
  * @returns {boolean}
  */
-export const getInputCheckboxValue = target => target.checked;
+export const getInputCheckboxValue = (target) => target.checked;
 
 /**
  * Returns a file or an array of files if the attribute "multiple" is set.
@@ -115,7 +115,7 @@ export const getInputFileValue = (target) => {
  * @param {HTMLInputElement} target
  * @returns {string|Number}
  */
-export const getInputNumberValue = target => (target.value !== '' ? +target.value : '');
+export const getInputNumberValue = (target) => (target.value !== '' ? +target.value : '');
 
 /**
  * Returns a value from any type of input (text, checkbox, file...)

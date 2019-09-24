@@ -207,22 +207,25 @@ scrollOptions: {
 								<br />
 								<u>[event-like object]</u><br />
 								It can be an (or an array of) event-like object with the following properties:<br />
-								<pre>
-									<PrismCode className="language-js">
-										{`
+							</p>
+							<pre>
+								<PrismCode className="language-js">
+									{`
 const event = {
 	target: {
 		name: 'email',
 		value: 'test@test.com',
 	},
 };
-										`}
-									</PrismCode>
-								</pre>
+									`}
+								</PrismCode>
+							</pre>
+							<p>
 								Example:<br />
-								<pre>
-									<PrismCode className="language-js">
-										{`
+							</p>
+							<pre>
+								<PrismCode className="language-js">
+									{`
 function handleChange(event, handleFieldChange) {
 	const lowercaseEvent = {
 		...event,
@@ -231,13 +234,11 @@ function handleChange(event, handleFieldChange) {
 			value: (event.target.value || '').toLowerCase(),
 		},
 	};
-
 	handleFieldChange(lowercaseEvent);
 }
-										`}
-									</PrismCode>
-								</pre>
-							</p>
+									`}
+								</PrismCode>
+							</pre>
 							<p>
 								<mark>value</mark> <br />
 								Input value displayed

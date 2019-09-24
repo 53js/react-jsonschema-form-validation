@@ -4,4 +4,4 @@ const Context = React.createContext();
 
 export default Context;
 
-export const withContext = cb => <Context.Consumer>{cb}</Context.Consumer>;
+export const withContext = (cb) => <Context.Consumer>{cb}</Context.Consumer>;

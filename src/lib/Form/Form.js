@@ -15,7 +15,8 @@ import {
 	updateDataFromEvents,
 } from './helpers';
 
-const DefaultFormComponent = props => <form noValidate {...props} />;
+// eslint-disable-next-line react/jsx-props-no-spreading
+const DefaultFormComponent = (props) => <form noValidate {...props} />;
 
 const initialState = {
 	errors: [],
@@ -152,8 +153,8 @@ class Form extends PureComponent {
 	isFieldTouched = (fieldNames) => {
 		fieldNames = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
 		const { touchedFields } = this.state;
-		return !!fieldNames.find(fieldName => (
-			filterByFieldNameWithWildcard(touchedFields.map(field => ({ field })), fieldName).length > 0
+		return !!fieldNames.find((fieldName) => (
+			filterByFieldNameWithWildcard(touchedFields.map((field) => ({ field })), fieldName).length > 0
 		));
 	}
 
@@ -222,6 +223,7 @@ class Form extends PureComponent {
 				<FormComponent
 					className={this.getClassnames()}
 					onSubmit={this.handleSubmit}
+					// eslint-disable-next-line react/jsx-props-no-spreading
 					{...props}
 				>
 					{ children }

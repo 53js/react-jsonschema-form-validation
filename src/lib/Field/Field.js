@@ -55,13 +55,14 @@ class Field extends PureComponent {
 			...props
 		} = this.props;
 
-		return withContext(form => (
+		return withContext((form) => (
 			<Component
 				className={this.getClassnames(form)}
 				name={name}
 				onBlur={this.memoGetOnBlurHandler(form.touch, name, onBlur)}
 				onChange={this.memoGetOnChangeHandler(onChange, form.handleFieldChange)}
 				ref={forwardedRef}
+				// eslint-disable-next-line react/jsx-props-no-spreading
 				{...props}
 			>
 				{children}
@@ -93,5 +94,6 @@ Field.defaultProps = {
 };
 
 export default React.forwardRef((props, ref) => (
+	// eslint-disable-next-line react/jsx-props-no-spreading
 	<Field {...props} forwardedRef={ref} />
 ));
