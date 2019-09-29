@@ -8,7 +8,8 @@ module.exports = {
 	},
 	parser: 'babel-eslint',
 	rules: {
+		'react/jsx-one-expression-per-line': 0, // Buggy
+		'react/jsx-props-no-spreading': 'off',
 		'react/state-in-constructor': 'off',
-		'react/jsx-one-expression-per-line': 0 // Buggy
 	},
 };
