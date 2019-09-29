@@ -7,6 +7,7 @@ const Submit = (props) => {
 	const {
 		loading,
 		success,
+		...rest
 	} = props;
 
 	return (
@@ -15,6 +16,7 @@ const Submit = (props) => {
 			disabled={loading || success}
 			size="xl"
 			type="submit"
+			{...rest}
 		>
 			{
 				// eslint-disable-next-line no-nested-ternary

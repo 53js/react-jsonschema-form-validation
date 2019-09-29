@@ -17,6 +17,7 @@ import BasicForm from '../demo/basic';
 import CustomMessageForm from '../demo/custom-error';
 import ErrorMarkerForm from '../demo/error-marker';
 import SimpleForm from '../demo/simple';
+import ContextForm from '../demo/context';
 import ReactSelectForm from '../demo/react-select';
 import Header from './Header';
 
@@ -46,15 +47,16 @@ const items = [
 		name: 'Error marker',
 		to: '/examples/error-marker-form',
 	},
+	{
+		Component: ContextForm,
+		name: 'Using Form Context',
+		to: '/examples/context-form',
+	},
 ];
 
 const Examples = () => (
 	<Container className="content">
 		<Header />
-		<Row>
-			<Col>
-			</Col>
-		</Row>
 		<Row>
 			<Col tag="main" md={{ size: 3, order: 2 }}>
 				<div className="docs-sidebar mb-3">
@@ -63,7 +65,7 @@ const Examples = () => (
 						<a href="https://github.com/53js/react-jsonschema-form-validation/tree/master/src/demo">Sources</a>
 					</p>
 					<Nav className="flex-column">
-						{items.map(item => (
+						{items.map((item) => (
 							<NavItem key={item.to}>
 								<NavLink tag={Link} to={item.to}>
 									{item.name}
@@ -74,7 +76,7 @@ const Examples = () => (
 				</div>
 			</Col>
 			<Col tag="aside" md={{ size: 9, order: 1 }} className="docSearch-content">
-				{items.map(item => (
+				{items.map((item) => (
 					<Route
 						exact
 						path={item.to}
