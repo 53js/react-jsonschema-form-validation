@@ -3,7 +3,7 @@ import memoize from 'memoize-one';
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 
-import { withContext } from '../Form/Context';
+import { withFormContext } from '../Form/Context';
 import getErrorMessage from './getErrorMessage';
 
 class FieldError extends PureComponent {
@@ -44,7 +44,7 @@ class FieldError extends PureComponent {
 			name,
 		} = this.props;
 
-		return withContext((form) => {
+		return withFormContext((form) => {
 			const fieldErrors = form.getFieldErrors(name);
 			if (!fieldErrors.length) return null;
 

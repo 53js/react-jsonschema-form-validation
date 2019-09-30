@@ -3,7 +3,7 @@ import memoize from 'memoize-one';
 import PropTypes from 'prop-types';
 import React, { PureComponent } from 'react';
 
-import { withContext } from '../Form/Context';
+import { withFormContext } from '../Form/Context';
 
 class Field extends PureComponent {
 	memoGetClassnames = memoize((className, isInvalid, isSubmitted, isTouched) => classnames(
@@ -55,7 +55,7 @@ class Field extends PureComponent {
 			...props
 		} = this.props;
 
-		return withContext((form) => (
+		return withFormContext((form) => (
 			<Component
 				className={this.getClassnames(form)}
 				name={name}
