@@ -1,2 +1,3 @@
 export { default } from './Form';
-export { default as Context } from './Context';
+export * from './Context';
+export { default as FormContext } from './Context';

@@ -6,7 +6,7 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import scrollToElement from 'scroll-to-element';
 
-import Context from './Context';
+import FormContext from './Context';
 import {
 	createAjv,
 	filterByFieldNameWithWildcard,
@@ -219,7 +219,7 @@ class Form extends PureComponent {
 		} = this.props;
 
 		return (
-			<Context.Provider value={this.getContext()}>
+			<FormContext.Provider value={this.getContext()}>
 				<FormComponent
 					className={this.getClassnames()}
 					onSubmit={this.handleSubmit}
@@ -228,7 +228,7 @@ class Form extends PureComponent {
 				>
 					{ children }
 				</FormComponent>
-			</Context.Provider>
+			</FormContext.Provider>
 		);
 	}
 }

@@ -14,4 +14,4 @@ export default {
 	Consumer,
 };
 
-export const withContext = jest.fn().mockImplementation((cb) => <Consumer>{cb}</Consumer>);
+export const withFormContext = jest.fn().mockImplementation((cb) => <Consumer>{cb}</Consumer>);
