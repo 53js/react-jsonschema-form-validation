@@ -25,10 +25,11 @@ export default () => (
 					</pre>
 					<h2 className="mt-5">Getting started</h2>
 					<hr />
-					<p>Define a JSON Schema for your form</p>
+					<p>Define a JSON Schema for your form:</p>
 					<pre className="mb-4">
 						<PrismCode className="language-javascript">
-							{`const simpleJsonSchema = {
+							{`// simpleJsonSchema.js
+export default {
 	type: 'object',
 	properties: {
 		email: { type: 'string', format: 'email' },
@@ -41,66 +42,82 @@ export default () => (
 };`}
 						</PrismCode>
 					</pre>
-
-					<p>Import the Form, Field, FieldError and write your form</p>
-
-
-					{/*<div className="docs-example">a</div>*/}
+					<p>Import the Form, Field, FieldError and write your form:</p>
 					<pre>
 						<PrismCode className="language-jsx">
-							{`import React from 'react';
+							{`// GettingStartedForm.js
+import React, { useState } from 'react';
 import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
 
+import { SubmitButton } from './SubmitButton';
+import simpleJsonSchema from './schema';
 
-/* ... */
-	state = {
-		formData: {
-			email: '',
-			name: '',
-		},
-	}
+const GettingStartedForm = () => {
+	const [formData, setFormData] = useState({
+		email: '',
+		name: '',
+	});
+	const [success, setSuccess] = useState(false);
 
-	handleChange = (data) => {
-		this.setState({ formData: data });
-	}
+	const handleChange = (newData) => { setFormData(newData); };
+	const handleSubmit = () => { setSuccess(true); };
 
-	render() {
-		return (
-			<Form
-				data={this.state.formData}
-				onChange={this.handleChange}
-				onSubmit={this.handleSubmit}
-				schema={simpleJsonSchema}
-			>
-				<div className="form-group">
-					<label htmlFor="client-name">Name :</label>
-					<Field
-						id="client-name"
-						name="name"
-						value={this.state.formData.name}
-					/>
-					<FieldError name="name" />
-				</div>
-				<div className="form-group">
-					<label htmlFor="client-email">Email :</label>
-					<Field
-						id="client-email"
-						name="email"
-						type="email"
-						value={this.state.formData.email}
-					/>
-					<FieldError name="email" />
-				</div>
-				<button type="submit">
-					Submit
-				</button>
-			</Form>
-		);
-
-							`}
+	return (
+		<Form
+			data={formData}
+			onChange={handleChange}
+			onSubmit={handleSubmit}
+			schema={simpleJsonSchema}
+		>
+			<div className="form-group">
+				<label htmlFor="client-name">Name:</label>
+				<Field
+					id="client-name"
+					name="name"
+					value={formData.name}
+				/>
+				<FieldError name="name" />
+			</div>
+			<div className="form-group">
+				<label htmlFor="client-email">Email:</label>
+				<Field
+					id="client-email"
+					name="email"
+					type="email"
+					value={formData.email}
+				/>
+				<FieldError name="email" />
+			</div>
+			<SubmitButton />
+		</Form>
+	);
+};
+`}
 						</PrismCode>
 					</pre>
-					<p>This example can be found here : <Link to="/examples/simple">example</Link></p>
+					<p>Use Form Context:</p>
+					<pre>
+						<PrismCode className="language-jsx">
+							{`// SubmitButton.js
+import React, { useState } from 'react';
+import { useFormContext } from 'react-jsonschema-form-validation';
+
+const SubmitButton = () => {
+	const { valid } = useFormContext();
+
+	return (
+		<button
+			disabled={!valid}
+			type="submit"
+		>
+			Submit
+		</button>
+	);
+};
+`}
+						</PrismCode>
+					</pre>
+					<p>More examples can be found here : <Link to="/examples">examples</Link></p>
 					<h2 className="mt-5">API</h2>
 					<hr />
 					<p>

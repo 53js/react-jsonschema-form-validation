@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { PureComponent } from 'react';
 
 import {
 	Field,
@@ -18,25 +18,19 @@ const simpleJsonSchema = {
 	],
 };
 
-class SimpleForm extends React.Component {
-	constructor(props) {
-		super(props);
-		this.state = {
-			formData: {
-				email: '',
-			},
-			success: false,
-		};
-
-		this.handleChange = this.handleChange.bind(this);
-		this.handleSubmit = this.handleSubmit.bind(this);
+class SimpleForm extends PureComponent {
+	state = {
+		formData: {
+			email: '',
+		},
+		success: false,
 	}
 
-	handleSubmit() {
-		this.setState(state => ({ ...state, success: true }));
+	handleSubmit = () => {
+		this.setState({ success: true });
 	}
 
-	handleChange(newData) {
+	handleChange = (newData) => {
 		this.setState({
 			formData: newData,
 			success: false,

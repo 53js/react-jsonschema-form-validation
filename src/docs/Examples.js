@@ -14,10 +14,11 @@ import {
 import './Examples.css';
 
 import BasicForm from '../demo/basic';
+import ContextForm from '../demo/context';
 import CustomMessageForm from '../demo/custom-error';
 import ErrorMarkerForm from '../demo/error-marker';
+import HooksForm from '../demo/hooks';
 import SimpleForm from '../demo/simple';
-import ContextForm from '../demo/context';
 import ReactSelectForm from '../demo/react-select';
 import Header from './Header';
 
@@ -26,6 +27,11 @@ const items = [
 		Component: SimpleForm,
 		name: 'Simple',
 		to: '/examples/simple',
+	},
+	{
+		Component: HooksForm,
+		name: 'Hooks',
+		to: '/examples/hooks',
 	},
 	{
 		Component: BasicForm,

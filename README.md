@@ -41,8 +41,13 @@ yarn add react-jsonschema-form-validation
 
 ## Getting started
 
-First define your JSON Schema :
+Import modules:  
+```js
+import React, { useState } from 'react';
+import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
+```
 
+Define your JSON-Schema:  
 ```js
 const demoSchema = {
 	type: 'object',
@@ -55,30 +60,57 @@ const demoSchema = {
 };
 ```
 
-Then import modules :
-```js
-import React from 'react';
-import { Field, FieldError, Form } from 'react-jsonschema-form-validation';
-
-// ...
-```
-
-Then declare your __Form__, __Field__ and __FieldError__ components.
+Declare your `Form`, `Field` and `FieldError` components.
 Pass your schema to the Form props.
 
+**Example using a functional component and React hooks:**   
+```jsx
+const DemoForm = (props) => {
+	const [formData, setFormData] = useState({ email: '' });
+	
+	const handleChange = (newData) => {
+		// newData is a copy of the object formData with properties (and nested properties)
+		// updated using immutability pattern for each change occured in the form.
+		setFormData(newData);
+	}
+	
+	const handleSubmit = () => {
+		const { doWhateverYouWant } = props;
+		doWhateverYouWant(formData); // Do whatever you want with the form data
+	}
+
+	return (
+		<Form
+			data={formData}
+			onChange={handleChange}
+			onSubmit={handleSubmit}
+			schema={demoSchema}
+		>
+			<label>Email :</label>
+			<Field
+				name="email"
+				value={formData.email}
+			/>
+			<FieldError name="email" />
+			<button type="submit">Submit</button>
+		</Form>
+	);
+}
+```
+
+**Same example using a class component:**  
 ```jsx
 class DemoForm extends PureComponent {
-	// ...
 	state = {
 		formData: {
 			email: '',
 		},
 	}
 	
-	handleChange = (data) => {
-		// data is a copy of the object formData with properties (and nested properties)
+	handleChange = (newData) => {
+		// newData is a copy of the object formData with properties (and nested properties)
 		// updated using immutability pattern for each change occured in the form.
-		this.setState({ formData: data });
+		this.setState({ formData: newData });
 	}
 	
 	handleSubmit = () => {
@@ -108,7 +140,7 @@ class DemoForm extends PureComponent {
 
 🎵 _That's all folks !_ 
 
-### Examples
+## Examples
 We’ve got many examples, from the most simple to the most advanced.
 
 Live examples are available : [here](https://53js.github.io/react-jsonschema-form-validation/#/examples/ "examples")
