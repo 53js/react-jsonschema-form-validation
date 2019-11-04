@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`useFormContext should match snapshot 1`] = `
+<UseContextComponent>
+  <span>
+    FormContextSnapshot
+  </span>
+</UseContextComponent>
+`;
+
+exports[`withFormContext should match snapshot 1`] = `
+<WithContextComponent>
+  <span>
+    FormContextSnapshot
+  </span>
+</WithContextComponent>
+`;
