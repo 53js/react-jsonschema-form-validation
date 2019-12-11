@@ -1,24 +1,25 @@
 {
   "files": {
-    "main.css": "/react-jsonschema-form-validation/static/css/main.093d3386.chunk.css",
-    "main.js": "/react-jsonschema-form-validation/static/js/main.9a8a776e.chunk.js",
-    "main.js.map": "/react-jsonschema-form-validation/static/js/main.9a8a776e.chunk.js.map",
-    "runtime-main.js": "/react-jsonschema-form-validation/static/js/runtime-main.a1d89209.js",
-    "runtime-main.js.map": "/react-jsonschema-form-validation/static/js/runtime-main.a1d89209.js.map",
-    "static/css/2.5c5f4c00.chunk.css": "/react-jsonschema-form-validation/static/css/2.5c5f4c00.chunk.css",
-    "static/js/2.2df5df6f.chunk.js": "/react-jsonschema-form-validation/static/js/2.2df5df6f.chunk.js",
-    "static/js/2.2df5df6f.chunk.js.map": "/react-jsonschema-form-validation/static/js/2.2df5df6f.chunk.js.map",
+    "main.css": "/react-jsonschema-form-validation/static/css/main.8b31fdb7.chunk.css",
+    "main.js": "/react-jsonschema-form-validation/static/js/main.b1be5f3e.chunk.js",
+    "main.js.map": "/react-jsonschema-form-validation/static/js/main.b1be5f3e.chunk.js.map",
+    "runtime-main.js": "/react-jsonschema-form-validation/static/js/runtime-main.a4c38384.js",
+    "runtime-main.js.map": "/react-jsonschema-form-validation/static/js/runtime-main.a4c38384.js.map",
+    "static/css/2.c0f5ac91.chunk.css": "/react-jsonschema-form-validation/static/css/2.c0f5ac91.chunk.css",
+    "static/js/2.0fa67fad.chunk.js": "/react-jsonschema-form-validation/static/js/2.0fa67fad.chunk.js",
+    "static/js/2.0fa67fad.chunk.js.map": "/react-jsonschema-form-validation/static/js/2.0fa67fad.chunk.js.map",
     "index.html": "/react-jsonschema-form-validation/index.html",
-    "precache-manifest.1a9b9ecc2a9d916661eb704c816b1ccc.js": "/react-jsonschema-form-validation/precache-manifest.1a9b9ecc2a9d916661eb704c816b1ccc.js",
+    "precache-manifest.939b7cc0c73856b899d2e257b2b5ee08.js": "/react-jsonschema-form-validation/precache-manifest.939b7cc0c73856b899d2e257b2b5ee08.js",
     "service-worker.js": "/react-jsonschema-form-validation/service-worker.js",
-    "static/css/2.5c5f4c00.chunk.css.map": "/react-jsonschema-form-validation/static/css/2.5c5f4c00.chunk.css.map",
-    "static/css/main.093d3386.chunk.css.map": "/react-jsonschema-form-validation/static/css/main.093d3386.chunk.css.map"
+    "static/css/2.c0f5ac91.chunk.css.map": "/react-jsonschema-form-validation/static/css/2.c0f5ac91.chunk.css.map",
+    "static/css/main.8b31fdb7.chunk.css.map": "/react-jsonschema-form-validation/static/css/main.8b31fdb7.chunk.css.map",
+    "static/js/2.0fa67fad.chunk.js.LICENSE": "/react-jsonschema-form-validation/static/js/2.0fa67fad.chunk.js.LICENSE"
   },
   "entrypoints": [
-    "static/js/runtime-main.a1d89209.js",
-    "static/css/2.5c5f4c00.chunk.css",
-    "static/js/2.2df5df6f.chunk.js",
-    "static/css/main.093d3386.chunk.css",
-    "static/js/main.9a8a776e.chunk.js"
+    "static/js/runtime-main.a4c38384.js",
+    "static/css/2.c0f5ac91.chunk.css",
+    "static/js/2.0fa67fad.chunk.js",
+    "static/css/main.8b31fdb7.chunk.css",
+    "static/js/main.b1be5f3e.chunk.js"
   ]
 }
