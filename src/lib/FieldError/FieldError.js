@@ -41,7 +41,11 @@ class FieldError extends PureComponent {
 	render() {
 		const {
 			children,
+			className,
+			component: Component,
+			errorMessages,
 			name,
+			...props
 		} = this.props;
 
 		return withFormContext((form) => {
@@ -49,12 +53,12 @@ class FieldError extends PureComponent {
 			if (!fieldErrors.length) return null;
 
 			return (
-				<div className={this.getClassnames(form)}>
+				<Component className={this.getClassnames(form)} {...props}>
 					{
 						children
 						|| this.getFieldErrorMessage(fieldErrors[0], form)
 					}
-				</div>
+				</Component>
 			);
 		});
 	}
@@ -63,12 +67,14 @@ class FieldError extends PureComponent {
 FieldError.propTypes = {
 	children: PropTypes.node,
 	className: PropTypes.string,
+	component: PropTypes.elementType,
 	errorMessages: PropTypes.objectOf(PropTypes.func),
 	name: PropTypes.string.isRequired,
 };
 
 FieldError.defaultProps = {
 	children: null,
+	component: 'div',
 	errorMessages: null,
 	className: '',
 };

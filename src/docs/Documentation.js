@@ -101,7 +101,7 @@ class Documentation extends PureComponent {
 									Use your own css classes to customize the component
 								</p>
 								<p>
-									<mark>component</mark> <i>node</i><br />
+									<mark>component</mark> <i>elementType</i><br />
 									The component to use as form. By default it renders an html form element.
 								</p>
 								<p>
@@ -254,7 +254,7 @@ function handleChange(event, handleFieldChange) {
 									Use your own css classes to customize the component
 								</p>
 								<p>
-									<mark>component</mark> <i>object</i><br />
+									<mark>component</mark> <i>elementType</i><br />
 									The component to wrap in.
 									Default is a html input.
 								</p>
@@ -304,6 +304,11 @@ function handleChange(event, handleFieldChange) {
 								<p>
 									<mark>children</mark>  <i>node</i><br />
 									Children will replace error message. Useful for displaying exclamation mark
+								</p>
+								<p>
+									<mark>component</mark> <i>elementType</i><br />
+									The component to wrap in.
+									Default is a html div.
 								</p>
 								<p>
 									<mark>className</mark> <i>string</i><br />

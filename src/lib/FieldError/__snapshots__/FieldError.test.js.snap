@@ -3,6 +3,7 @@
 exports[`should match snapshot 1`] = `
 <FieldError
   className=""
+  component="div"
   errorMessages={null}
   name="username"
 >
