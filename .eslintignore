@@ -1,0 +1,6 @@
+build
+dist
+docs
+node_modules
+coverage
+.types-temp

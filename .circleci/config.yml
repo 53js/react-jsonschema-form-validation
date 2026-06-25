@@ -43,6 +43,10 @@ jobs:
             ./cc-test-reporter before-build
 
       - run:
+          name: Type check
+          command: npm run type-check
+
+      - run:
           name: Run tests
           command: |
             # run tests!

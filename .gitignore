@@ -9,6 +9,7 @@
 # production
 /build
 /dist
+/.types-temp
 
 # misc
 .DS_Store
