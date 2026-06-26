@@ -124,11 +124,9 @@ export const formatErrors = (errors) => (errors || []).map((error) => {
 	const formatted = /** @type {FormattedError} */ (error);
 	formatted.field = formatted.dataPath;
 
-	if (formatted.keyword === 'required') {
+	if (formatted.keyword === 'required' && 'missingProperty' in formatted.params) {
 		// AJV's `required` errors carry the missing key in `params.missingProperty`.
-		const { params } = formatted;
-		const { missingProperty } = /** @type {{ missingProperty: string }} */ (params);
-		formatted.field = `${formatted.field}.${missingProperty}`;
+		formatted.field = `${formatted.field}.${formatted.params.missingProperty}`;
 	}
 
 	formatted.field = formatted.field
@@ -157,11 +155,10 @@ export const filterByFieldNameWithWildcard = (fields, fieldName) => {
 
 	return fields.filter((e) => {
 		if (regex) {
-			// Cast: TS sees `e.field` as `string | undefined`. The original
-			// code passes it to `regex.test()` verbatim — when `field` is
-			// undefined JS coerces it to the literal string `"undefined"`.
-			// Preserved as-is for exact runtime parity.
-			return regex.test(/** @type {string} */ (e.field));
+			// `e.field !== undefined` short-circuits the test() call.
+			// In practice the lib never feeds `undefined` here (errors and
+			// touchedFields always carry a string field).
+			return e.field !== undefined && regex.test(e.field);
 		}
 		return e.field === fieldName;
 	});
