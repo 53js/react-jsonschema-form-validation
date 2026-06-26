@@ -4,3 +4,5 @@ docs
 node_modules
 coverage
 .types-temp
+types
+**/*.d.ts
