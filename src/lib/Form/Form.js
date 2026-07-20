@@ -7,6 +7,7 @@
  *   FormHTMLAttributes,
  *   ComponentPropsWithoutRef,
  * } from 'react'
+ * @import { DebouncedFunc } from 'lodash'
  * @import { JSONSchema7Definition } from 'json-schema'
  * @import { ScrollOptions } from 'scroll-to-element'
  * @import { FormattedError, FormChangeEvent } from './helpers'
@@ -100,12 +101,10 @@ import {
 
 /**
  * Return type of `lodash.throttle` applied to the form validator. The
- * `cancel`/`flush` methods come from lodash and are used to discard pending
- * runs when the schema changes or the component unmounts.
+ * `cancel` / `flush` methods (from lodash's `DebouncedFunc<T>` interface)
+ * discard pending runs when the schema changes or the component unmounts.
  *
- * @typedef {(
- *   ((data: object) => void) & { cancel: () => void; flush: () => void }
- * )} ThrottledValidator
+ * @typedef {DebouncedFunc<(data: object) => void>} ThrottledValidator
  */
 
 /**
@@ -116,6 +115,16 @@ import {
  * @param {FormHTMLAttributes<HTMLFormElement>} props
  */
 const DefaultFormComponent = (props) => <form noValidate {...props} />;
+
+// Module-level defaults — shared by every `<Form>` instance via both
+// `Form.defaultProps` and the destructuring fallbacks in the methods below.
+// Extracting them here (instead of duplicating the literals) keeps the AJV
+// instance stable across renders (critical for `memoGetValidator`'s
+// memoization) and removes the need to cast `undefined`-typed props.
+const DEFAULT_AJV = createAjv();
+const DEFAULT_THROTTLE_DURATION = 200;
+/** @type {Record<string, unknown>} */
+const DEFAULT_DATA = {};
 
 /** @type {FormState} */
 const initialState = {
@@ -219,23 +228,26 @@ class Form extends PureComponent {
 		const names = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
 		const { errors } = this.state;
 
-		return names.reduce((/** @type {FormattedError[]} */ fieldsErrors, fieldName) => [
-			...fieldsErrors,
-			...filterByFieldNameWithWildcard(errors, fieldName),
-		], []);
+		return names.reduce(
+			(fieldsErrors, fieldName) => [
+				...fieldsErrors,
+				...filterByFieldNameWithWildcard(errors, fieldName),
+			],
+			/** @type {FormattedError[]} */ ([]),
+		);
 	}
 
 	getValidator = () => {
-		const { ajv, schema, throttleDuration } = this.props;
-		// Casts: `ajv` and `throttleDuration` are declared optional in `FormProps`
-		// (so consumers may omit them) but `Form.defaultProps` guarantees a value
-		// at runtime. Class component `defaultProps` are invisible to TypeScript,
-		// hence the casts.
-		return this.memoGetValidator(
-			/** @type {Ajv.Ajv} */ (ajv),
+		// Destructuring defaults reference the same module-level constants
+		// declared in `Form.defaultProps`, so `memoGetValidator`'s
+		// memoization stays stable across renders while TS sees the
+		// non-optional types it needs.
+		const {
+			ajv = DEFAULT_AJV,
 			schema,
-			/** @type {number} */ (throttleDuration),
-		);
+			throttleDuration = DEFAULT_THROTTLE_DURATION,
+		} = this.props;
+		return this.memoGetValidator(ajv, schema, throttleDuration);
 	}
 
 	/**
@@ -244,7 +256,7 @@ class Form extends PureComponent {
 	 * @param {unknown} [value] Used only when `event` is a string.
 	 */
 	handleFieldChange = (event, value) => {
-		const { data, onChange } = this.props;
+		const { data = DEFAULT_DATA, onChange } = this.props;
 		if (onChange) {
 			// Cast on `value`: `FormInputTarget.value` is typed as `string` to
 			// mirror real DOM inputs. When the change is synthesized from a
@@ -255,13 +267,7 @@ class Form extends PureComponent {
 			const realEvent = typeof event === 'string'
 				? { target: { name: event, value: castValue } }
 				: event;
-			// Cast: `data` is declared optional in `FormProps`, but
-			// `Form.defaultProps` provides `{}`. The class-level
-			// `defaultProps` is invisible to TypeScript.
-			const newData = updateDataFromEvents(
-				/** @type {Record<string, unknown>} */ (data),
-				realEvent,
-			);
+			const newData = updateDataFromEvents(data, realEvent);
 			onChange(newData, realEvent);
 		}
 	}
@@ -352,7 +358,7 @@ class Form extends PureComponent {
 	}
 
 	validate = () => {
-		const { data } = this.props;
+		const { data = DEFAULT_DATA } = this.props;
 		const validate = this.getValidator();
 		validate(data);
 	}
@@ -404,11 +410,11 @@ Form.propTypes = {
 };
 
 Form.defaultProps = {
-	ajv: createAjv(),
+	ajv: DEFAULT_AJV,
 	children: null,
 	className: '',
 	component: DefaultFormComponent,
-	data: {},
+	data: DEFAULT_DATA,
 	errorMessages: {},
 	onChange: null,
 	scrollToError: true,
@@ -417,7 +423,7 @@ Form.defaultProps = {
 		align: 'middle',
 		duration: 900,
 	},
-	throttleDuration: 200,
+	throttleDuration: DEFAULT_THROTTLE_DURATION,
 };
 
 /**
