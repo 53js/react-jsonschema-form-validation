@@ -30,7 +30,7 @@ import React, { useContext } from 'react';
  */
 
 /**
- * Map of error-message factories. `defaultMessage` is the catch-all used by
+ * Map of error messages. `defaultMessage` is the catch-all used by
  * `<FieldError>` when no entry matches the error's keyword. The known
  * keywords (see {@link AjvKeyword}) are typed for autocomplete; any other
  * string key (e.g. a custom AJV keyword) is allowed via the index signature.

@@ -1,3 +1,18 @@
+/**
+ * @import {
+ *   ReactNode,
+ *   ReactElement,
+ *   ElementType,
+ *   FormEvent,
+ *   FormHTMLAttributes,
+ *   ComponentPropsWithoutRef,
+ * } from 'react'
+ * @import { JSONSchema7Definition } from 'json-schema'
+ * @import { ScrollOptions } from 'scroll-to-element'
+ * @import { FormattedError, FormChangeEvent } from './helpers'
+ * @import { FormContextValue, ErrorMessagesMap } from './Context'
+ */
+
 import Ajv from 'ajv';
 import classnames from 'classnames';
 import throttle from 'lodash.throttle';

@@ -1,3 +1,14 @@
+/**
+ * @import {
+ *   ReactNode,
+ *   ReactElement,
+ *   ElementType,
+ *   ComponentPropsWithoutRef,
+ * } from 'react'
+ * @import { FormattedError } from '../Form/helpers'
+ * @import { ErrorMessagesMap, FormContextValue } from '../Form/Context'
+ */
+
 import classnames from 'classnames';
 import memoize from 'memoize-one';
 import React, { PureComponent } from 'react';
@@ -6,8 +17,55 @@ import PropTypes from 'prop-types';
 import { withFormContext } from '../Form/Context';
 import getErrorMessage from './getErrorMessage';
 
+/**
+ * @internal
+ * Internal own props of `<FieldError>`. The public, polymorphic
+ * `FieldErrorProps<C>` extends this with the props of the underlying
+ * component `C`.
+ *
+ * @typedef {{
+ *   children?: ReactNode,
+ *   className?: string,
+ *   component?: ElementType,
+ *   errorMessages?: ErrorMessagesMap | null,
+ *   name: string,
+ * }} FieldErrorOwnProps
+ */
+
+/**
+ * Polymorphic props of `<FieldError>`. When `component={X}` is supplied,
+ * every prop accepted by `X` is also accepted here (with autocomplete and
+ * typo detection). The default `C = 'div'` matches the runtime default.
+ *
+ * - `name`            — path of the form field whose first error should be shown.
+ * - `errorMessages`   — optional per-field overrides; they take priority over the
+ *                       map declared at the `<Form>` level (see `ErrorMessagesMap`).
+ * - `component`       — element rendered when an error is present (default `'div'`).
+ * - `children`        — replaces the auto-generated message when provided.
+ *
+ * @template {ElementType} [C = 'div']
+ * @typedef {(
+ *   {
+ *     name: string,
+ *     children?: ReactNode,
+ *     className?: string,
+ *     component?: C,
+ *     errorMessages?: ErrorMessagesMap | null,
+ *   }
+ *   & Omit<
+ *     ComponentPropsWithoutRef<C>,
+ *     'name' | 'children' | 'className' | 'component' | 'errorMessages'
+ *   >
+ * )} FieldErrorProps
+ */
+
+/** @extends {PureComponent<FieldErrorOwnProps>} */
 class FieldError extends PureComponent {
-	memoGetClassnames = memoize((className, isSubmitted, isTouched) => classnames(
+	memoGetClassnames = memoize((
+		/** @type {string | undefined} */ className,
+		/** @type {boolean} */ isSubmitted,
+		/** @type {boolean} */ isTouched,
+	) => classnames(
 		'Jfv_FieldError',
 		className,
 		{
@@ -16,11 +74,18 @@ class FieldError extends PureComponent {
 		},
 	))
 
-	memoGetFieldErrorMessage = memoize((error, formErrorMessages, fieldErrorMessages) => {
+	memoGetFieldErrorMessage = memoize((
+		/** @type {FormattedError} */ error,
+		/** @type {ErrorMessagesMap | undefined} */ formErrorMessages,
+		/** @type {ErrorMessagesMap | null | undefined} */ fieldErrorMessages,
+	) => {
 		const errorMessages = { ...formErrorMessages, ...fieldErrorMessages };
 		return getErrorMessage(error, errorMessages);
 	})
 
+	/**
+	 * @param {FormContextValue} form
+	 */
 	getClassnames = (form) => {
 		const { className, name } = this.props;
 		const { isFieldTouched, isSubmitted } = form;
@@ -32,6 +97,10 @@ class FieldError extends PureComponent {
 		);
 	}
 
+	/**
+	 * @param {FormattedError} error
+	 * @param {FormContextValue} form
+	 */
 	getFieldErrorMessage = (error, form) => {
 		const { errorMessages: fieldErrorMessages } = this.props;
 		const { errorMessages: formErrorMessages } = form;
@@ -42,7 +111,7 @@ class FieldError extends PureComponent {
 		const {
 			children,
 			className,
-			component: Component,
+			component: Component = 'div',
 			errorMessages,
 			name,
 			...props
@@ -79,4 +148,17 @@ FieldError.defaultProps = {
 	className: '',
 };
 
-export default FieldError;
+/**
+ * @typedef {<C extends ElementType = 'div'>(
+ *   props: FieldErrorProps<C>
+ * ) => ReactElement | null} PolymorphicFieldErrorComponent
+ */
+
+// Polymorphic re-typing: the class is non-generic internally (uses
+// `FieldErrorOwnProps`); the cast below restores the generic so consumers
+// get autocomplete and type-checking on `component`'s own props.
+const PolymorphicFieldError = /** @type {PolymorphicFieldErrorComponent} */ (
+	/** @type {unknown} */ (FieldError)
+);
+
+export default PolymorphicFieldError;

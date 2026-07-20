@@ -7,9 +7,9 @@
  * Find the error message to display when a field is invalid.
  *
  * Resolution priority (highest first):
- *   1. The corresponding message factory passed to `<FieldError>` as a prop
- *   2. The corresponding message factory passed to `<Form>` as a prop
- *   3. The `defaultMessage` factory passed to `<Form>` (catch-all)
+ *   1. The corresponding error message passed to `<FieldError>` as a prop
+ *   2. The corresponding error message passed to `<Form>` as a prop
+ *   3. The `defaultMessage` passed to `<Form>` (catch-all)
  *   4. The raw AJV message
  *
  * @param {FormattedError} fieldError
