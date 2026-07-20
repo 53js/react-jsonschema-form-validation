@@ -18,10 +18,9 @@ import { withFormContext } from '../Form/Context';
 import getErrorMessage from './getErrorMessage';
 
 /**
- * @internal
- * Internal own props of `<FieldError>`. The public, polymorphic
- * `FieldErrorProps<C>` extends this with the props of the underlying
- * component `C`.
+ * Base props of `<FieldError>` — the validation-specific props handled by
+ * the component itself. The public, polymorphic `FieldErrorProps<C>` extends
+ * this with the props of the underlying component `C`.
  *
  * @typedef {{
  *   children?: ReactNode,
@@ -29,7 +28,7 @@ import getErrorMessage from './getErrorMessage';
  *   component?: ElementType,
  *   errorMessages?: ErrorMessagesMap | null,
  *   name: string,
- * }} FieldErrorOwnProps
+ * }} FieldErrorBaseProps
  */
 
 /**
@@ -45,21 +44,13 @@ import getErrorMessage from './getErrorMessage';
  *
  * @template {ElementType} [C = 'div']
  * @typedef {(
- *   {
- *     name: string,
- *     children?: ReactNode,
- *     className?: string,
- *     component?: C,
- *     errorMessages?: ErrorMessagesMap | null,
- *   }
- *   & Omit<
- *     ComponentPropsWithoutRef<C>,
- *     'name' | 'children' | 'className' | 'component' | 'errorMessages'
- *   >
+ *   Omit<FieldErrorBaseProps, 'component'>
+ *   & { component?: C }
+ *   & Omit<ComponentPropsWithoutRef<C>, keyof FieldErrorBaseProps>
  * )} FieldErrorProps
  */
 
-/** @extends {PureComponent<FieldErrorOwnProps>} */
+/** @extends {PureComponent<FieldErrorBaseProps>} */
 class FieldError extends PureComponent {
 	memoGetClassnames = memoize((
 		/** @type {string | undefined} */ className,
@@ -155,7 +146,7 @@ FieldError.defaultProps = {
  */
 
 // Polymorphic re-typing: the class is non-generic internally (uses
-// `FieldErrorOwnProps`); the cast below restores the generic so consumers
+// `FieldErrorBaseProps`); the cast below restores the generic so consumers
 // get autocomplete and type-checking on `component`'s own props.
 const PolymorphicFieldError = /** @type {PolymorphicFieldErrorComponent} */ (
 	/** @type {unknown} */ (FieldError)

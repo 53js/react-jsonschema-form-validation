@@ -5,7 +5,6 @@
 		"declaration": true,
 		"emitDeclarationOnly": true,
 		"removeComments": false,
-		"stripInternal": true,
 		"rootDir": "src/lib",
 		"outDir": ".types-temp"
 	}

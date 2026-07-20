@@ -32,10 +32,13 @@ import { withFormContext } from '../Form/Context';
  */
 
 /**
- * @internal
- * Internal own props of `<Field>` — the validation-specific props handled
- * by the component itself. The public, polymorphic `FieldProps<C>` extends
- * this with the props of the underlying component `C`.
+ * Base props of `<Field>` — the validation-specific props handled by the
+ * component itself. The public, polymorphic `FieldProps<C>` extends this
+ * with the props of the underlying component `C`.
+ *
+ * `forwardedRef` is an implementation detail (injected by the outer
+ * `React.forwardRef` wrapper) and is omitted from the public polymorphic
+ * type below.
  *
  * @typedef {{
  *   name: string,
@@ -45,7 +48,7 @@ import { withFormContext } from '../Form/Context';
  *   forwardedRef?: Ref<unknown> | null,
  *   onBlur?: ((event: FocusEvent) => void) | null,
  *   onChange?: FieldChangeHandler | null,
- * }} FieldOwnProps
+ * }} FieldBaseProps
  */
 
 /**
@@ -62,22 +65,13 @@ import { withFormContext } from '../Form/Context';
  *
  * @template {ElementType} [C = 'input']
  * @typedef {(
- *   {
- *     name: string,
- *     children?: ReactNode,
- *     className?: string,
- *     component?: C,
- *     onBlur?: ((event: FocusEvent) => void) | null,
- *     onChange?: FieldChangeHandler | null,
- *   }
- *   & Omit<
- *     ComponentPropsWithoutRef<C>,
- *     'name' | 'children' | 'className' | 'component' | 'onBlur' | 'onChange'
- *   >
+ *   Omit<FieldBaseProps, 'component' | 'forwardedRef'>
+ *   & { component?: C }
+ *   & Omit<ComponentPropsWithoutRef<C>, keyof FieldBaseProps>
  * )} FieldProps
  */
 
-/** @extends {PureComponent<FieldOwnProps>} */
+/** @extends {PureComponent<FieldBaseProps>} */
 class Field extends PureComponent {
 	memoGetClassnames = memoize((
 		/** @type {string | undefined} */ className,
@@ -152,7 +146,6 @@ class Field extends PureComponent {
 				onBlur={this.memoGetOnBlurHandler(form.touch, name, onBlur)}
 				onChange={this.memoGetOnChangeHandler(onChange, form.handleFieldChange)}
 				ref={forwardedRef}
-				// eslint-disable-next-line react/jsx-props-no-spreading
 				{...props}
 			>
 				{children}
@@ -187,7 +180,7 @@ Field.defaultProps = {
 // below reinstates the polymorphism so consumers get full autocomplete
 // and type-checking for the props of the `component` they pass.
 const FieldComponent = React.forwardRef(
-	/** @type {ForwardRefRenderFunction<unknown, FieldOwnProps>} */
+	/** @type {ForwardRefRenderFunction<unknown, FieldBaseProps>} */
 	((props, ref) => <Field {...props} forwardedRef={ref} />),
 );
 
