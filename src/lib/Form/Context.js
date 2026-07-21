@@ -33,13 +33,16 @@ import React, { useContext } from 'react';
  * Map of error messages. `defaultMessage` is the catch-all used by
  * `<FieldError>` when no entry matches the error's keyword. The known
  * keywords (see {@link AjvKeyword}) are typed for autocomplete; any other
- * string key (e.g. a custom AJV keyword) is allowed via the index signature.
+ * string key (e.g. a custom AJV keyword) is still allowed.
  *
- * @typedef {(
- *   { [K in AjvKeyword]?: ErrorMessageFn }
- *   & { defaultMessage?: ErrorMessageFn }
- *   & { [keyword: string]: ErrorMessageFn | undefined }
- * )} ErrorMessagesMap
+ * The `(string & {})` in the key union is the standard TypeScript trick to
+ * accept arbitrary strings *without* collapsing the literal union — plain
+ * `string` would erase the autocomplete on the known keywords.
+ *
+ * @typedef {Partial<Record<
+ *   AjvKeyword | 'defaultMessage' | (string & {}),
+ *   ErrorMessageFn
+ * >>} ErrorMessagesMap
  */
 
 /**
