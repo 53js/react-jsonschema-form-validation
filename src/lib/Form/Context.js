@@ -9,7 +9,7 @@ import React, { useContext } from 'react';
  * Built-in AJV validation keywords. Listed here so consumers writing
  * `errorMessages` get IDE autocomplete on the well-known keys while still
  * being free to add custom keywords (any other string is accepted via the
- * `ErrorMessagesMap` index signature).
+ * `(string & {})` intersection in `ErrorMessagesMap`).
  *
  * @typedef {(
  *   'type' | 'required' | 'enum' | 'const'
