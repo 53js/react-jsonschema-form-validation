@@ -49,15 +49,21 @@ import immutable from 'dot-prop-immutable';
  * This variant:
  *  1. Strips the index signature so `Omit` can operate on named keys only,
  *     keeping their precise types.
- *  2. Re-attaches the original index signature (with its original value
- *     type) so that extra props like `data-*` / `aria-*` keep passing
- *     through when the source type intentionally accepted them.
+ *  2. Only re-attaches the original index signature (with its original
+ *     value type) *if T actually had one to begin with*. The `string
+ *     extends keyof T` guard prevents accidentally re-injecting an index
+ *     signature on plain "record-like" types whose values happen to share
+ *     a common supertype (e.g. `{ label: string; flavor: 'a' | 'b' }`
+ *     structurally extends `{ [k: string]: string }` but does not really
+ *     accept arbitrary keys).
  *
  * @template T
  * @template {PropertyKey} K
  * @typedef {(
  *   Omit<{ [P in keyof T as string extends P ? never : P]: T[P] }, K>
- *   & (T extends { [k: string]: infer V } ? { [k: string]: V } : {})
+ *   & (string extends keyof T
+ *     ? (T extends { [k: string]: infer V } ? { [k: string]: V } : {})
+ *     : {})
  * )} SafePropsOmit
  */
 
