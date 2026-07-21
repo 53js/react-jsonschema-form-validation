@@ -1,15 +1,14 @@
 /**
  * @import {
  *   ReactNode,
- *   ReactElement,
  *   ElementType,
  *   Ref,
  *   FocusEvent,
  *   ForwardRefRenderFunction,
- *   ComponentPropsWithoutRef,
+ *   ComponentProps,
  *   ComponentPropsWithRef,
  * } from 'react'
- * @import { FormChangeEvent } from '../Form/helpers'
+ * @import { FormChangeEvent, SafePropsOmit } from '../Form/helpers'
  * @import { FormContextValue } from '../Form/Context'
  */
 
@@ -67,7 +66,7 @@ import { withFormContext } from '../Form/Context';
  * @typedef {(
  *   Omit<FieldBaseProps, 'component' | 'forwardedRef'>
  *   & { component?: C }
- *   & Omit<ComponentPropsWithoutRef<C>, keyof FieldBaseProps>
+ *   & SafePropsOmit<ComponentProps<C>, keyof FieldBaseProps | 'ref'>
  * )} FieldProps
  */
 
@@ -176,27 +175,19 @@ Field.defaultProps = {
 	onChange: null,
 };
 
-// `React.forwardRef` itself is not generic; the explicit type annotation
-// below reinstates the polymorphism so consumers get full autocomplete
-// and type-checking for the props of the `component` they pass.
+// `React.forwardRef` itself is not generic; the type annotation on the
+// default export below reinstates the polymorphism so consumers get full
+// autocomplete and type-checking for the props of the `component` they
+// pass. `ref` is typed via `ComponentPropsWithRef<C>['ref']` so it matches
+// the underlying component (e.g. `Ref<HTMLInputElement>` by default, or
+// the custom handle type when a user component is supplied).
 const FieldComponent = React.forwardRef(
 	/** @type {ForwardRefRenderFunction<unknown, FieldBaseProps>} */
 	((props, ref) => <Field {...props} forwardedRef={ref} />),
 );
 
-/**
- * `ref` is typed via `ComponentPropsWithRef<C>['ref']` so the ref type
- * matches the underlying component (e.g. `Ref<HTMLInputElement>` by default,
- * or the custom handle type when a user component is supplied).
- *
- * @typedef {<C extends ElementType = 'input'>(
- *   props: FieldProps<C> & { ref?: ComponentPropsWithRef<C>['ref'] }
- * ) => ReactElement | null} PolymorphicFieldComponent
- */
-
-/** @type {PolymorphicFieldComponent} */
-const PolymorphicField = /** @type {PolymorphicFieldComponent} */ (
+export default /** @type {<C extends ElementType = 'input'>(
+	props: FieldProps<C> & { ref?: ComponentPropsWithRef<C>['ref'] }
+) => ReactNode} */ (
 	/** @type {unknown} */ (FieldComponent)
 );
-
-export default PolymorphicField;

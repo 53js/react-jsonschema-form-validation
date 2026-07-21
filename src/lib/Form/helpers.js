@@ -40,6 +40,28 @@ import immutable from 'dot-prop-immutable';
  */
 
 /**
+ * Internal `Omit` variant that keeps typed keys strict even when `T` has an
+ * index signature (like `[key: string]: any` — reactstrap and a few other
+ * libraries expose these). Standard `Omit<T, K>` on such a type collapses
+ * the typed keys back into `any` through the index, which effectively kills
+ * the polymorphic type-checking on `<Field component={X} .../>` etc.
+ *
+ * This variant:
+ *  1. Strips the index signature so `Omit` can operate on named keys only,
+ *     keeping their precise types.
+ *  2. Re-attaches the original index signature (with its original value
+ *     type) so that extra props like `data-*` / `aria-*` keep passing
+ *     through when the source type intentionally accepted them.
+ *
+ * @template T
+ * @template {PropertyKey} K
+ * @typedef {(
+ *   Omit<{ [P in keyof T as string extends P ? never : P]: T[P] }, K>
+ *   & (T extends { [k: string]: infer V } ? { [k: string]: V } : {})
+ * )} SafePropsOmit
+ */
+
+/**
  * Returns a default AJV instance configured for use with the form.
  *
  * @returns {Ajv.Ajv}

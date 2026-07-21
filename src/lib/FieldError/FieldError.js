@@ -1,11 +1,10 @@
 /**
  * @import {
  *   ReactNode,
- *   ReactElement,
  *   ElementType,
- *   ComponentPropsWithoutRef,
+ *   ComponentProps,
  * } from 'react'
- * @import { FormattedError } from '../Form/helpers'
+ * @import { FormattedError, SafePropsOmit } from '../Form/helpers'
  * @import { ErrorMessagesMap, FormContextValue } from '../Form/Context'
  */
 
@@ -46,7 +45,7 @@ import getErrorMessage from './getErrorMessage';
  * @typedef {(
  *   Omit<FieldErrorBaseProps, 'component'>
  *   & { component?: C }
- *   & Omit<ComponentPropsWithoutRef<C>, keyof FieldErrorBaseProps>
+ *   & SafePropsOmit<ComponentProps<C>, keyof FieldErrorBaseProps | 'ref'>
  * )} FieldErrorProps
  */
 
@@ -139,17 +138,12 @@ FieldError.defaultProps = {
 	className: '',
 };
 
-/**
- * @typedef {<C extends ElementType = 'div'>(
- *   props: FieldErrorProps<C>
- * ) => ReactElement | null} PolymorphicFieldErrorComponent
- */
-
 // Polymorphic re-typing: the class is non-generic internally (uses
-// `FieldErrorBaseProps`); the cast below restores the generic so consumers
-// get autocomplete and type-checking on `component`'s own props.
-const PolymorphicFieldError = /** @type {PolymorphicFieldErrorComponent} */ (
+// `FieldErrorBaseProps`); the cast on the default export restores the
+// generic so consumers get autocomplete and type-checking on `component`'s
+// own props.
+export default /** @type {<C extends ElementType = 'div'>(
+	props: FieldErrorProps<C>
+) => ReactNode} */ (
 	/** @type {unknown} */ (FieldError)
 );
-
-export default PolymorphicFieldError;

@@ -1,16 +1,15 @@
 /**
  * @import {
  *   ReactNode,
- *   ReactElement,
  *   ElementType,
  *   FormEvent,
  *   FormHTMLAttributes,
- *   ComponentPropsWithoutRef,
+ *   ComponentProps,
  * } from 'react'
  * @import { DebouncedFunc } from 'lodash'
  * @import { JSONSchema7Definition } from 'json-schema'
  * @import { ScrollOptions } from 'scroll-to-element'
- * @import { FormattedError, FormChangeEvent } from './helpers'
+ * @import { FormattedError, FormChangeEvent, SafePropsOmit } from './helpers'
  * @import { ErrorMessagesMap } from './Context'
  */
 
@@ -83,7 +82,7 @@ import {
  *     data?: T,
  *     onChange?: ((data: T, event?: FormChangeEvent) => void) | null,
  *   }
- *   & Omit<ComponentPropsWithoutRef<C>, keyof FormBaseProps>
+ *   & SafePropsOmit<ComponentProps<C>, keyof FormBaseProps | 'ref'>
  * )} FormProps
  */
 
@@ -426,17 +425,11 @@ Form.defaultProps = {
 	throttleDuration: DEFAULT_THROTTLE_DURATION,
 };
 
-/**
- * @typedef {<T = Record<string, unknown>, C extends ElementType = 'form'>(
- *   props: FormProps<T, C>
- * ) => ReactElement | null} PolymorphicFormComponent
- */
-
 // Polymorphic re-typing: the class is non-generic internally (uses
-// `FormBaseProps`); the cast restores the generic on the public API so
-// consumers get autocomplete and type-checking on `component`'s own props.
-const PolymorphicForm = /** @type {PolymorphicFormComponent} */ (
+// `FormBaseProps`); the cast on the default export restores both generics
+// (`T` for data shape, `C` for wrapper element) on the public API.
+export default /** @type {<T = Record<string, unknown>, C extends ElementType = 'form'>(
+	props: FormProps<T, C>
+) => ReactNode} */ (
 	/** @type {unknown} */ (Form)
 );
-
-export default PolymorphicForm;
