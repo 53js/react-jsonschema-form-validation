@@ -8,14 +8,16 @@ declare module 'scroll-to-element' {
 	): void;
 }
 
-// Minimal `process.env` declaration so the optional debug flag
-// `REACT_APP_JFV_DEBUG` can be read without pulling in `@types/node`.
+// Minimal `process` declaration for the optional debug flag
+// `REACT_APP_JFV_DEBUG`, without pulling in `@types/node`. Typed as
+// possibly-undefined because browser bundlers (Vite, esbuild, native
+// ESM) do not polyfill it — call sites must guard access.
 declare const process: {
-	env: {
+	env?: {
 		REACT_APP_JFV_DEBUG?: string;
 		NODE_ENV?: string;
 	};
-};
+} | undefined;
 
 declare module 'classnames' {
 	type ClassValue = string | number | boolean | undefined | null | ClassDictionary | ClassArray;

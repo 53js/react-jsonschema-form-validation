@@ -25,7 +25,7 @@ const getErrorMessage = (fieldError, errorMessages) => {
 	let message = customErrorMessage ? customErrorMessage(fieldError) : fieldError.message;
 
 	/* istanbul ignore next */
-	if (process.env.REACT_APP_JFV_DEBUG === 'true') {
+	if (typeof process !== 'undefined' && process?.env?.REACT_APP_JFV_DEBUG === 'true') {
 		message += ` [#${fieldError.keyword}]`;
 	}
 

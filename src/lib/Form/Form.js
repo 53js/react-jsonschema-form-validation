@@ -291,7 +291,10 @@ class Form extends PureComponent {
 	handleSubmitError = () => {
 		const { scrollToError } = this.props;
 		const { errors } = this.state;
-		if (process.env.REACT_APP_JFV_DEBUG === 'true') console.log(errors); // eslint-disable-line no-console
+		/* istanbul ignore next */
+		if (typeof process !== 'undefined' && process?.env?.REACT_APP_JFV_DEBUG === 'true') {
+			console.log(errors); // eslint-disable-line no-console
+		}
 		if (scrollToError) this.scrollToFirstError();
 	}
 
