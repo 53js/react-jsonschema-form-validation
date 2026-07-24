@@ -1,37 +1,35 @@
-# Javascript Node CircleCI 2.0 configuration file
+# Javascript Node CircleCI 2.1 configuration file
 #
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
-#
-version: 2
-jobs:
-  build:
+
+version: 2.1
+
+executors:
+  node20:
     docker:
-      # specify the version you desire here
-      - image: circleci/node:latest
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/mongo:3.4.4
-
+      # Node 20 LTS — TS 6 requires Node ≥18, and the deprecated
+      # `circleci/node:latest` image is frozen around Node 14/16.
+      - image: cimg/node:20.20
     working_directory: ~/repo
 
+jobs:
+  build:
+    executor: node20
     steps:
       - checkout
 
-      # Download and cache dependencies
+      # Download and cache dependencies (keyed on yarn.lock for reproducibility)
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "package.json" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
+            - v2-dependencies-{{ checksum "yarn.lock" }}
+            - v2-dependencies-
 
-      - run: npm install
+      - run: yarn install --frozen-lockfile --ignore-optional --ignore-scripts
 
       - save_cache:
           paths:
             - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
+          key: v2-dependencies-{{ checksum "yarn.lock" }}
 
       - run:
           name: Setup Code Climate test-reporter
@@ -44,18 +42,49 @@ jobs:
 
       - run:
           name: Type check
-          command: npm run type-check
+          command: yarn type-check
 
       - run:
           name: Run tests
-          command: |
-            # run tests!
-            npm test -- --coverage
+          command: yarn test:runtime --coverage
 
       - run:
           name: Build
           command: |
             # build library!
-            npm run dist
+            yarn dist
             # upload test report to Code Climate using `after-build`
             ./cc-test-reporter after-build -t lcov
+
+  # One job per @types/react major. Each installs the parent lib from a
+  # fresh tarball into `test-types/node_modules` (setup.sh), overrides
+  # @types/react to the matrix's version, and runs `tsc --noEmit` on
+  # positive.tsx + negative.tsx.
+  types:
+    executor: node20
+    parameters:
+      react:
+        type: string
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v2-dependencies-{{ checksum "yarn.lock" }}
+      - run: yarn install --frozen-lockfile --ignore-optional --ignore-scripts
+      - run: yarn dist:js && yarn dist:types
+      - run: bash test-types/setup.sh
+      - run:
+          name: Type-check against @types/react@^<< parameters.react >>
+          command: |
+            cd test-types
+            yarn add --dev --silent "@types/react@^<< parameters.react >>"
+            yarn test
+
+workflows:
+  ci:
+    jobs:
+      - build
+      - types:
+          matrix:
+            parameters:
+              react: ["16", "17", "18"]

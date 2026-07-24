@@ -1,0 +1,18 @@
+{
+	"name": "rjfv-types-fixture",
+	"private": true,
+	"description": "Type-level test fixture. Installs the parent lib from a fresh tarball (see setup.sh) so the fixture's @types/react resolution is fully isolated from the parent repo.",
+	"scripts": {
+		"test": "tsc -p tsconfig.json"
+	},
+	"dependencies": {
+		"react-jsonschema-form-validation": "file:./rjfv-fixture.tgz"
+	},
+	"devDependencies": {
+		"@types/json-schema": "^7.0.15",
+		"@types/react": "^16",
+		"ajv": "^6",
+		"react": "^16",
+		"typescript": "^6"
+	}
+}

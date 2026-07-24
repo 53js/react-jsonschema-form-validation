@@ -17,10 +17,13 @@
 		"dist:types:bundle": "dts-bundle-generator -o dist/index.d.ts --no-banner --no-check .types-temp/index.d.ts",
 		"dist:types:cleanup": "rm -rf .types-temp",
 		"minify:css": "cleancss --level 1 --source-map --source-map-inline-sources --output dist/$npm_package_name.min.css dist/$npm_package_name.css",
-		"test": "react-scripts test",
+		"test": "npm-run-all --sequential test:runtime test:types",
+		"test:runtime": "react-scripts test --watchAll=false",
+		"test:runtime:watch": "react-scripts test",
+		"test:types": "bash test-types/check-matrix.sh",
 		"type-check": "tsc -p tsconfig.json",
 		"eject": "react-scripts eject",
-		"prepublishOnly": "npm test -- --bail --ci --runInBand --watchAll=false && npm run dist",
+		"prepublishOnly": "yarn test:runtime --ci --bail --runInBand && yarn test:types && yarn dist",
 		"preversion": "npm run docs && git add docs && (git commit -m \"update docs for new version\" || echo \"No changes to commit\")"
 	},
 	"browserslist": [
