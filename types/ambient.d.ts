@@ -1,14 +1,10 @@
-declare module 'scroll-to-element' {
-	export interface ScrollOptions {
-		offset?: number;
-		align?: 'top' | 'middle' | 'bottom' | string;
-		duration?: number;
-		ease?: string;
-	}
+// Local ambient declarations used only during type-checking. Not published.
 
+// `scroll-to-element` ships no type declarations.
+declare module 'scroll-to-element' {
 	export default function scrollToElement(
 		element: Element | string,
-		options?: ScrollOptions,
+		options?: { offset?: number; align?: string; duration?: number; ease?: string },
 	): void;
 }
 

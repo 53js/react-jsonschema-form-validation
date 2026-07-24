@@ -2,65 +2,16 @@ import React, { useContext } from 'react';
 
 /**
  * @import { ReactElement } from 'react'
- * @import { FormattedError, FormChangeEvent } from './helpers'
+ * @import { FormContextValue } from './Context.types'
  */
 
 /**
- * Built-in AJV validation keywords. Listed here so consumers writing
- * `errorMessages` get IDE autocomplete on the well-known keys while still
- * being free to add custom keywords (any other string is accepted via the
- * `(string & {})` intersection in `ErrorMessagesMap`).
- *
- * @typedef {(
- *   'type' | 'required' | 'enum' | 'const'
- *   | 'minimum' | 'maximum' | 'exclusiveMinimum' | 'exclusiveMaximum'
- *   | 'multipleOf'
- *   | 'minLength' | 'maxLength' | 'pattern' | 'format'
- *   | 'minItems' | 'maxItems' | 'uniqueItems'
- *   | 'minProperties' | 'maxProperties'
- *   | 'additionalProperties' | 'dependencies' | 'patternProperties' | 'properties'
- *   | 'oneOf' | 'anyOf' | 'allOf' | 'not' | 'if' | 'then' | 'else'
- * )} AjvKeyword
+ * React context that carries the `<Form>` state down to descendant
+ * `<Field>` and `<FieldError>` components. Not intended for direct use —
+ * consume it through `useFormContext()` (or the legacy `withFormContext()`
+ * render-prop helper), which handles the "outside a Form" case with a
+ * descriptive error instead of returning `undefined`.
  */
-
-/**
- * Builds a single error message string from an AJV error.
- *
- * @typedef {(error: FormattedError) => string} ErrorMessageFn
- */
-
-/**
- * Map of error messages. `defaultMessage` is the catch-all used by
- * `<FieldError>` when no entry matches the error's keyword. The known
- * keywords (see {@link AjvKeyword}) are typed for autocomplete; any other
- * string key (e.g. a custom AJV keyword) is still allowed.
- *
- * The `(string & {})` in the key union is the standard TypeScript trick to
- * accept arbitrary strings *without* collapsing the literal union — plain
- * `string` would erase the autocomplete on the known keywords.
- *
- * @typedef {Partial<Record<
- *   AjvKeyword | 'defaultMessage' | (string & {}),
- *   ErrorMessageFn
- * >>} ErrorMessagesMap
- */
-
-/**
- * @typedef {{
- *   errors: FormattedError[],
- *   isSubmitted: boolean,
- *   touchedFields: string[],
- *   valid: boolean,
- *   errorMessages?: ErrorMessagesMap,
- *   getFieldErrors: (names: string | string[]) => FormattedError[],
- *   handleFieldChange: (event: FormChangeEvent | string, value?: unknown) => void,
- *   isFieldTouched: (names: string | string[]) => boolean,
- *   isFieldInvalid: (names: string | string[]) => boolean,
- *   isTouched: () => boolean,
- *   touch: (names: string | string[]) => void,
- * }} FormContextValue
- */
-
 const FormContext = React.createContext(
 	/** @type {FormContextValue | undefined} */ (undefined),
 );
@@ -72,7 +23,13 @@ const OUTSIDE_FORM_ERROR = (
 	+ 'useFormContext / withFormContext must be used inside a <Form> component.'
 );
 
-/** @returns {FormContextValue} */
+/**
+ * Reads the form context. Throws if the calling component is not a
+ * descendant of a `<Form>` — failing loudly is better than returning
+ * `undefined` and crashing later with a less obvious error.
+ *
+ * @returns {FormContextValue}
+ */
 export const useFormContext = () => {
 	const ctx = useContext(FormContext);
 	if (ctx === undefined) {
@@ -83,7 +40,9 @@ export const useFormContext = () => {
 
 /**
  * Legacy render-prop helper kept for backward compatibility — prefer
- * `useFormContext()` in new code.
+ * `useFormContext()` in new code. Like `useFormContext`, it throws when
+ * rendered outside a `<Form>` so the callback always receives a defined
+ * context value.
  *
  * @template T
  * @param {(ctx: FormContextValue) => T} cb

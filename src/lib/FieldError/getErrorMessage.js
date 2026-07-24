@@ -1,6 +1,6 @@
 /**
  * @import { FormattedError } from '../Form/helpers'
- * @import { ErrorMessagesMap } from '../Form/Context'
+ * @import { ErrorMessagesMap } from '../Form/Context.types'
  */
 
 /**

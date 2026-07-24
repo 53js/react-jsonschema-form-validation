@@ -9,7 +9,7 @@
  *   ComponentPropsWithRef,
  * } from 'react'
  * @import { FormChangeEvent, SafePropsOmit } from '../Form/helpers'
- * @import { FormContextValue } from '../Form/Context'
+ * @import { FormContextValue } from '../Form/Context.types'
  */
 
 import classnames from 'classnames';
@@ -43,7 +43,7 @@ import { withFormContext } from '../Form/Context';
  *   name: string,
  *   children?: ReactNode,
  *   className?: string,
- *   component?: ElementType | string,
+ *   component?: ElementType,
  *   forwardedRef?: Ref<unknown> | null,
  *   onBlur?: ((event: FocusEvent) => void) | null,
  *   onChange?: FieldChangeHandler | null,
@@ -188,6 +188,6 @@ const FieldComponent = React.forwardRef(
 
 export default /** @type {<C extends ElementType = 'input'>(
 	props: FieldProps<C> & { ref?: ComponentPropsWithRef<C>['ref'] }
-) => ReactNode} */ (
+) => JSX.Element | null} */ (
 	/** @type {unknown} */ (FieldComponent)
 );

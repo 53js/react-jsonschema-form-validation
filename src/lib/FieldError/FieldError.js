@@ -5,7 +5,7 @@
  *   ComponentProps,
  * } from 'react'
  * @import { FormattedError, SafePropsOmit } from '../Form/helpers'
- * @import { ErrorMessagesMap, FormContextValue } from '../Form/Context'
+ * @import { ErrorMessagesMap, FormContextValue } from '../Form/Context.types'
  */
 
 import classnames from 'classnames';
@@ -144,6 +144,6 @@ FieldError.defaultProps = {
 // own props.
 export default /** @type {<C extends ElementType = 'div'>(
 	props: FieldErrorProps<C>
-) => ReactNode} */ (
+) => JSX.Element | null} */ (
 	/** @type {unknown} */ (FieldError)
 );

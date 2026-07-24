@@ -8,9 +8,20 @@
  * } from 'react'
  * @import { DebouncedFunc } from 'lodash'
  * @import { JSONSchema7Definition } from 'json-schema'
- * @import { ScrollOptions } from 'scroll-to-element'
  * @import { FormattedError, FormChangeEvent, SafePropsOmit } from './helpers'
- * @import { ErrorMessagesMap } from './Context'
+ * @import { ErrorMessagesMap } from './Context.types'
+ */
+
+/**
+ * Options controlling how the form scrolls to the first invalid field on
+ * a failed submit.
+ *
+ * @typedef {{
+ *   offset?: number,
+ *   align?: 'top' | 'middle' | 'bottom' | (string & {}),
+ *   duration?: number,
+ *   ease?: string,
+ * }} JfvScrollOptions
  */
 
 import Ajv from 'ajv';
@@ -47,7 +58,7 @@ import {
  *   onSubmit: (event: FormEvent) => void,
  *   schema: JSONSchema7Definition,
  *   scrollToError?: boolean,
- *   scrollOptions?: ScrollOptions,
+ *   scrollOptions?: JfvScrollOptions,
  * }} FormBaseProps
  */
 
@@ -297,6 +308,22 @@ class Form extends PureComponent {
 	 */
 	isFieldInvalid = (fieldNames) => {
 		const names = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
+		// TODO(maintainer): likely latent bug — the spread below only propagates
+		// `names[0]` because `getFieldErrors` reads a single `fieldNames`
+		// argument. Multi-name calls like `isFieldInvalid(['a', 'b'])` silently
+		// ignore every element after the first. Preserved as-is for strict
+		// runtime parity; the `[string]` tuple cast just makes the spread legal
+		// for TS.
+		//
+		// The original implementation spreads `names` to `getFieldErrors`,
+		// which only reads its single `fieldNames` argument — so any element
+		// beyond the first is silently ignored. This looks like a latent bug
+		// for multi-name calls (e.g. `isFieldInvalid(['a', 'b'])`), but the
+		// behavior is preserved here for strict parity with the pre-typing
+		// code. To confirm with the main maintainer.
+		// The tuple cast makes the spread legal for TS; the runtime is
+		// unchanged (still spreads the full array — only the first element
+		// is read because of how `getFieldErrors` is written).
 		const tuple = /** @type {[string]} */ (names);
 		return this.getFieldErrors(...tuple).length > 0;
 	}
@@ -430,6 +457,6 @@ Form.defaultProps = {
 // (`T` for data shape, `C` for wrapper element) on the public API.
 export default /** @type {<T = Record<string, unknown>, C extends ElementType = 'form'>(
 	props: FormProps<T, C>
-) => ReactNode} */ (
+) => JSX.Element | null} */ (
 	/** @type {unknown} */ (Form)
 );
