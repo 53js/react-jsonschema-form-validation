@@ -1,3 +1,29 @@
+/**
+ * @import {
+ *   ReactNode,
+ *   ElementType,
+ *   FormEvent,
+ *   FormHTMLAttributes,
+ *   ComponentProps,
+ * } from 'react'
+ * @import { DebouncedFunc } from 'lodash'
+ * @import { JSONSchema7Definition } from 'json-schema'
+ * @import { FormattedError, FormChangeEvent, SafePropsOmit } from './helpers'
+ * @import { ErrorMessagesMap } from './Context.types'
+ */
+
+/**
+ * Options controlling how the form scrolls to the first invalid field on
+ * a failed submit.
+ *
+ * @typedef {{
+ *   offset?: number,
+ *   align?: 'top' | 'middle' | 'bottom' | (string & {}),
+ *   duration?: number,
+ *   ease?: string,
+ * }} JfvScrollOptions
+ */
+
 import Ajv from 'ajv';
 import classnames from 'classnames';
 import throttle from 'lodash.throttle';
@@ -15,9 +41,102 @@ import {
 	updateDataFromEvents,
 } from './helpers';
 
-// eslint-disable-next-line react/jsx-props-no-spreading
+/**
+ * Base props of `<Form>` — the validation-specific props the component
+ * handles itself. The public, polymorphic `FormProps<T, C>` extends this
+ * with the props of the underlying component `C` and typed data `T`.
+ *
+ * @typedef {{
+ *   ajv?: Ajv.Ajv,
+ *   children?: ReactNode,
+ *   className?: string,
+ *   component?: ElementType,
+ *   data?: Record<string, unknown>,
+ *   throttleDuration?: number,
+ *   errorMessages?: ErrorMessagesMap,
+ *   onChange?: ((data: Record<string, unknown>, event?: FormChangeEvent) => void) | null,
+ *   onSubmit: (event: FormEvent) => void,
+ *   schema: JSONSchema7Definition,
+ *   scrollToError?: boolean,
+ *   scrollOptions?: JfvScrollOptions,
+ * }} FormBaseProps
+ */
+
+/**
+ * Polymorphic props of `<Form>`. Two type parameters:
+ * - `T` — shape of the form data. Inferred from `data` / `onChange`, or
+ *         you can pass it explicitly via `<Form<UserData> …>`. Default
+ *         `Record<string, unknown>`. Note that `T` is a *promise* by the
+ *         caller: nothing at compile time ensures the JSON Schema actually
+ *         validates `T`.
+ * - `C` — element type used for the form wrapper (the `component` prop).
+ *         Default `'form'`. When supplied, every prop accepted by `C` is
+ *         also accepted on `<Form>` (autocomplete + typo detection).
+ *
+ * Field reference:
+ * - `schema`        — JSON-Schema used to validate `data`.
+ * - `data`          — current form values, fully controlled by the parent.
+ * - `onChange`      — called with the updated data on every field change.
+ * - `onSubmit`      — called only when validation passes at submit time.
+ * - `errorMessages` — map of error messages shared by every `<FieldError>`
+ *                     descendant (see `ErrorMessagesMap`).
+ * - `ajv`           — optional pre-configured AJV instance, useful to plug
+ *                     in custom keywords/formats.
+ * - `component`     — element rendered for the form wrapper (default `<form noValidate>`).
+ *
+ * @template [T = Record<string, unknown>]
+ * @template {ElementType} [C = 'form']
+ * @typedef {(
+ *   Omit<FormBaseProps, 'component' | 'data' | 'onChange'>
+ *   & {
+ *     component?: C,
+ *     data?: T,
+ *     onChange?: ((data: T, event?: FormChangeEvent) => void) | null,
+ *   }
+ *   & SafePropsOmit<ComponentProps<C>, keyof FormBaseProps | 'ref'>
+ * )} FormProps
+ */
+
+/**
+ * Internal state held by `<Form>`. Exposed (via the context) to descendants
+ * so they can react to validation results and touched fields.
+ *
+ * @typedef {{
+ *   errors: FormattedError[],
+ *   isSubmitted: boolean,
+ *   touchedFields: string[],
+ *   valid: boolean,
+ * }} FormState
+ */
+
+/**
+ * Return type of `lodash.throttle` applied to the form validator. The
+ * `cancel` / `flush` methods (from lodash's `DebouncedFunc<T>` interface)
+ * discard pending runs when the schema changes or the component unmounts.
+ *
+ * @typedef {DebouncedFunc<(data: object) => void>} ThrottledValidator
+ */
+
+/**
+ * Default wrapper element used when no `component` prop is supplied. Renders
+ * a plain `<form noValidate>` so the browser's native validation UI does not
+ * interfere with AJV's.
+ *
+ * @param {FormHTMLAttributes<HTMLFormElement>} props
+ */
 const DefaultFormComponent = (props) => <form noValidate {...props} />;
 
+// Module-level defaults — shared by every `<Form>` instance via both
+// `Form.defaultProps` and the destructuring fallbacks in the methods below.
+// Extracting them here (instead of duplicating the literals) keeps the AJV
+// instance stable across renders (critical for `memoGetValidator`'s
+// memoization) and removes the need to cast `undefined`-typed props.
+const DEFAULT_AJV = createAjv();
+const DEFAULT_THROTTLE_DURATION = 200;
+/** @type {Record<string, unknown>} */
+const DEFAULT_DATA = {};
+
+/** @type {FormState} */
 const initialState = {
 	errors: [],
 	isSubmitted: false,
@@ -25,16 +144,27 @@ const initialState = {
 	valid: true,
 };
 
+/** @extends {PureComponent<FormBaseProps, FormState>} */
 class Form extends PureComponent {
+	/** @type {FormState} */
 	state = { ...initialState }
 
-	memoGetClassnames = memoize((className, isSubmitted) => classnames(
+	/** @type {ThrottledValidator | undefined} */
+	throttledValidator;
+
+	memoGetClassnames = memoize((
+		/** @type {string | undefined} */ className,
+		/** @type {boolean} */ isSubmitted,
+	) => classnames(
 		'Jfv_Form',
 		className,
 		{ isSubmitted },
 	))
 
-	memoGetContext = memoize((state, errorMessages) => ({
+	memoGetContext = memoize((
+		/** @type {FormState} */ state,
+		/** @type {ErrorMessagesMap | undefined} */ errorMessages,
+	) => ({
 		...state,
 		errorMessages,
 		getFieldErrors: this.getFieldErrors,
@@ -45,23 +175,31 @@ class Form extends PureComponent {
 		touch: this.touch,
 	}))
 
-	memoGetValidator = memoize((ajv, schema, throttleDuration) => {
+	memoGetValidator = memoize((
+		/** @type {Ajv.Ajv} */ ajv,
+		/** @type {JSONSchema7Definition} */ schema,
+		/** @type {number} */ throttleDuration,
+	) => {
 		const validate = ajv.compile(schema);
 
+		/** @param {object} data */
 		const validator = (data) => {
 			const formattedData = formatData(data);
-			const valid = validate(formattedData);
+			// Cast: AJV's `compile()` return type includes `boolean | Promise<...>`
+			// because async schemas exist. We do not use them, so the result is
+			// always a synchronous boolean here.
+			const valid = /** @type {boolean} */ (validate(formattedData));
 			const errors = formatErrors(validate.errors);
 
-			this.setState({
-				valid,
-				errors,
-			});
+			this.setState({ valid, errors });
 		};
 
 		if (this.throttledValidator) this.throttledValidator.cancel();
 		this.throttledValidator = throttle(validator, throttleDuration);
 
+		// We memoize the throttled function so that two consecutive validations
+		// with the same data reference skip work entirely (AJV is fast but the
+		// no-op short-circuit is even faster).
 		return memoize(this.throttledValidator);
 	})
 
@@ -92,41 +230,59 @@ class Form extends PureComponent {
 		return this.memoGetContext(this.state, errorMessages);
 	}
 
+	/**
+	 * @param {string | string[]} fieldNames
+	 * @returns {FormattedError[]}
+	 */
 	getFieldErrors = (fieldNames) => {
-		fieldNames = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
+		const names = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
 		const { errors } = this.state;
 
-		return fieldNames.reduce((fieldsErrors, fieldName) => [
-			...fieldsErrors,
-			...filterByFieldNameWithWildcard(errors, fieldName),
-		], []);
+		return names.reduce(
+			(fieldsErrors, fieldName) => [
+				...fieldsErrors,
+				...filterByFieldNameWithWildcard(errors, fieldName),
+			],
+			/** @type {FormattedError[]} */ ([]),
+		);
 	}
 
 	getValidator = () => {
+		// Destructuring defaults reference the same module-level constants
+		// declared in `Form.defaultProps`, so `memoGetValidator`'s
+		// memoization stays stable across renders while TS sees the
+		// non-optional types it needs.
 		const {
-			ajv,
+			ajv = DEFAULT_AJV,
 			schema,
-			throttleDuration,
+			throttleDuration = DEFAULT_THROTTLE_DURATION,
 		} = this.props;
 		return this.memoGetValidator(ajv, schema, throttleDuration);
 	}
 
+	/**
+	 * @param {FormChangeEvent | string} event Either a real change event or
+	 *                                          a field path (string).
+	 * @param {unknown} [value] Used only when `event` is a string.
+	 */
 	handleFieldChange = (event, value) => {
-		const { data, onChange } = this.props;
+		const { data = DEFAULT_DATA, onChange } = this.props;
 		if (onChange) {
-			if (typeof event === 'string') {
-				event = {
-					target: {
-						name: event,
-						value,
-					},
-				};
-			}
-			const newData = updateDataFromEvents(data, event);
-			onChange(newData, event);
+			// Cast on `value`: `FormInputTarget.value` is typed as `string` to
+			// mirror real DOM inputs. When the change is synthesized from a
+			// (name, value) pair, `value` can be any JSON-compatible scalar —
+			// the runtime stores it verbatim, the cast satisfies the
+			// structural type without altering behavior.
+			const castValue = /** @type {string} */ (value);
+			const realEvent = typeof event === 'string'
+				? { target: { name: event, value: castValue } }
+				: event;
+			const newData = updateDataFromEvents(data, realEvent);
+			onChange(newData, realEvent);
 		}
 	}
 
+	/** @param {FormEvent} event */
 	handleSubmit = (event) => {
 		event.preventDefault();
 		this.submit(event);
@@ -135,29 +291,50 @@ class Form extends PureComponent {
 	handleSubmitError = () => {
 		const { scrollToError } = this.props;
 		const { errors } = this.state;
-		if (process.env.REACT_APP_JFV_DEBUG === 'true') console.log(errors); // eslint-disable-line no-console
+		/* istanbul ignore next */
+		if (typeof process !== 'undefined' && process?.env?.REACT_APP_JFV_DEBUG === 'true') {
+			console.log(errors); // eslint-disable-line no-console
+		}
 		if (scrollToError) this.scrollToFirstError();
 	}
 
+	/** @param {FormEvent} event */
 	handleSubmitSuccess = (event) => {
 		const { onSubmit } = this.props;
 		this.reset();
 		onSubmit(event);
 	}
 
+	/**
+	 * @param {string | string[]} fieldNames
+	 * @returns {boolean}
+	 */
 	isFieldInvalid = (fieldNames) => {
-		fieldNames = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
-		return this.getFieldErrors(...fieldNames).length > 0;
+		const names = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
+		// The spread here only propagates `names[0]` — `getFieldErrors` reads
+		// a single `fieldNames` argument, so any element beyond the first is
+		// ignored at runtime. Behavior preserved as-is; the tuple cast just
+		// makes the spread legal for TS.
+		const tuple = /** @type {[string]} */ (names);
+		return this.getFieldErrors(...tuple).length > 0;
 	}
 
+	/**
+	 * @param {string | string[]} fieldNames
+	 * @returns {boolean}
+	 */
 	isFieldTouched = (fieldNames) => {
-		fieldNames = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
+		const names = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
 		const { touchedFields } = this.state;
-		return !!fieldNames.find((fieldName) => (
-			filterByFieldNameWithWildcard(touchedFields.map((field) => ({ field })), fieldName).length > 0
+		return !!names.find((fieldName) => (
+			filterByFieldNameWithWildcard(
+				touchedFields.map((field) => ({ field })),
+				fieldName,
+			).length > 0
 		));
 	}
 
+	/** @returns {boolean} */
 	isTouched = () => {
 		const { touchedFields } = this.state;
 		return !!touchedFields.length;
@@ -173,6 +350,7 @@ class Form extends PureComponent {
 		scrollToElement(element, scrollOptions);
 	}
 
+	/** @param {FormEvent} event */
 	submit = (event) => {
 		const { valid } = this.state;
 
@@ -182,21 +360,22 @@ class Form extends PureComponent {
 		else this.handleSubmitError();
 	}
 
+	/** @param {string | string[]} fieldNames */
 	touch = (fieldNames) => {
-		fieldNames = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
+		const names = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
 		const { touchedFields } = this.state;
 		this.setState({
 			touchedFields: [
 				...new Set([
 					...touchedFields,
-					...fieldNames,
+					...names,
 				]),
 			],
 		});
 	}
 
 	validate = () => {
-		const { data } = this.props;
+		const { data = DEFAULT_DATA } = this.props;
 		const validate = this.getValidator();
 		validate(data);
 	}
@@ -206,7 +385,7 @@ class Form extends PureComponent {
 			ajv,
 			children,
 			className,
-			component: FormComponent,
+			component: FormComponent = DefaultFormComponent,
 			data,
 			throttleDuration,
 			errorMessages,
@@ -223,10 +402,9 @@ class Form extends PureComponent {
 				<FormComponent
 					className={this.getClassnames()}
 					onSubmit={this.handleSubmit}
-					// eslint-disable-next-line react/jsx-props-no-spreading
 					{...props}
 				>
-					{ children }
+					{children}
 				</FormComponent>
 			</FormContext.Provider>
 		);
@@ -249,11 +427,11 @@ Form.propTypes = {
 };
 
 Form.defaultProps = {
-	ajv: createAjv(),
+	ajv: DEFAULT_AJV,
 	children: null,
 	className: '',
 	component: DefaultFormComponent,
-	data: {},
+	data: DEFAULT_DATA,
 	errorMessages: {},
 	onChange: null,
 	scrollToError: true,
@@ -262,7 +440,14 @@ Form.defaultProps = {
 		align: 'middle',
 		duration: 900,
 	},
-	throttleDuration: 200,
+	throttleDuration: DEFAULT_THROTTLE_DURATION,
 };
 
-export default Form;
+// Polymorphic re-typing: the class is non-generic internally (uses
+// `FormBaseProps`); the cast on the default export restores both generics
+// (`T` for data shape, `C` for wrapper element) on the public API.
+export default /** @type {<T = Record<string, unknown>, C extends ElementType = 'form'>(
+	props: FormProps<T, C>
+) => JSX.Element | null} */ (
+	/** @type {unknown} */ (Form)
+);

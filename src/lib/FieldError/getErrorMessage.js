@@ -1,14 +1,20 @@
 /**
- * [getErrorMessage find the error message to display when a field is invalid]
- * @param  {Object} fieldError           [The AJV error object]
- * @param  {Object} errorMessages   	 [The complete list of error messages]
- * @return {string}                      [return the error message]
+ * @import { FormattedError } from '../Form/helpers'
+ * @import { ErrorMessagesMap } from '../Form/Context.types'
+ */
+
+/**
+ * Find the error message to display when a field is invalid.
  *
- * Message displayed priority :
- *  1. The correponding error message passed by the FieldError component
- *  2. The correponding error message passed by the Form component or
- *  3. The default message passed by the Form component
- *  4. The AJV message if noting is passed
+ * Resolution priority (highest first):
+ *   1. The corresponding error message passed to `<FieldError>` as a prop
+ *   2. The corresponding error message passed to `<Form>` as a prop
+ *   3. The `defaultMessage` passed to `<Form>` (catch-all)
+ *   4. The raw AJV message
+ *
+ * @param {FormattedError} fieldError
+ * @param {ErrorMessagesMap | undefined} errorMessages
+ * @returns {string | undefined}
  */
 const getErrorMessage = (fieldError, errorMessages) => {
 	// customMessage = the errorMessage provided by the <FieldError> as props
@@ -19,7 +25,7 @@ const getErrorMessage = (fieldError, errorMessages) => {
 	let message = customErrorMessage ? customErrorMessage(fieldError) : fieldError.message;
 
 	/* istanbul ignore next */
-	if (process.env.REACT_APP_JFV_DEBUG === 'true') {
+	if (typeof process !== 'undefined' && process?.env?.REACT_APP_JFV_DEBUG === 'true') {
 		message += ` [#${fieldError.keyword}]`;
 	}
 

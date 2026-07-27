@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"target": "ES2019",
+		"module": "ESNext",
+		"moduleResolution": "node",
+		"ignoreDeprecations": "6.0",
+		"lib": ["ES2019", "DOM"],
+		"jsx": "react",
+		"strict": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"noEmit": true,
+		"noUnusedLocals": false,
+		"types": []
+	},
+	"include": ["positive.tsx", "negative.tsx", "_helpers.ts"]
+}

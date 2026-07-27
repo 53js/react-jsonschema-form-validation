@@ -11,11 +11,19 @@
 		"docs": "rm -rf docs && npm run build && mv build docs",
 		"dist": "npm-run-all clean dist:* minify:*",
 		"dist:css": "sass --style=expanded --no-source-map src/lib/styles/main.scss dist/$npm_package_name.css",
-		"dist:js": "cross-env NODE_ENV=production babel src/lib --out-dir dist",
+		"dist:js": "cross-env NODE_ENV=production babel src/lib --out-dir dist --ignore '**/*.test.js,**/Context.types.js'",
+		"dist:types": "npm-run-all dist:types:emit dist:types:bundle dist:types:cleanup",
+		"dist:types:emit": "tsc -p tsconfig.build.json",
+		"dist:types:bundle": "dts-bundle-generator -o dist/index.d.ts --no-banner --no-check .types-temp/index.d.ts",
+		"dist:types:cleanup": "rm -rf .types-temp",
 		"minify:css": "cleancss --level 1 --source-map --source-map-inline-sources --output dist/$npm_package_name.min.css dist/$npm_package_name.css",
-		"test": "react-scripts test",
+		"test": "npm-run-all --sequential test:runtime test:types",
+		"test:runtime": "react-scripts test --watchAll=false",
+		"test:runtime:watch": "react-scripts test",
+		"test:types": "bash test-types/check-matrix.sh",
+		"type-check": "tsc -p tsconfig.json",
 		"eject": "react-scripts eject",
-		"prepublishOnly": "npm test -- --bail --ci --runInBand --watchAll=false && npm run dist",
+		"prepublishOnly": "yarn test:runtime --ci --bail --runInBand && yarn test:types && yarn dist",
 		"preversion": "npm run docs && git add docs && (git commit -m \"update docs for new version\" || echo \"No changes to commit\")"
 	},
 	"browserslist": [
@@ -26,6 +34,7 @@
 	],
 	"main": "dist/index.js",
 	"module": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"files": [
 		"dist",
 		"README.md"
@@ -37,6 +46,7 @@
 	"repository": "github:53js/react-jsonschema-form-validation",
 	"dependencies": {
 		"@babel/runtime": "^7.8.4",
+		"@types/json-schema": "^7.0.15",
 		"ajv": "^6.11.0",
 		"classnames": "^2.2.6",
 		"dot-prop-immutable": "^2.1.0",
@@ -47,10 +57,15 @@
 	},
 	"devDependencies": {
 		"@babel/cli": "^7.8.4",
+		"@types/lodash.throttle": "^4.1.9",
+		"@types/prop-types": "^15.7.15",
+		"@types/react": "^16.14.70",
+		"@types/react-dom": "^16.9.25",
 		"babel-eslint": "10.0.3",
 		"bootstrap": "^4.4.1",
 		"clean-css-cli": "^4.3.0",
 		"cross-env": "^7.0.0",
+		"dts-bundle-generator": "^9.5.1",
 		"enzyme": "^3.11.0",
 		"enzyme-adapter-react-16": "^1.15.2",
 		"enzyme-to-json": "^3.4.4",
@@ -70,10 +85,14 @@
 		"react-scripts": "^3.3.1",
 		"react-select": "^3.0.8",
 		"react-test-renderer": "^16.12.0",
-		"reactstrap": "^8.4.1"
+		"reactstrap": "^8.4.1",
+		"typescript": "^6.0.3"
 	},
 	"peerDependencies": {
 		"react": ">=15"
+	},
+	"resolutions": {
+		"dts-bundle-generator/typescript": "^6.0.3"
 	},
 	"jest": {
 		"collectCoverageFrom": [

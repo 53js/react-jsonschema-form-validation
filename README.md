@@ -140,6 +140,25 @@ class DemoForm extends PureComponent {
 
 🎵 _That's all folks !_ 
 
+## TypeScript
+
+The library is fully typed — `.d.ts` declarations ship with the package, no
+`@types/...` required.
+
+Most relevant exported types:
+
+```ts
+import type {
+    FormProps,         // generic: FormProps<T, C> — T = data shape, C = wrapper element
+    FieldProps,        // generic: FieldProps<C> — C = underlying component
+    FieldErrorProps,   // generic: FieldErrorProps<C>
+    FormContextValue,
+    FormattedError,
+    ErrorMessageFn,
+    ErrorMessagesMap,
+} from 'react-jsonschema-form-validation';
+```
+
 ## Examples
 We’ve got many examples, from the most simple to the most advanced.
 
