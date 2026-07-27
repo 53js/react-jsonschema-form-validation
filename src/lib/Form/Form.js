@@ -311,22 +311,10 @@ class Form extends PureComponent {
 	 */
 	isFieldInvalid = (fieldNames) => {
 		const names = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
-		// TODO(maintainer): likely latent bug — the spread below only propagates
-		// `names[0]` because `getFieldErrors` reads a single `fieldNames`
-		// argument. Multi-name calls like `isFieldInvalid(['a', 'b'])` silently
-		// ignore every element after the first. Preserved as-is for strict
-		// runtime parity; the `[string]` tuple cast just makes the spread legal
-		// for TS.
-		//
-		// The original implementation spreads `names` to `getFieldErrors`,
-		// which only reads its single `fieldNames` argument — so any element
-		// beyond the first is silently ignored. This looks like a latent bug
-		// for multi-name calls (e.g. `isFieldInvalid(['a', 'b'])`), but the
-		// behavior is preserved here for strict parity with the pre-typing
-		// code. To confirm with the main maintainer.
-		// The tuple cast makes the spread legal for TS; the runtime is
-		// unchanged (still spreads the full array — only the first element
-		// is read because of how `getFieldErrors` is written).
+		// The spread here only propagates `names[0]` — `getFieldErrors` reads
+		// a single `fieldNames` argument, so any element beyond the first is
+		// ignored at runtime. Behavior preserved as-is; the tuple cast just
+		// makes the spread legal for TS.
 		const tuple = /** @type {[string]} */ (names);
 		return this.getFieldErrors(...tuple).length > 0;
 	}
