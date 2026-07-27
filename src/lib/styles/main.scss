@@ -1,4 +1,2 @@
-@import 'variables';
-
-@import '../Field/Field.scss';
-@import '../FieldError/FieldError.scss';
+@use '../Field/Field';
+@use '../FieldError/FieldError';
