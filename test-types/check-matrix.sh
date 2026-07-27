@@ -10,7 +10,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 DEFAULT_VERSION=16
-VERSIONS=(16 17 18)
+VERSIONS=(16 17 18 19)
 
 trap 'yarn add --dev --silent "@types/react@^${DEFAULT_VERSION}" >/dev/null' EXIT
 

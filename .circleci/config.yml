@@ -87,4 +87,4 @@ workflows:
       - types:
           matrix:
             parameters:
-              react: ["16", "17", "18"]
+              react: ["16", "17", "18", "19"]

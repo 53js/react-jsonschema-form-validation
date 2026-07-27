@@ -9,9 +9,7 @@
 		"react-jsonschema-form-validation": "file:./rjfv-fixture.tgz"
 	},
 	"devDependencies": {
-		"@types/json-schema": "^7.0.15",
 		"@types/react": "^16",
-		"ajv": "^6",
 		"react": "^16",
 		"typescript": "^6"
 	}
