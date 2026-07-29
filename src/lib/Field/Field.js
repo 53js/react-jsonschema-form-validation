@@ -104,7 +104,7 @@ import { withFormContext } from '../Form/Context';
  *     onChange?: PolymorphicFieldChangeHandler<C> | null,
  *     onBlur?: ((arg: ChildEmit<C, 'onBlur'>) => void) | null,
  *   }
- *   & SafePropsOmit<ComponentProps<C>, keyof FieldBaseProps | 'ref'>
+ *   & SafePropsOmit<ComponentProps<C>, keyof FieldBaseProps | 'ref' | 'onChange' | 'onBlur'>
  * )} FieldProps
  */
 
