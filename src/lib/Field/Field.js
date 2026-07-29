@@ -99,16 +99,37 @@ class Field extends PureComponent {
 	memoGetOnChangeHandler = memoize((
 		/** @type {FieldChangeHandler | null | undefined} */ onChange,
 		/** @type {FormContextValue['handleFieldChange']} */ handleFieldChange,
-	) => /** @param {FormChangeEvent} event */ (event) => {
+		/** @type {string} */ name,
+	) => /** @param {any} eventOrValue */ (eventOrValue) => {
 		if (onChange) {
-			// User-supplied onChange replaces the default behavior. We pass the
-			// form's own update handler so the user can still apply the change
-			// from inside their handler (e.g. after a transformation).
-			onChange(event, handleFieldChange);
+			// User-supplied onChange replaces the default behavior. We pass
+			// whatever the child emitted straight through (raw value for
+			// non-DOM components like PhoneInput or react-select, DOM event
+			// otherwise) plus the form's own update handler so the user can
+			// still apply the change from inside their handler.
+			onChange(eventOrValue, handleFieldChange);
 			return;
 		}
 
-		handleFieldChange(event);
+		// Children that emit a raw value (`PhoneInput.onChange(value)`,
+		// `react-select.onChange(option)`) would otherwise be treated as the
+		// field NAME by `Form.handleFieldChange` — that method uses a
+		// `typeof event === 'string'` branch to expose a programmatic API
+		// (`form.handleFieldChange('fieldName', value)`), and every raw
+		// emission would hit it and pollute `data` with a bogus key. Detect
+		// events that already carry a `target.name` and pass them through;
+		// wrap anything else into a synthetic event using this Field's `name`.
+		const isEvent = eventOrValue != null
+			&& typeof eventOrValue === 'object'
+			&& eventOrValue.target != null
+			&& typeof eventOrValue.target === 'object'
+			&& typeof eventOrValue.target.name === 'string';
+
+		handleFieldChange(
+			isEvent
+				? eventOrValue
+				: { target: { name, value: eventOrValue } },
+		);
 	})
 
 	/**
@@ -143,7 +164,7 @@ class Field extends PureComponent {
 				className={this.getClassnames(form)}
 				name={name}
 				onBlur={this.memoGetOnBlurHandler(form.touch, name, onBlur)}
-				onChange={this.memoGetOnChangeHandler(onChange, form.handleFieldChange)}
+				onChange={this.memoGetOnChangeHandler(onChange, form.handleFieldChange, name)}
 				ref={forwardedRef}
 				{...props}
 			>
