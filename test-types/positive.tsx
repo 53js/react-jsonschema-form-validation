@@ -140,6 +140,97 @@ const WithMemo = () => (
 );
 
 // ---------------------------------------------------------------------------
+// 5b. Polymorphic onChange — first parameter follows what `component` emits
+// ---------------------------------------------------------------------------
+
+// Component that emits a raw string.
+type ValueEmitterProps = {
+	value?: string;
+	onChange: (value: string) => void;
+};
+const ValueEmitter = (_p: ValueEmitterProps) => <input />;
+
+const _valueEmitterInfersString = () => (
+	<Form schema={schema} onSubmit={() => {}}>
+		<Field
+			name="phone"
+			component={ValueEmitter}
+			onChange={(value, hfc) => {
+				type _v = Expect<Equal<typeof value, string>>;
+				type _h = Expect<Equal<typeof hfc, FormContextValue['handleFieldChange']>>;
+				void [value, hfc];
+			}}
+		/>
+	</Form>
+);
+
+// Component that emits an option object (only the first parameter is captured).
+type Option = { value: string; label: string };
+type OptionEmitterProps = {
+	value?: Option | null;
+	onChange: (option: Option | null) => void;
+};
+const OptionEmitter = (_p: OptionEmitterProps) => <select />;
+
+const _optionEmitterInfersOption = () => (
+	<Form schema={schema} onSubmit={() => {}}>
+		<Field
+			name="category"
+			component={OptionEmitter}
+			onChange={(option) => {
+				type _ = Expect<Equal<typeof option, Option | null>>;
+				void option;
+			}}
+		/>
+	</Form>
+);
+
+// Intrinsic input — `onChange` still receives a real DOM ChangeEvent.
+const _inputOnChangeReceivesEvent = () => (
+	<Form schema={schema} onSubmit={() => {}}>
+		<Field
+			name="x"
+			onChange={(event) => {
+				void event.target.value;
+			}}
+		/>
+	</Form>
+);
+
+// onBlur is polymorphic too — first parameter follows `C.onBlur`.
+type CustomBlurProps = {
+	onBlur: (payload: { field: string; timestamp: number }) => void;
+};
+const CustomBlurComponent = (_p: CustomBlurProps) => <input />;
+
+const _blurInfersPayload = () => (
+	<Form schema={schema} onSubmit={() => {}}>
+		<Field
+			name="x"
+			component={CustomBlurComponent}
+			onBlur={(payload) => {
+				type _ = Expect<Equal<typeof payload, { field: string; timestamp: number }>>;
+				void payload;
+			}}
+		/>
+	</Form>
+);
+
+// Backward-compat — a handler typed explicitly as `FieldChangeHandler`
+// stays assignable to a default `<Field>` (no `component` prop).
+const _fieldChangeHandlerBackwardCompat = () => {
+	const legacy: FieldChangeHandler = (event, hfc) => {
+		void event.target.value;
+		void hfc;
+	};
+	return (
+		<Form schema={schema} onSubmit={() => {}}>
+			<Field name="x" onChange={legacy} />
+		</Form>
+	);
+};
+
+// ---------------------------------------------------------------------------
 // 6. Polymorphic Form wrapper — `component="section"` accepts native props
 // ---------------------------------------------------------------------------
 const PolymorphicForm = () => (

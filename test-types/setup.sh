@@ -15,8 +15,9 @@ yarn dist:types >/dev/null
 yarn pack --filename test-types/rjfv-fixture.tgz >/dev/null
 
 cd test-types
-# Force yarn to re-read the tarball: same filename means yarn thinks the
-# entry is fresh even when the tarball content changed. --check-files
-# re-extracts missing packages.
-rm -rf node_modules/react-jsonschema-form-validation
-yarn install --silent --check-files
+# Force yarn to re-read the tarball. Same filename means yarn's global cache
+# reuses stale content across iterations even with --check-files, so we also
+# drop the lockfile (which pins the tarball's content hash) and the local
+# entry — install then re-extracts from the freshly-packed tarball.
+rm -rf node_modules/react-jsonschema-form-validation yarn.lock
+yarn install --silent
