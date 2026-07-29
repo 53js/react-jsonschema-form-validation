@@ -168,6 +168,10 @@ Live examples are available : [here](https://53js.github.io/react-jsonschema-for
 
 📃 Check out our documentation : [here](https://53js.github.io/react-jsonschema-form-validation "documentation")
 
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for release notes.
+
 ## Licence
 
 MIT
