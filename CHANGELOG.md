@@ -12,7 +12,7 @@ and dependency-only bumps are omitted.
 
 ## [0.6.0] — 2026-07-27
 
-First release since 0.5.5 (2019). Bundles a feature that had been sitting
+First release since 0.5.6 (2020). Bundles a feature that had been sitting
 on `master` since 2020 with a full typing pass, a modern CSS build, and
 packaging fixes.
 
@@ -39,6 +39,9 @@ packaging fixes.
 - `@types/json-schema` moved from `devDependencies` to `dependencies`.
   The shipped `.d.ts` imports from it; consumers without it in their
   transitive tree previously got `Cannot find module 'json-schema'`.
+- `useFormContext` / `withFormContext` now throw a descriptive error
+  when used outside a `<Form>` ancestor (previously returned
+  `undefined`, crashing later with a cryptic `TypeError`).
 
 ### Removed
 
@@ -54,6 +57,11 @@ packaging fixes.
 - `process.env.REACT_APP_JFV_DEBUG` access is now guarded. The
   unguarded lookup crashed browser bundlers that don't polyfill
   `process` (Vite, esbuild, native ESM).
+
+## [0.5.6] — 2020-02-06
+
+### Changed
+- Dependency updates.
 
 ## [0.5.5] — 2019-12-11
 
@@ -118,7 +126,8 @@ Initial public release.
 - `react-select` wrapper.
 
 [Unreleased]: https://github.com/53js/react-jsonschema-form-validation/compare/v0.6.0...HEAD
-[0.6.0]: https://github.com/53js/react-jsonschema-form-validation/compare/8534580...v0.6.0
+[0.6.0]: https://github.com/53js/react-jsonschema-form-validation/compare/71300db...v0.6.0
+[0.5.6]: https://github.com/53js/react-jsonschema-form-validation/compare/8534580...71300db
 [0.5.5]: https://github.com/53js/react-jsonschema-form-validation/compare/53a58a8...8534580
 [0.5.4]: https://github.com/53js/react-jsonschema-form-validation/compare/b06b086...53a58a8
 [0.5.3]: https://github.com/53js/react-jsonschema-form-validation/compare/d6f6531...b06b086
