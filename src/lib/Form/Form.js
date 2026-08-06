@@ -245,6 +245,11 @@ class Form extends PureComponent {
 	})
 
 	componentDidMount() {
+		// Reset the flag raised by componentWillUnmount: React 18 StrictMode
+		// (dev) unmounts then REMOUNTS the same instance (cWU then cDM) —
+		// without this reset, unregisterFieldError would stay a no-op
+		// forever and the registry would accumulate stale entries.
+		this.unmounting = false;
 		this.validate();
 	}
 
@@ -272,7 +277,12 @@ class Form extends PureComponent {
 		/** @type {string[]} */
 		const ids = [];
 		this.fieldErrorRegistry.forEach((entry) => {
-			if (entry.name === name) ids.push(entry.id);
+			// A registered <FieldError> may target a wildcard (`user.*`):
+			// reuse the display-side matching so its id is referenced by
+			// every field it covers (literal names still match exactly).
+			if (filterByFieldNameWithWildcard([{ field: name }], entry.name).length) {
+				ids.push(entry.id);
+			}
 		});
 		const uniqueIds = [...new Set(ids)];
 		return uniqueIds.length ? uniqueIds.join(' ') : undefined;

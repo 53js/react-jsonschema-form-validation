@@ -136,6 +136,57 @@ it('should merge a user aria-describedby before the registered error ids', () =>
 	expect(wrapper.find('input').prop('aria-describedby')).toBe(`username-hint ${errorId}`);
 });
 
+it('should reference a wildcard FieldError id from the fields it covers', () => {
+	const nestedSchema = {
+		type: 'object',
+		properties: {
+			user: {
+				type: 'object',
+				properties: {
+					email: { type: 'string' },
+				},
+				required: ['email'],
+			},
+		},
+		required: ['user'],
+	};
+	const wrapper = mount(
+		<Form data={{ user: {} }} onSubmit={() => {}} schema={nestedSchema}>
+			<Field name="user.email" />
+			<FieldError name="user.*" />
+		</Form>,
+	);
+
+	wrapper.find('input').simulate('blur');
+	wrapper.update();
+
+	const errorId = wrapper.find('div.Jfv_FieldError').prop('id');
+	expect(errorId).toMatch(/^jfv\d+-error-user\.\*$/);
+	expect(wrapper.find('input').prop('aria-describedby')).toBe(errorId);
+});
+
+it('should reset the unmounting flag on remount (React 18 StrictMode)', () => {
+	const wrapper = mount(
+		<Form {...formProps}>
+			<FieldError name="username" />
+		</Form>,
+	);
+	const instance = wrapper.instance();
+	expect(instance.fieldErrorRegistry.size).toBe(1);
+	const key = [...instance.fieldErrorRegistry.keys()][0];
+
+	// React 18 StrictMode (dev) unmounts then REMOUNTS the same instance:
+	// componentWillUnmount followed by componentDidMount. Unregistering
+	// must work again after the remount.
+	instance.componentWillUnmount();
+	instance.componentDidMount();
+
+	instance.unregisterFieldError(key);
+	expect(instance.fieldErrorRegistry.size).toBe(0);
+
+	wrapper.unmount();
+});
+
 it('should make unregisterFieldError a no-op while the form unmounts', () => {
 	const wrapper = mount(
 		<Form {...formProps}>
