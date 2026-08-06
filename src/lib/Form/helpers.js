@@ -159,7 +159,7 @@ export const formatErrors = (errors) => (errors || []).map((error) => {
 
 	formatted.field = formatted.field
 		.replace(/^\./, '')
-		.replace(/\[([0-9]+)\]/, '.$1');
+		.replace(/\[([0-9]+)\]/g, '.$1');
 
 	return formatted;
 });
@@ -178,7 +178,10 @@ export const filterByFieldNameWithWildcard = (fields, fieldName) => {
 	/** @type {RegExp | undefined} */
 	let regex;
 	if (/\*$/.test(fieldName)) {
-		regex = new RegExp(`^${fieldName.replace(/\*$/, '')}`);
+		// Escape regex metacharacters so a prefix like `user.` matches the
+		// literal dot instead of any character (`user.*` must not match `userX`).
+		const prefix = fieldName.replace(/\*$/, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		regex = new RegExp(`^${prefix}`);
 	}
 
 	return fields.filter((e) => {
