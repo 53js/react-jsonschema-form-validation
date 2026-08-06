@@ -64,12 +64,16 @@
  *   touchedFields: string[],
  *   valid: boolean,
  *   errorMessages?: ErrorMessagesMap,
+ *   formId: string,
+ *   getFieldErrorDescribedBy: (name: string) => string | undefined,
  *   getFieldErrors: (names: string | string[]) => FormattedError[],
  *   handleFieldChange: (event: FormChangeEvent | string, value?: unknown) => void,
  *   isFieldTouched: (names: string | string[]) => boolean,
  *   isFieldInvalid: (names: string | string[]) => boolean,
  *   isTouched: () => boolean,
+ *   registerFieldError: (key: string, name: string, id: string) => void,
  *   touch: (names: string | string[]) => void,
+ *   unregisterFieldError: (key: string) => void,
  * }} FormContextValue
  */
 

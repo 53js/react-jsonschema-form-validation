@@ -27,6 +27,7 @@ import getErrorMessage from './getErrorMessage';
  *   className?: string,
  *   component?: ElementType,
  *   errorMessages?: ErrorMessagesMap | null,
+ *   id?: string | null,
  *   name: string,
  * }} FieldErrorBaseProps
  */
@@ -41,6 +42,9 @@ import getErrorMessage from './getErrorMessage';
  *                       map declared at the `<Form>` level (see `ErrorMessagesMap`).
  * - `component`       — element rendered when an error is present (default `'div'`).
  * - `children`        — replaces the auto-generated message when provided.
+ * - `id`              — overrides the default deterministic id; the effective id is
+ *                       registered in the form, so `<Field>`'s `aria-describedby`
+ *                       follows it automatically.
  *
  * @template {ElementType} [C = 'div']
  * @typedef {(
@@ -50,8 +54,38 @@ import getErrorMessage from './getErrorMessage';
  * )} FieldErrorProps
  */
 
-/** @extends {PureComponent<FieldErrorBaseProps>} */
-class FieldError extends PureComponent {
+/**
+ * Props of the internal implementation: the public props plus the form
+ * context injected as a regular prop by the wrapper below.
+ *
+ * @typedef {FieldErrorBaseProps & { form: FormContextValue }} FieldErrorInnerProps
+ */
+
+// Module-level counter giving each mounted <FieldError> a stable identity
+// (`key`) in the Form's id registry.
+let nextFieldErrorKey = 0;
+const createFieldErrorKey = () => {
+	nextFieldErrorKey += 1;
+	return `jfve${nextFieldErrorKey}`;
+};
+
+/**
+ * Internal implementation. Receives the form context as a `form` prop —
+ * injected by the `withFormContext` render-prop in the public wrapper —
+ * so the registration lifecycles below can use it. (`static contextType`
+ * would need the real React context object, which the unit tests replace
+ * with a plain mock; the render-prop also matches the existing style.)
+ *
+ * Registration is independent from rendering, on purpose: the registry
+ * entry exists as long as the component is mounted, even while no error is
+ * displayed (render returns `null`) — an `aria-describedby` IDREF pointing
+ * to an absent element is ignored by assistive technologies.
+ *
+ * @extends {PureComponent<FieldErrorInnerProps>}
+ */
+class FieldErrorInner extends PureComponent {
+	fieldErrorKey = createFieldErrorKey();
+
 	memoGetClassnames = memoize((
 		/** @type {string | undefined} */ className,
 		/** @type {boolean} */ isSubmitted,
@@ -74,11 +108,34 @@ class FieldError extends PureComponent {
 		return getErrorMessage(error, errorMessages);
 	})
 
-	/**
-	 * @param {FormContextValue} form
-	 */
-	getClassnames = (form) => {
-		const { className, name } = this.props;
+	// Registration happens in effects only — never during render. The
+	// resulting Form setState flushes before the browser paints, so no
+	// intermediate state is visible.
+	componentDidMount() {
+		const { form, name } = this.props;
+		form.registerFieldError(this.fieldErrorKey, name, this.getId());
+	}
+
+	/** @param {FieldErrorInnerProps} prevProps */
+	componentDidUpdate(prevProps) {
+		// Anti-loop guard: re-register only when the (name, id) pair
+		// actually changed — paired with the identical-entry bail-out in
+		// Form.registerFieldError.
+		const { form, name } = this.props;
+		const prevId = prevProps.id != null
+			? prevProps.id
+			: getFieldErrorId(prevProps.form.formId, prevProps.name);
+		if (prevProps.name === name && prevId === this.getId()) return;
+		form.registerFieldError(this.fieldErrorKey, name, this.getId());
+	}
+
+	componentWillUnmount() {
+		const { form } = this.props;
+		form.unregisterFieldError(this.fieldErrorKey);
+	}
+
+	getClassnames = () => {
+		const { className, form, name } = this.props;
 		const { isFieldTouched, isSubmitted } = form;
 
 		return this.memoGetClassnames(
@@ -88,14 +145,22 @@ class FieldError extends PureComponent {
 		);
 	}
 
-	/**
-	 * @param {FormattedError} error
-	 * @param {FormContextValue} form
-	 */
-	getFieldErrorMessage = (error, form) => {
-		const { errorMessages: fieldErrorMessages } = this.props;
+	/** @param {FormattedError} error */
+	getFieldErrorMessage = (error) => {
+		const { errorMessages: fieldErrorMessages, form } = this.props;
 		const { errorMessages: formErrorMessages } = form;
 		return this.memoGetFieldErrorMessage(error, formErrorMessages, fieldErrorMessages);
+	}
+
+	/**
+	 * Effective id: the user-supplied `id` prop, or the deterministic
+	 * default derived from (formId, name). The same value is registered in
+	 * the Form registry, so a custom id never desynchronizes the
+	 * `aria-describedby` of the matching `<Field>`.
+	 */
+	getId = () => {
+		const { form, id, name } = this.props;
+		return id != null ? id : getFieldErrorId(form.formId, name);
 	}
 
 	render() {
@@ -104,38 +169,73 @@ class FieldError extends PureComponent {
 			className,
 			component: Component = 'div',
 			errorMessages,
+			form,
+			id,
 			name,
 			...props
 		} = this.props;
 
-		return withFormContext((form) => {
-			const fieldErrors = form.getFieldErrors(name);
-			if (!fieldErrors.length) return null;
+		const fieldErrors = form.getFieldErrors(name);
+		if (!fieldErrors.length) return null;
 
-			// Default id matches the aria-describedby set by <Field> for the
-			// same `name`; declared before {...props} so users can override it.
-			return (
-				<Component
-					className={this.getClassnames(form)}
-					id={getFieldErrorId(name)}
-					role="alert"
-					{...props}
-				>
-					{
-						children
-						|| this.getFieldErrorMessage(fieldErrors[0], form)
-					}
-				</Component>
-			);
-		});
+		return (
+			<Component
+				className={this.getClassnames()}
+				id={this.getId()}
+				role="alert"
+				{...props}
+			>
+				{
+					children
+					|| this.getFieldErrorMessage(fieldErrors[0])
+				}
+			</Component>
+		);
 	}
 }
+
+FieldErrorInner.propTypes = {
+	children: PropTypes.node,
+	className: PropTypes.string,
+	component: PropTypes.elementType,
+	errorMessages: PropTypes.objectOf(PropTypes.func),
+	form: PropTypes.shape({
+		errorMessages: PropTypes.objectOf(PropTypes.func),
+		formId: PropTypes.string,
+		getFieldErrors: PropTypes.func.isRequired,
+		isFieldTouched: PropTypes.func.isRequired,
+		isSubmitted: PropTypes.bool,
+		registerFieldError: PropTypes.func.isRequired,
+		unregisterFieldError: PropTypes.func.isRequired,
+	}).isRequired,
+	id: PropTypes.string,
+	name: PropTypes.string.isRequired,
+};
+
+FieldErrorInner.defaultProps = {
+	children: null,
+	className: '',
+	component: 'div',
+	errorMessages: null,
+	id: null,
+};
+
+/**
+ * Public component: a thin wrapper reading the form context and passing it
+ * to the implementation as the `form` prop.
+ *
+ * @param {FieldErrorBaseProps} props
+ */
+const FieldError = (props) => withFormContext(
+	(form) => <FieldErrorInner {...props} form={form} />,
+);
 
 FieldError.propTypes = {
 	children: PropTypes.node,
 	className: PropTypes.string,
 	component: PropTypes.elementType,
 	errorMessages: PropTypes.objectOf(PropTypes.func),
+	id: PropTypes.string,
 	name: PropTypes.string.isRequired,
 };
 
@@ -144,9 +244,10 @@ FieldError.defaultProps = {
 	component: 'div',
 	errorMessages: null,
 	className: '',
+	id: null,
 };
 
-// Polymorphic re-typing: the class is non-generic internally (uses
+// Polymorphic re-typing: the implementation is non-generic internally (uses
 // `FieldErrorBaseProps`); the cast on the default export restores the
 // generic so consumers get autocomplete and type-checking on `component`'s
 // own props.

@@ -5,6 +5,7 @@ exports[`should match snapshot 1`] = `
   name="username"
 >
   <Field
+    aria-describedby={null}
     className=""
     component="input"
     forwardedRef={null}

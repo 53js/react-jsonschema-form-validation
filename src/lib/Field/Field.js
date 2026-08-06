@@ -17,7 +17,6 @@ import memoize from 'memoize-one';
 import PropTypes from 'prop-types';
 import React, { PureComponent } from 'react';
 
-import getFieldErrorId from '../a11y';
 import { withFormContext } from '../Form/Context';
 
 /**
@@ -73,6 +72,7 @@ import { withFormContext } from '../Form/Context';
  *
  * @typedef {{
  *   name: string,
+ *   'aria-describedby'?: string | null,
  *   children?: ReactNode,
  *   className?: string,
  *   component?: ElementType,
@@ -181,6 +181,7 @@ class Field extends PureComponent {
 
 	render() {
 		const {
+			'aria-describedby': ariaDescribedBy,
 			children,
 			className,
 			component: Component = 'input',
@@ -191,19 +192,29 @@ class Field extends PureComponent {
 			...props
 		} = this.props;
 
-		// Both aria-* defaults sit BEFORE {...props} so users can override
-		// them. They are gated on the same reveal condition as the visual
-		// error styling (touched or submitted): before that, the matching
-		// <FieldError> is only hidden via CSS, and display:none elements
-		// directly referenced by aria-describedby ARE included in the
-		// accessible description — without the gate, screen readers would
-		// announce "invalid entry" plus the full error message on focus in
-		// a pristine form, with nothing visible on screen.
+		// Both ARIA attributes are gated on the same reveal condition as the
+		// visual error styling (touched or submitted): before that, the
+		// matching <FieldError> is only hidden via CSS, and display:none
+		// elements directly referenced by aria-describedby ARE included in
+		// the accessible description — without the gate, screen readers
+		// would announce "invalid entry" plus the full error message on
+		// focus in a pristine form, with nothing visible on screen.
+		//
+		// aria-invalid is a plain DEFAULT (before {...props}), overridable.
+		// aria-describedby is a COMPUTED value (after {...props}): the
+		// user-supplied IDREFs come first (e.g. a hint text id), then the
+		// error ids registered by this form's <FieldError>s once revealed —
+		// merge, not override (React Aria / Reach UI pattern). Fully
+		// disabling the wiring is therefore not possible via override; if
+		// ever needed it will be a dedicated prop.
 		return withFormContext((form) => {
 			const revealed = form.isFieldTouched(name) || form.isSubmitted;
+			const describedBy = [
+				ariaDescribedBy,
+				revealed ? form.getFieldErrorDescribedBy(name) : undefined,
+			].filter(Boolean).join(' ') || undefined;
 			return (
 				<Component
-					aria-describedby={revealed ? getFieldErrorId(name) : undefined}
 					aria-invalid={revealed && form.isFieldInvalid(name) ? true : undefined}
 					className={this.getClassnames(form)}
 					name={name}
@@ -211,6 +222,7 @@ class Field extends PureComponent {
 					onChange={this.memoGetOnChangeHandler(onChange, form.handleFieldChange, name)}
 					ref={forwardedRef}
 					{...props}
+					aria-describedby={describedBy}
 				>
 					{children}
 				</Component>
@@ -220,6 +232,7 @@ class Field extends PureComponent {
 }
 
 Field.propTypes = {
+	'aria-describedby': PropTypes.string,
 	children: PropTypes.node,
 	className: PropTypes.string,
 	component: PropTypes.oneOfType([PropTypes.string, PropTypes.func]),
@@ -233,6 +246,7 @@ Field.propTypes = {
 };
 
 Field.defaultProps = {
+	'aria-describedby': null,
 	children: null,
 	className: '',
 	component: 'input',
