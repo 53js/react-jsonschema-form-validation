@@ -81,6 +81,11 @@ describe('.formatErrors(errors)', () => {
 		const errors = [{ dataPath: 'arr[0].input' }];
 		expect(helpers.formatErrors(errors)[0].field).toStrictEqual('arr.0.input');
 	});
+
+	it('should convert every array index when the path contains several', () => {
+		const errors = [{ dataPath: 'items[0].tags[1]' }];
+		expect(helpers.formatErrors(errors)[0].field).toStrictEqual('items.0.tags.1');
+	});
 });
 
 describe('.filterByFieldNameWithWildcard(fields, fieldName)', () => {
@@ -108,6 +113,30 @@ describe('.filterByFieldNameWithWildcard(fields, fieldName)', () => {
 
 		expect(helpers.filterByFieldNameWithWildcard(fields, 'name*'))
 			.toEqual([{ field: 'name' }, { field: 'name1' }]);
+	});
+
+	it('should treat the dot in a wildcard prefix as a literal character', () => {
+		const fields = [
+			{ field: 'user.email' },
+			{ field: 'userX' },
+			{ field: 'user' },
+		];
+
+		expect(helpers.filterByFieldNameWithWildcard(fields, 'user.*'))
+			.toEqual([{ field: 'user.email' }]);
+	});
+
+	it('should not crash when the wildcard prefix contains an unclosed bracket', () => {
+		const fields = [
+			{ field: 'items[0].label' },
+			{ field: 'items[1].label' },
+			{ field: 'other' },
+		];
+
+		// The unescaped prefix `items[0` used to throw a SyntaxError
+		// (unterminated character class) when compiled to a RegExp.
+		expect(helpers.filterByFieldNameWithWildcard(fields, 'items[0*'))
+			.toEqual([{ field: 'items[0].label' }]);
 	});
 });
 
