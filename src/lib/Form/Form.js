@@ -374,7 +374,12 @@ class Form extends PureComponent {
 		} = scrollOptions || {};
 		// Legacy `offset`, `duration` and `ease` options (scroll-to-element)
 		// are intentionally ignored: the native API has no equivalent.
-		element.scrollIntoView({ behavior, block, inline });
+		// Guard: some environments (e.g. consumers' jsdom test setups) do not
+		// implement scrollIntoView — skip scrolling there, but keep the a11y
+		// focus move below.
+		if (typeof element.scrollIntoView === 'function') {
+			element.scrollIntoView({ behavior, block, inline });
+		}
 		// Move keyboard focus to the first invalid field (a11y). The scroll
 		// itself is handled above, hence `preventScroll`.
 		element.focus({ preventScroll: true });

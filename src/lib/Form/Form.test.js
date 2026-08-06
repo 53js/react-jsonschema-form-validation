@@ -17,6 +17,7 @@ const testSchema = {
 // jsdom does not implement Element#scrollIntoView: define a mock so the
 // native scrolling in Form.scrollToFirstError() can run and be asserted on.
 const scrollIntoViewMock = jest.fn();
+const originalScrollIntoView = Element.prototype.scrollIntoView;
 
 beforeAll(() => {
 	Element.prototype.scrollIntoView = scrollIntoViewMock;
@@ -24,6 +25,14 @@ beforeAll(() => {
 
 beforeEach(() => {
 	scrollIntoViewMock.mockClear();
+});
+
+afterAll(() => {
+	if (originalScrollIntoView) {
+		Element.prototype.scrollIntoView = originalScrollIntoView;
+	} else {
+		delete Element.prototype.scrollIntoView;
+	}
 });
 
 it('should match snapshot', () => {
@@ -449,6 +458,46 @@ describe('Form.scrollToFirstError()', () => {
 				block: 'end',
 				inline: 'start',
 			});
+		} finally {
+			wrapper.detach();
+			document.body.removeChild(container);
+		}
+	});
+
+	it('should still move focus without throwing when the element does not implement scrollIntoView', () => {
+		const data = { type: 'invalid-value' };
+		const container = document.createElement('div');
+		document.body.appendChild(container);
+
+		const wrapper = mount(
+			<Form
+				data={data}
+				onSubmit={() => {}}
+				schema={testSchema}
+			>
+				<Field
+					id="test-type"
+					name="type"
+					type="text"
+				/>
+			</Form>,
+			{ attachTo: container },
+		);
+
+		const input = document.getElementById('test-type');
+		// Shadow the prototype mock with an own property: simulates an
+		// environment (e.g. a consumer's jsdom test setup) where
+		// scrollIntoView is not implemented at all.
+		input.scrollIntoView = undefined;
+
+		try {
+			expect(() => {
+				wrapper.find('form').simulate('submit', { preventDefault() {} });
+			}).not.toThrow();
+
+			// Scrolling is skipped, but the a11y focus move still happens.
+			expect(scrollIntoViewMock).not.toHaveBeenCalled();
+			expect(document.activeElement).toBe(input);
 		} finally {
 			wrapper.detach();
 			document.body.removeChild(container);
