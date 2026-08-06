@@ -313,12 +313,30 @@ describe('Form.scrollToFirstError()', () => {
 			{ attachTo: container },
 		);
 
-		wrapper.find('form').simulate('submit', { preventDefault() {} });
+		try {
+			wrapper.find('form').simulate('submit', { preventDefault() {} });
 
-		expect(document.activeElement).toBe(document.getElementById('test-type'));
+			expect(document.activeElement).toBe(document.getElementById('test-type'));
+		} finally {
+			wrapper.detach();
+			document.body.removeChild(container);
+		}
+	});
 
-		wrapper.detach();
-		document.body.removeChild(container);
+	it('should not throw when called directly while the form has no errors', () => {
+		const data = { type: 'te' };
+
+		const wrapper = mount(
+			<Form
+				data={data}
+				onSubmit={() => {}}
+				schema={testSchema}
+			/>,
+		);
+
+		expect(() => {
+			wrapper.instance().scrollToFirstError();
+		}).not.toThrow();
 	});
 });
 
