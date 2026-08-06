@@ -121,6 +121,26 @@ it('should allow to override role via props', () => {
 	expect(fieldError.find('.Jfv_FieldError').prop('role')).toBe('status');
 });
 
+it('should have a deterministic id derived from name so fields can reference it', () => {
+	const context = {
+		getFieldErrors: jest.fn(() => [{ keyword: 'bad1' }]),
+		isFieldTouched: jest.fn(),
+	};
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
+	const fieldError = mount(<FieldError name="username" />);
+	expect(fieldError.find('.Jfv_FieldError').prop('id')).toBe('jfv-error-username');
+});
+
+it('should allow to override id via props', () => {
+	const context = {
+		getFieldErrors: jest.fn(() => [{ keyword: 'bad1' }]),
+		isFieldTouched: jest.fn(),
+	};
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
+	const fieldError = mount(<FieldError id="custom-id" name="username" />);
+	expect(fieldError.find('.Jfv_FieldError').prop('id')).toBe('custom-id');
+});
+
 it('should add class isTouched if field is touched', () => {
 	const context = {
 		getFieldErrors: jest.fn(() => [{ keyword: 'bad1' }]),

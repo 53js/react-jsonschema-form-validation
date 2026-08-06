@@ -17,6 +17,7 @@ import memoize from 'memoize-one';
 import PropTypes from 'prop-types';
 import React, { PureComponent } from 'react';
 
+import getFieldErrorId from '../a11y';
 import { withFormContext } from '../Form/Context';
 
 /**
@@ -190,8 +191,15 @@ class Field extends PureComponent {
 			...props
 		} = this.props;
 
+		// Both aria-* defaults sit BEFORE {...props} so users can override
+		// them. aria-describedby always points to the matching <FieldError>
+		// id: when no error is displayed the id does not exist, and
+		// assistive technologies ignore dangling references — simpler than
+		// rendering it conditionally.
 		return withFormContext((form) => (
 			<Component
+				aria-describedby={getFieldErrorId(name)}
+				aria-invalid={form.isFieldInvalid(name) || undefined}
 				className={this.getClassnames(form)}
 				name={name}
 				onBlur={this.memoGetOnBlurHandler(form.touch, name, onBlur)}

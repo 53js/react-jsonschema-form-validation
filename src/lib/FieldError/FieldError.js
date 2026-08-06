@@ -13,6 +13,7 @@ import memoize from 'memoize-one';
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 
+import getFieldErrorId from '../a11y';
 import { withFormContext } from '../Form/Context';
 import getErrorMessage from './getErrorMessage';
 
@@ -111,8 +112,15 @@ class FieldError extends PureComponent {
 			const fieldErrors = form.getFieldErrors(name);
 			if (!fieldErrors.length) return null;
 
+			// Default id matches the aria-describedby set by <Field> for the
+			// same `name`; declared before {...props} so users can override it.
 			return (
-				<Component className={this.getClassnames(form)} role="alert" {...props}>
+				<Component
+					className={this.getClassnames(form)}
+					id={getFieldErrorId(name)}
+					role="alert"
+					{...props}
+				>
 					{
 						children
 						|| this.getFieldErrorMessage(fieldErrors[0], form)

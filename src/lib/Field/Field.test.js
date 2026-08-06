@@ -78,6 +78,45 @@ it('should add class isInvalid if field is invalid', () => {
 	expect(field.find('.Jfv_Field').hasClass('isInvalid')).toBe(true);
 });
 
+it('should set aria-invalid when the field is invalid', () => {
+	const context = {
+		isFieldInvalid: jest.fn(() => true),
+		isFieldTouched: jest.fn(),
+	};
+
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
+	const field = mount(<Field name="username" />);
+	expect(field.find('input').prop('aria-invalid')).toBe(true);
+	expect(field.find('input').getDOMNode().getAttribute('aria-invalid')).toBe('true');
+});
+
+it('should not render aria-invalid when the field is valid', () => {
+	const field = mount(<Field name="username" />);
+	expect(field.find('input').prop('aria-invalid')).toBe(undefined);
+	expect(field.find('input').getDOMNode().hasAttribute('aria-invalid')).toBe(false);
+});
+
+it('should allow to override aria-invalid via props', () => {
+	const context = {
+		isFieldInvalid: jest.fn(() => true),
+		isFieldTouched: jest.fn(),
+	};
+
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
+	const field = mount(<Field aria-invalid={false} name="username" />);
+	expect(field.find('input').prop('aria-invalid')).toBe(false);
+});
+
+it('should point aria-describedby at the matching FieldError id by default', () => {
+	const field = mount(<Field name="username" />);
+	expect(field.find('input').prop('aria-describedby')).toBe('jfv-error-username');
+});
+
+it('should allow to override aria-describedby via props', () => {
+	const field = mount(<Field aria-describedby="my-hint" name="username" />);
+	expect(field.find('input').prop('aria-describedby')).toBe('my-hint');
+});
+
 it('Default component input can be changed', () => {
 	const Component = () => 'component';
 	const field = mount(<Field component={Component} name="username" />);
