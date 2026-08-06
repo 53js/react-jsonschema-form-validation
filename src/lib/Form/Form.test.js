@@ -241,6 +241,85 @@ describe('Form.isFieldInvalid(fieldNames)', () => {
 		expect(wrapper.instance().isFieldInvalid('type')).toBe(false);
 		expect(wrapper.instance().isFieldInvalid(['name'])).toBe(true);
 	});
+
+	it('should check every name of the list, not only the first one', () => {
+		// 'type' is valid, only 'name' (2nd element) has an error: a naive
+		// implementation checking names[0] only would return false here.
+		const data = {
+			type: 'te',
+			name: 'HE',
+		};
+
+		const newSchema = {
+			type: 'object',
+			properties: {
+				type: { type: 'string', enum: ['te', 'ta'] },
+				name: { type: 'string', minLength: 6 },
+			},
+			required: [
+				'type',
+				'name',
+			],
+		};
+
+		const wrapper = mount(
+			<Form
+				data={data}
+				onSubmit={() => {}}
+				schema={newSchema}
+			/>,
+		);
+
+		expect(wrapper.instance().isFieldInvalid(['type', 'name'])).toBe(true);
+	});
+});
+
+describe('Form.scrollToFirstError()', () => {
+	it('should not throw when no DOM element matches the first error field', () => {
+		const data = { type: 'invalid-value' };
+
+		// No <Field name="type"> rendered: document.getElementsByName('type')
+		// is empty when the submit fails.
+		const wrapper = mount(
+			<Form
+				data={data}
+				onSubmit={() => {}}
+				schema={testSchema}
+			/>,
+		);
+
+		expect(() => {
+			wrapper.find('form').simulate('submit', { preventDefault() {} });
+		}).not.toThrow();
+	});
+
+	it('should move focus to the first invalid field after a failed submit', () => {
+		const data = { type: 'invalid-value' };
+		const container = document.createElement('div');
+		document.body.appendChild(container);
+
+		const wrapper = mount(
+			<Form
+				data={data}
+				onSubmit={() => {}}
+				schema={testSchema}
+			>
+				<Field
+					id="test-type"
+					name="type"
+					type="text"
+				/>
+			</Form>,
+			{ attachTo: container },
+		);
+
+		wrapper.find('form').simulate('submit', { preventDefault() {} });
+
+		expect(document.activeElement).toBe(document.getElementById('test-type'));
+
+		wrapper.detach();
+		document.body.removeChild(container);
+	});
 });
 
 describe('Form.isFieldTouched(fieldName)', () => {

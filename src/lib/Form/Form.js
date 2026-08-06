@@ -311,12 +311,7 @@ class Form extends PureComponent {
 	 */
 	isFieldInvalid = (fieldNames) => {
 		const names = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
-		// The spread here only propagates `names[0]` — `getFieldErrors` reads
-		// a single `fieldNames` argument, so any element beyond the first is
-		// ignored at runtime. Behavior preserved as-is; the tuple cast just
-		// makes the spread legal for TS.
-		const tuple = /** @type {[string]} */ (names);
-		return this.getFieldErrors(...tuple).length > 0;
+		return this.getFieldErrors(names).length > 0;
 	}
 
 	/**
@@ -347,7 +342,13 @@ class Form extends PureComponent {
 		const { errors } = this.state;
 		const firstError = errors[0];
 		const element = document.getElementsByName(firstError.field)[0];
+		// No DOM element may carry the error's name (custom field, error on a
+		// nested object): skip scrolling instead of forwarding `undefined`.
+		if (!element) return;
 		scrollToElement(element, scrollOptions);
+		// Move keyboard focus to the first invalid field (a11y). The scroll
+		// itself is handled above, hence `preventScroll`.
+		element.focus({ preventScroll: true });
 	}
 
 	/** @param {FormEvent} event */
