@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# Least-privilege default.
+permissions:
+  contents: read
+
+# Cancel stale PR runs when a new commit is pushed. Runs on `master` are
+# never cancelled — we want every merge to have a green build attached.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile --ignore-optional
+      - run: yarn type-check
+      - run: yarn test:runtime
+      - run: yarn dist
+
+  # One job per @types/react major. Each installs the parent lib from a
+  # fresh tarball into `test-types/node_modules` (setup.sh), overrides
+  # @types/react to the matrix's version, and runs `tsc --noEmit` on
+  # positive.tsx + negative.tsx.
+  types:
+    name: types (@types/react ${{ matrix.types-react }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        types-react: ['16', '17', '18', '19']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile --ignore-optional
+      - run: yarn dist:js && yarn dist:types
+      - run: bash test-types/setup.sh
+      - name: Type-check against @types/react@^${{ matrix.types-react }}
+        working-directory: test-types
+        run: |
+          yarn add --dev --silent "@types/react@^${{ matrix.types-react }}"
+          yarn test
