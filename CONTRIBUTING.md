@@ -22,10 +22,11 @@ yarn start
 
 ## Tests
 
-Run these before opening a PR — CI runs the same commands.
+Run these before opening a PR — CI runs the runtime suite, a type-check
+matrix equivalent to `yarn test:types`, and the `yarn dist` build.
 
 ```bash
-# Jest unit tests (via react-scripts). 6 suites, 75 tests at the time of writing.
+# Jest unit tests (via react-scripts)
 yarn test:runtime
 
 # Watch mode
