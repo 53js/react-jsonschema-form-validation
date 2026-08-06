@@ -20,14 +20,45 @@ import React, { PureComponent } from 'react';
 import { withFormContext } from '../Form/Context';
 
 /**
- * Signature of the user-supplied `onChange` handler. It receives the event
- * and the form's internal handler so the user can decide whether to apply,
- * transform or skip the update.
+ * `onChange` handler for a default `<Field>` (intrinsic `<input>`).
+ * For `<Field component={C}>`, prefer `PolymorphicFieldChangeHandler<C>`
+ * or let TypeScript infer the handler type from context.
  *
  * @typedef {(
  *   event: FormChangeEvent,
  *   formHandleFieldChange: FormContextValue['handleFieldChange'],
  * ) => void} FieldChangeHandler
+ */
+
+/**
+ * First argument type of component `C`'s handler `K` (`'onChange'` or
+ * `'onBlur'`). Falls back to `FormChangeEvent` / `FocusEvent` when `C`
+ * doesn't declare the handler.
+ *
+ * Only the FIRST argument is captured. Handlers with additional
+ * parameters (e.g. `(option, action) => void`) type the first one only.
+ *
+ * @template {ElementType} C
+ * @template {'onChange' | 'onBlur'} K
+ * @typedef {K extends 'onChange'
+ *     ? (ComponentProps<C> extends { onChange?: (arg: infer A, ...rest: any) => any }
+ *         ? A
+ *         : FormChangeEvent)
+ *     : (ComponentProps<C> extends { onBlur?: (arg: infer A, ...rest: any) => any }
+ *         ? A
+ *         : FocusEvent)
+ * } ChildEmit
+ */
+
+/**
+ * `onChange` handler whose first parameter follows what `C` emits:
+ * a DOM event for intrinsic elements, a raw value for custom components.
+ *
+ * @template {ElementType} C
+ * @typedef {(
+ *   eventOrValue: ChildEmit<C, 'onChange'>,
+ *   formHandleFieldChange: FormContextValue['handleFieldChange'],
+ * ) => void} PolymorphicFieldChangeHandler
  */
 
 /**
@@ -57,16 +88,23 @@ import { withFormContext } from '../Form/Context';
  *
  * - `name`        — path within the form data this field reads/writes.
  * - `component`   — host element or component (default `'input'`).
- * - `onChange`    — user override; receives the raw event plus the form's
- *                   internal change handler so the user can decide whether
- *                   to apply, transform or skip the update.
+ * - `onChange`    — user override. First parameter follows what `C` emits
+ *                   (a DOM event for intrinsic elements, a raw value for
+ *                   custom components). The form's internal handler is
+ *                   passed as the second parameter so the user can still
+ *                   apply the change from inside their handler.
  * - `onBlur`      — user override; always fires *after* `form.touch(name)`.
+ *                   First parameter polymorphic on `C.onBlur`.
  *
  * @template {ElementType} [C = 'input']
  * @typedef {(
- *   Omit<FieldBaseProps, 'component' | 'forwardedRef'>
- *   & { component?: C }
- *   & SafePropsOmit<ComponentProps<C>, keyof FieldBaseProps | 'ref'>
+ *   Omit<FieldBaseProps, 'component' | 'forwardedRef' | 'onChange' | 'onBlur'>
+ *   & {
+ *     component?: C,
+ *     onChange?: PolymorphicFieldChangeHandler<C> | null,
+ *     onBlur?: ((arg: ChildEmit<C, 'onBlur'>) => void) | null,
+ *   }
+ *   & SafePropsOmit<ComponentProps<C>, keyof FieldBaseProps | 'ref' | 'onChange' | 'onBlur'>
  * )} FieldProps
  */
 
@@ -99,16 +137,30 @@ class Field extends PureComponent {
 	memoGetOnChangeHandler = memoize((
 		/** @type {FieldChangeHandler | null | undefined} */ onChange,
 		/** @type {FormContextValue['handleFieldChange']} */ handleFieldChange,
-	) => /** @param {FormChangeEvent} event */ (event) => {
+		/** @type {string} */ name,
+	) => /** @param {any} eventOrValue */ (eventOrValue) => {
 		if (onChange) {
-			// User-supplied onChange replaces the default behavior. We pass the
-			// form's own update handler so the user can still apply the change
-			// from inside their handler (e.g. after a transformation).
-			onChange(event, handleFieldChange);
+			// User-supplied onChange replaces the default behavior. Passes
+			// whatever the child emitted (raw value or DOM event), along
+			// with the form's own update handler.
+			onChange(eventOrValue, handleFieldChange);
 			return;
 		}
 
-		handleFieldChange(event);
+		// Wrap non-event emissions (raw string / object / etc.) into a
+		// synthetic event carrying this Field's `name`, so downstream
+		// state updates land under the right key.
+		const isEvent = eventOrValue != null
+			&& typeof eventOrValue === 'object'
+			&& eventOrValue.target != null
+			&& typeof eventOrValue.target === 'object'
+			&& typeof eventOrValue.target.name === 'string';
+
+		handleFieldChange(
+			isEvent
+				? eventOrValue
+				: { target: { name, value: eventOrValue } },
+		);
 	})
 
 	/**
@@ -143,7 +195,7 @@ class Field extends PureComponent {
 				className={this.getClassnames(form)}
 				name={name}
 				onBlur={this.memoGetOnBlurHandler(form.touch, name, onBlur)}
-				onChange={this.memoGetOnChangeHandler(onChange, form.handleFieldChange)}
+				onChange={this.memoGetOnChangeHandler(onChange, form.handleFieldChange, name)}
 				ref={forwardedRef}
 				{...props}
 			>

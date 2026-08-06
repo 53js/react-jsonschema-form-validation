@@ -129,3 +129,78 @@ it('should call onChange handler passed as prop when field value changes', () =>
 	);
 	expect(context.handleFieldChange).not.toHaveBeenCalled();
 });
+
+// Regression: children that emit a raw value instead of a DOM event
+// (e.g. react-phone-number-input's `onChange('+1234567890')`) used to
+// pollute `data` with a bogus key when no user handler was supplied —
+// Form.handleFieldChange treats a string first arg as the field name.
+// The wrapper must now synthesize an event using the Field's `name`.
+it('should wrap a raw string emitted by a non-DOM child into a synthetic event (no user handler)', () => {
+	// eslint-disable-next-line react/prop-types
+	const RawEmitter = ({ onChange }) => (
+		<button type="button" onClick={() => onChange('+1234567890')}>
+			emit
+		</button>
+	);
+	const context = {
+		handleFieldChange: jest.fn(),
+		isFieldInvalid: jest.fn(),
+		isFieldTouched: jest.fn(),
+	};
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
+
+	const field = mount(<Field name="phone" component={RawEmitter} />);
+	field.find('button').simulate('click');
+
+	expect(context.handleFieldChange).toHaveBeenCalledWith({
+		target: { name: 'phone', value: '+1234567890' },
+	});
+});
+
+it('should wrap a raw object emitted by a non-DOM child into a synthetic event (no user handler)', () => {
+	// Simulates a react-select-style component that calls
+	// `onChange({ value, label })`.
+	// eslint-disable-next-line react/prop-types
+	const OptionEmitter = ({ onChange }) => (
+		<button type="button" onClick={() => onChange({ value: 'foo', label: 'Foo' })}>
+			emit
+		</button>
+	);
+	const context = {
+		handleFieldChange: jest.fn(),
+		isFieldInvalid: jest.fn(),
+		isFieldTouched: jest.fn(),
+	};
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
+
+	const field = mount(<Field name="category" component={OptionEmitter} />);
+	field.find('button').simulate('click');
+
+	expect(context.handleFieldChange).toHaveBeenCalledWith({
+		target: { name: 'category', value: { value: 'foo', label: 'Foo' } },
+	});
+});
+
+it('should pass a raw value straight through to a user-supplied onChange without wrapping', () => {
+	// Preserves the 0.6.0 behavior for handler-based flows: the user gets
+	// the raw emission (string / object / whatever the child emitted).
+	// eslint-disable-next-line react/prop-types
+	const RawEmitter = ({ onChange }) => (
+		<button type="button" onClick={() => onChange('+1234567890')}>
+			emit
+		</button>
+	);
+	const context = {
+		handleFieldChange: jest.fn(),
+		isFieldInvalid: jest.fn(),
+		isFieldTouched: jest.fn(),
+	};
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
+
+	const handler = jest.fn();
+	const field = mount(<Field name="phone" component={RawEmitter} onChange={handler} />);
+	field.find('button').simulate('click');
+
+	expect(handler).toHaveBeenCalledWith('+1234567890', context.handleFieldChange);
+	expect(context.handleFieldChange).not.toHaveBeenCalled();
+});

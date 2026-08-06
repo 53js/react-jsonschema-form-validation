@@ -73,6 +73,26 @@ const WrongRefKind = () => {
 };
 
 // ---------------------------------------------------------------------------
+// Field — polymorphic onChange must match component's onChange signature
+// ---------------------------------------------------------------------------
+
+// Component that emits a raw string, not a DOM event.
+type ValueEmitterProps = {
+	value?: string;
+	onChange: (value: string) => void;
+};
+const ValueEmitter = (_p: ValueEmitterProps) => <input />;
+
+const WrongValueEmitterHandler = () => (
+	<Field
+		name="phone"
+		component={ValueEmitter}
+		// @ts-expect-error — event-based handler on a value-emitting component
+		onChange={(event: { target: { value: string } }) => event.target.value}
+	/>
+);
+
+// ---------------------------------------------------------------------------
 // Form — required props
 // ---------------------------------------------------------------------------
 
@@ -130,6 +150,7 @@ const E2 = <FieldError name="x" errorMessages={{ required: 42 }} />;
 export {
 	f1, f2, f3, f4, f5, f6, f7,
 	WrongRefKind,
+	WrongValueEmitterHandler,
 	F1, F2, F3, F4, F5, F6, F7,
 	E1, E2,
 };
