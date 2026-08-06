@@ -10,6 +10,7 @@ exports[`should match snapshot 1`] = `
   <mockConstructor>
     <div
       className="Jfv_FieldError"
+      role="alert"
     />
   </mockConstructor>
 </FieldError>

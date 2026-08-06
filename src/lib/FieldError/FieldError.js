@@ -112,7 +112,7 @@ class FieldError extends PureComponent {
 			if (!fieldErrors.length) return null;
 
 			return (
-				<Component className={this.getClassnames(form)} {...props}>
+				<Component className={this.getClassnames(form)} role="alert" {...props}>
 					{
 						children
 						|| this.getFieldErrorMessage(fieldErrors[0], form)

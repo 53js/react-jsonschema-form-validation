@@ -101,6 +101,26 @@ it('should add class isSubmitted if form is submitted', () => {
 	expect(fieldError.find('.Jfv_FieldError').hasClass('isSubmitted')).toBe(true);
 });
 
+it('should have role="alert" by default so errors are announced to screen readers', () => {
+	const context = {
+		getFieldErrors: jest.fn(() => [{ keyword: 'bad1' }]),
+		isFieldTouched: jest.fn(),
+	};
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
+	const fieldError = mount(<FieldError name="username" />);
+	expect(fieldError.find('.Jfv_FieldError').prop('role')).toBe('alert');
+});
+
+it('should allow to override role via props', () => {
+	const context = {
+		getFieldErrors: jest.fn(() => [{ keyword: 'bad1' }]),
+		isFieldTouched: jest.fn(),
+	};
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
+	const fieldError = mount(<FieldError name="username" role="status" />);
+	expect(fieldError.find('.Jfv_FieldError').prop('role')).toBe('status');
+});
+
 it('should add class isTouched if field is touched', () => {
 	const context = {
 		getFieldErrors: jest.fn(() => [{ keyword: 'bad1' }]),

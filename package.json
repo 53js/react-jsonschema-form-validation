@@ -89,7 +89,7 @@
 		"typescript": "^6.0.3"
 	},
 	"peerDependencies": {
-		"react": ">=15"
+		"react": ">=16.8"
 	},
 	"resolutions": {
 		"dts-bundle-generator/typescript": "^6.0.3"
