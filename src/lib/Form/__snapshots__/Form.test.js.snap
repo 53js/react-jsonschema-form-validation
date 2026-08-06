@@ -1697,9 +1697,8 @@ exports[`should match snapshot 1`] = `
   schema={Object {}}
   scrollOptions={
     Object {
-      "align": "middle",
-      "duration": 900,
-      "offset": 0,
+      "behavior": "smooth",
+      "block": "center",
     }
   }
   scrollToError={true}

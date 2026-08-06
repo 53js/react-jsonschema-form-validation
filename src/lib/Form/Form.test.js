@@ -14,6 +14,27 @@ const testSchema = {
 	],
 };
 
+// jsdom does not implement Element#scrollIntoView: define a mock so the
+// native scrolling in Form.scrollToFirstError() can run and be asserted on.
+const scrollIntoViewMock = jest.fn();
+const originalScrollIntoView = Element.prototype.scrollIntoView;
+
+beforeAll(() => {
+	Element.prototype.scrollIntoView = scrollIntoViewMock;
+});
+
+beforeEach(() => {
+	scrollIntoViewMock.mockClear();
+});
+
+afterAll(() => {
+	if (originalScrollIntoView) {
+		Element.prototype.scrollIntoView = originalScrollIntoView;
+	} else {
+		delete Element.prototype.scrollIntoView;
+	}
+});
+
 it('should match snapshot', () => {
 	const wrapper = mount(<Form onSubmit={() => {}} schema={{}} />);
 	expect(wrapper).toMatchSnapshot();
@@ -317,6 +338,166 @@ describe('Form.scrollToFirstError()', () => {
 			wrapper.find('form').simulate('submit', { preventDefault() {} });
 
 			expect(document.activeElement).toBe(document.getElementById('test-type'));
+		} finally {
+			wrapper.detach();
+			document.body.removeChild(container);
+		}
+	});
+
+	it('should scroll the first invalid field into view with smooth/center defaults', () => {
+		const data = { type: 'invalid-value' };
+		const container = document.createElement('div');
+		document.body.appendChild(container);
+
+		const wrapper = mount(
+			<Form
+				data={data}
+				onSubmit={() => {}}
+				schema={testSchema}
+			>
+				<Field
+					id="test-type"
+					name="type"
+					type="text"
+				/>
+			</Form>,
+			{ attachTo: container },
+		);
+
+		try {
+			wrapper.find('form').simulate('submit', { preventDefault() {} });
+
+			expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+			expect(scrollIntoViewMock).toHaveBeenCalledWith({
+				behavior: 'smooth',
+				block: 'center',
+				inline: 'nearest',
+			});
+			// The element scrolled into view is the first invalid field.
+			expect(scrollIntoViewMock.mock.instances[0]).toBe(document.getElementById('test-type'));
+		} finally {
+			wrapper.detach();
+			document.body.removeChild(container);
+		}
+	});
+
+	it('should map the legacy align option to block and ignore offset/duration/ease', () => {
+		const data = { type: 'invalid-value' };
+		const container = document.createElement('div');
+		document.body.appendChild(container);
+
+		const wrapper = mount(
+			<Form
+				data={data}
+				onSubmit={() => {}}
+				schema={testSchema}
+				scrollOptions={{
+					align: 'top',
+					offset: 120,
+					duration: 900,
+					ease: 'inOutQuad',
+				}}
+			>
+				<Field
+					id="test-type"
+					name="type"
+					type="text"
+				/>
+			</Form>,
+			{ attachTo: container },
+		);
+
+		try {
+			wrapper.find('form').simulate('submit', { preventDefault() {} });
+
+			// `align: 'top'` maps to `block: 'start'`; the unsupported legacy
+			// options are not forwarded to scrollIntoView.
+			expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+			expect(scrollIntoViewMock).toHaveBeenCalledWith({
+				behavior: 'smooth',
+				block: 'start',
+				inline: 'nearest',
+			});
+		} finally {
+			wrapper.detach();
+			document.body.removeChild(container);
+		}
+	});
+
+	it('should forward native scrollIntoView options as-is', () => {
+		const data = { type: 'invalid-value' };
+		const container = document.createElement('div');
+		document.body.appendChild(container);
+
+		const wrapper = mount(
+			<Form
+				data={data}
+				onSubmit={() => {}}
+				schema={testSchema}
+				scrollOptions={{
+					behavior: 'auto',
+					block: 'end',
+					inline: 'start',
+				}}
+			>
+				<Field
+					id="test-type"
+					name="type"
+					type="text"
+				/>
+			</Form>,
+			{ attachTo: container },
+		);
+
+		try {
+			wrapper.find('form').simulate('submit', { preventDefault() {} });
+
+			expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+			expect(scrollIntoViewMock).toHaveBeenCalledWith({
+				behavior: 'auto',
+				block: 'end',
+				inline: 'start',
+			});
+		} finally {
+			wrapper.detach();
+			document.body.removeChild(container);
+		}
+	});
+
+	it('should still move focus without throwing when the element does not implement scrollIntoView', () => {
+		const data = { type: 'invalid-value' };
+		const container = document.createElement('div');
+		document.body.appendChild(container);
+
+		const wrapper = mount(
+			<Form
+				data={data}
+				onSubmit={() => {}}
+				schema={testSchema}
+			>
+				<Field
+					id="test-type"
+					name="type"
+					type="text"
+				/>
+			</Form>,
+			{ attachTo: container },
+		);
+
+		const input = document.getElementById('test-type');
+		// Shadow the prototype mock with an own property: simulates an
+		// environment (e.g. a consumer's jsdom test setup) where
+		// scrollIntoView is not implemented at all.
+		input.scrollIntoView = undefined;
+
+		try {
+			expect(() => {
+				wrapper.find('form').simulate('submit', { preventDefault() {} });
+			}).not.toThrow();
+
+			// Scrolling is skipped, but the a11y focus move still happens.
+			expect(scrollIntoViewMock).not.toHaveBeenCalled();
+			expect(document.activeElement).toBe(input);
 		} finally {
 			wrapper.detach();
 			document.body.removeChild(container);

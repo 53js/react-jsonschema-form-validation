@@ -6,19 +6,32 @@
  *   FormHTMLAttributes,
  *   ComponentProps,
  * } from 'react'
- * @import { DebouncedFunc } from 'lodash'
  * @import { JSONSchema7Definition } from 'json-schema'
  * @import { FormattedError, FormChangeEvent, SafePropsOmit } from './helpers'
  * @import { ErrorMessagesMap } from './Context.types'
+ * @import { ThrottledFunc } from './throttle'
  */
 
 /**
  * Options controlling how the form scrolls to the first invalid field on
- * a failed submit.
+ * a failed submit. Forwarded to the native `element.scrollIntoView()`.
+ *
+ * Native `scrollIntoView` options (`behavior`, `block`, `inline`) are passed
+ * through as-is. The legacy `align` option ('top' | 'middle' | 'bottom'),
+ * inherited from the former `scroll-to-element` dependency, is mapped to
+ * `block` ('start' | 'center' | 'end'); an explicit `block` wins over `align`.
+ *
+ * The legacy `offset`, `duration` and `ease` options are still accepted for
+ * backward compatibility but are IGNORED: the native scrolling API has no
+ * equivalent — animation is delegated to the browser via `behavior: 'smooth'`
+ * (the default).
  *
  * @typedef {{
- *   offset?: number,
+ *   behavior?: ScrollBehavior,
+ *   block?: ScrollLogicalPosition,
+ *   inline?: ScrollLogicalPosition,
  *   align?: 'top' | 'middle' | 'bottom' | (string & {}),
+ *   offset?: number,
  *   duration?: number,
  *   ease?: string,
  * }} JfvScrollOptions
@@ -26,13 +39,12 @@
 
 import Ajv from 'ajv';
 import classnames from 'classnames';
-import throttle from 'lodash.throttle';
 import memoize from 'memoize-one';
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
-import scrollToElement from 'scroll-to-element';
 
 import FormContext from './Context';
+import throttle from './throttle';
 import {
 	createAjv,
 	filterByFieldNameWithWildcard,
@@ -110,11 +122,11 @@ import {
  */
 
 /**
- * Return type of `lodash.throttle` applied to the form validator. The
- * `cancel` / `flush` methods (from lodash's `DebouncedFunc<T>` interface)
- * discard pending runs when the schema changes or the component unmounts.
+ * Return type of the local `throttle` helper applied to the form validator.
+ * Its `cancel` method discards pending runs when the schema changes or the
+ * component unmounts.
  *
- * @typedef {DebouncedFunc<(data: object) => void>} ThrottledValidator
+ * @typedef {ThrottledFunc<(data: object) => void>} ThrottledValidator
  */
 
 /**
@@ -135,6 +147,15 @@ const DEFAULT_AJV = createAjv();
 const DEFAULT_THROTTLE_DURATION = 200;
 /** @type {Record<string, unknown>} */
 const DEFAULT_DATA = {};
+
+// Mapping from the legacy `scroll-to-element` `align` option to the native
+// `scrollIntoView` `block` option.
+/** @type {Record<string, ScrollLogicalPosition>} */
+const ALIGN_TO_BLOCK = {
+	top: 'start',
+	middle: 'center',
+	bottom: 'end',
+};
 
 /** @type {FormState} */
 const initialState = {
@@ -345,7 +366,20 @@ class Form extends PureComponent {
 		// No DOM element may carry the error's name (custom field, error on a
 		// nested object): skip scrolling instead of forwarding `undefined`.
 		if (!element) return;
-		scrollToElement(element, scrollOptions);
+		const {
+			align,
+			behavior = 'smooth',
+			block = (align && ALIGN_TO_BLOCK[align]) || 'center',
+			inline = 'nearest',
+		} = scrollOptions || {};
+		// Legacy `offset`, `duration` and `ease` options (scroll-to-element)
+		// are intentionally ignored: the native API has no equivalent.
+		// Guard: some environments (e.g. consumers' jsdom test setups) do not
+		// implement scrollIntoView — skip scrolling there, but keep the a11y
+		// focus move below.
+		if (typeof element.scrollIntoView === 'function') {
+			element.scrollIntoView({ behavior, block, inline });
+		}
 		// Move keyboard focus to the first invalid field (a11y). The scroll
 		// itself is handled above, hence `preventScroll`.
 		element.focus({ preventScroll: true });
@@ -437,9 +471,8 @@ Form.defaultProps = {
 	onChange: null,
 	scrollToError: true,
 	scrollOptions: {
-		offset: 0,
-		align: 'middle',
-		duration: 900,
+		behavior: 'smooth',
+		block: 'center',
 	},
 	throttleDuration: DEFAULT_THROTTLE_DURATION,
 };
