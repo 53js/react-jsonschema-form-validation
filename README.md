@@ -1,10 +1,8 @@
 # React JSON Schema Form Validation
 
-[![npm](http://img.shields.io/npm/v/react-jsonschema-form-validation.svg?style=flat)](https://npmjs.org/package/react-jsonschema-form-validation "View this project on npm") 
-[![Code Climate coverage](https://img.shields.io/codeclimate/coverage/53js/react-jsonschema-form-validation.svg)](https://codeclimate.com/github/53js/react-jsonschema-form-validation "CodeClimate coverage") 
-[![CircleCI](https://img.shields.io/circleci/build/github/53js/react-jsonschema-form-validation.svg)](https://circleci.com/gh/53js/react-jsonschema-form-validation "CircleCI") 
-[![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/53js/react-jsonschema-form-validation.svg)](https://codeclimate.com/github/53js/react-jsonschema-form-validation "CodeClimate maintainability") 
-[![MIT](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT) 
+[![npm](https://img.shields.io/npm/v/react-jsonschema-form-validation.svg?style=flat)](https://npmjs.org/package/react-jsonschema-form-validation "View this project on npm")
+[![CI](https://github.com/53js/react-jsonschema-form-validation/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/53js/react-jsonschema-form-validation/actions/workflows/ci.yml)
+[![MIT](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
 
 Validate forms with powerful JSON Schema and Ajv !
 
