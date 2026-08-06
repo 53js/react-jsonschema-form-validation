@@ -5,8 +5,8 @@ regressions invisible from inside the repo — return-type incompatibilities,
 missing dependency imports, ambient module leaks, over-loose props, etc.
 
 Deliberately non-executable — the suite only needs to type-check. It's
-run against `@types/react` 16, 17, and 18 (see `check-matrix.sh` for
-local, `.circleci/config.yml` for CI matrix).
+run against `@types/react` 16, 17, 18 and 19 (see `check-matrix.sh` for
+local, `.github/workflows/ci.yml` for CI matrix).
 
 ## Files
 
