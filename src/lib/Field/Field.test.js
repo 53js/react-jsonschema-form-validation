@@ -78,10 +78,24 @@ it('should add class isInvalid if field is invalid', () => {
 	expect(field.find('.Jfv_Field').hasClass('isInvalid')).toBe(true);
 });
 
-it('should set aria-invalid when the field is invalid', () => {
+it('should not expose aria-invalid nor aria-describedby while untouched and unsubmitted, even if invalid', () => {
 	const context = {
 		isFieldInvalid: jest.fn(() => true),
-		isFieldTouched: jest.fn(),
+		isFieldTouched: jest.fn(() => false),
+	};
+
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
+	const field = mount(<Field name="username" />);
+	expect(field.find('input').prop('aria-invalid')).toBe(undefined);
+	expect(field.find('input').getDOMNode().hasAttribute('aria-invalid')).toBe(false);
+	expect(field.find('input').prop('aria-describedby')).toBe(undefined);
+	expect(field.find('input').getDOMNode().hasAttribute('aria-describedby')).toBe(false);
+});
+
+it('should set aria-invalid when the field is invalid and touched', () => {
+	const context = {
+		isFieldInvalid: jest.fn(() => true),
+		isFieldTouched: jest.fn(() => true),
 	};
 
 	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
@@ -90,7 +104,26 @@ it('should set aria-invalid when the field is invalid', () => {
 	expect(field.find('input').getDOMNode().getAttribute('aria-invalid')).toBe('true');
 });
 
-it('should not render aria-invalid when the field is valid', () => {
+it('should set aria-invalid and aria-describedby when the field is invalid and the form submitted', () => {
+	const context = {
+		isFieldInvalid: jest.fn(() => true),
+		isFieldTouched: jest.fn(() => false),
+		isSubmitted: true,
+	};
+
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
+	const field = mount(<Field name="username" />);
+	expect(field.find('input').prop('aria-invalid')).toBe(true);
+	expect(field.find('input').prop('aria-describedby')).toBe('jfv-error-username');
+});
+
+it('should not render aria-invalid when the field is valid, even touched', () => {
+	const context = {
+		isFieldInvalid: jest.fn(() => false),
+		isFieldTouched: jest.fn(() => true),
+	};
+
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	const field = mount(<Field name="username" />);
 	expect(field.find('input').prop('aria-invalid')).toBe(undefined);
 	expect(field.find('input').getDOMNode().hasAttribute('aria-invalid')).toBe(false);
@@ -99,7 +132,7 @@ it('should not render aria-invalid when the field is valid', () => {
 it('should allow to override aria-invalid via props', () => {
 	const context = {
 		isFieldInvalid: jest.fn(() => true),
-		isFieldTouched: jest.fn(),
+		isFieldTouched: jest.fn(() => true),
 	};
 
 	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
@@ -107,12 +140,24 @@ it('should allow to override aria-invalid via props', () => {
 	expect(field.find('input').prop('aria-invalid')).toBe(false);
 });
 
-it('should point aria-describedby at the matching FieldError id by default', () => {
+it('should point aria-describedby at the matching FieldError id once touched', () => {
+	const context = {
+		isFieldInvalid: jest.fn(),
+		isFieldTouched: jest.fn(() => true),
+	};
+
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	const field = mount(<Field name="username" />);
 	expect(field.find('input').prop('aria-describedby')).toBe('jfv-error-username');
 });
 
 it('should allow to override aria-describedby via props', () => {
+	const context = {
+		isFieldInvalid: jest.fn(),
+		isFieldTouched: jest.fn(() => true),
+	};
+
+	FormContext.Consumer.mockImplementationOnce((props) => props.children(context));
 	const field = mount(<Field aria-describedby="my-hint" name="username" />);
 	expect(field.find('input').prop('aria-describedby')).toBe('my-hint');
 });

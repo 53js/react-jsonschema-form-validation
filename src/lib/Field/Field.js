@@ -192,24 +192,30 @@ class Field extends PureComponent {
 		} = this.props;
 
 		// Both aria-* defaults sit BEFORE {...props} so users can override
-		// them. aria-describedby always points to the matching <FieldError>
-		// id: when no error is displayed the id does not exist, and
-		// assistive technologies ignore dangling references — simpler than
-		// rendering it conditionally.
-		return withFormContext((form) => (
-			<Component
-				aria-describedby={getFieldErrorId(name)}
-				aria-invalid={form.isFieldInvalid(name) || undefined}
-				className={this.getClassnames(form)}
-				name={name}
-				onBlur={this.memoGetOnBlurHandler(form.touch, name, onBlur)}
-				onChange={this.memoGetOnChangeHandler(onChange, form.handleFieldChange, name)}
-				ref={forwardedRef}
-				{...props}
-			>
-				{children}
-			</Component>
-		));
+		// them. They are gated on the same reveal condition as the visual
+		// error styling (touched or submitted): before that, the matching
+		// <FieldError> is only hidden via CSS, and display:none elements
+		// directly referenced by aria-describedby ARE included in the
+		// accessible description — without the gate, screen readers would
+		// announce "invalid entry" plus the full error message on focus in
+		// a pristine form, with nothing visible on screen.
+		return withFormContext((form) => {
+			const revealed = form.isFieldTouched(name) || form.isSubmitted;
+			return (
+				<Component
+					aria-describedby={revealed ? getFieldErrorId(name) : undefined}
+					aria-invalid={revealed && form.isFieldInvalid(name) ? true : undefined}
+					className={this.getClassnames(form)}
+					name={name}
+					onBlur={this.memoGetOnBlurHandler(form.touch, name, onBlur)}
+					onChange={this.memoGetOnChangeHandler(onChange, form.handleFieldChange, name)}
+					ref={forwardedRef}
+					{...props}
+				>
+					{children}
+				</Component>
+			);
+		});
 	}
 }
 
