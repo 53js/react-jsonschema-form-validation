@@ -44,7 +44,9 @@
 		"./dist/react-jsonschema-form-validation.css": "./dist/react-jsonschema-form-validation.css",
 		"./dist/react-jsonschema-form-validation.min.css": "./dist/react-jsonschema-form-validation.min.css"
 	},
-	"sideEffects": false,
+	"sideEffects": [
+		"*.css"
+	],
 	"engines": {
 		"node": ">=20"
 	},
