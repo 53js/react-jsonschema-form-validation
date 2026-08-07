@@ -12,4 +12,13 @@ module.exports = {
 		'react/jsx-props-no-spreading': 'off',
 		'react/state-in-constructor': 'off',
 	},
+	overrides: [
+		{
+			// Root build-tool config files import devDependencies by design.
+			files: ['vite.config.js', 'vitest.config.js'],
+			rules: {
+				'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
+			},
+		},
+	],
 };

@@ -1,5 +1,14 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Anchored to the project's own src/ so that node_modules/**/src/*.js
+// never matches.
+const srcJsRE = new RegExp(`^${escapeRegExp(projectRoot)}/src/.*\\.js$`);
 
 // The demo (src/docs) and the published library (src/lib) both use JSX inside
 // plain .js files. Renaming the src/lib files is not an option (they are
@@ -16,7 +25,7 @@ export default defineConfig({
 	],
 	esbuild: {
 		loader: 'jsx',
-		include: /src\/.*\.js$/,
+		include: srcJsRE,
 		// Vite's esbuild plugin excludes .js files by default; the default
 		// exclude wins over include, so it must be reset explicitly.
 		exclude: [],
