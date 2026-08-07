@@ -37,7 +37,10 @@ afterAll(() => {
 
 it('should match snapshot', () => {
 	const wrapper = mount(<Form onSubmit={() => {}} schema={{}} />);
-	expect(wrapper).toMatchSnapshot();
+	// Snapshot the rendered <form> element only: snapshotting the <Form>
+	// component would serialize its props — including the whole AJV instance,
+	// whose internal cache differs between run modes (flaky snapshot).
+	expect(wrapper.find('form')).toMatchSnapshot();
 });
 
 it('should call onSubmit handler when form submitted', () => {
@@ -70,6 +73,100 @@ it('should not call onSubmit handler as the form is not valid', () => {
 
 	wrapper.find('form').simulate('submit', { preventDefault() {} });
 	expect(onSubmit).not.toHaveBeenCalled();
+});
+
+describe('resetOnSubmit prop', () => {
+	it('should reset the form state on a successful submit by default', () => {
+		const onSubmit = jest.fn();
+		const data = { type: 'te' };
+
+		const wrapper = mount(
+			<Form
+				data={data}
+				onSubmit={onSubmit}
+				schema={testSchema}
+			/>,
+		);
+
+		wrapper.instance().touch('type');
+		expect(wrapper.state().touchedFields).toEqual(['type']);
+
+		wrapper.find('form').simulate('submit', { preventDefault() {} });
+
+		expect(onSubmit).toHaveBeenCalled();
+		expect(wrapper.state().touchedFields).toEqual([]);
+		expect(wrapper.state().isSubmitted).toBe(false);
+	});
+
+	it('should keep touched/submitted state on a successful submit when resetOnSubmit is false', () => {
+		const onSubmit = jest.fn();
+		const data = { type: 'te' };
+
+		const wrapper = mount(
+			<Form
+				data={data}
+				onSubmit={onSubmit}
+				resetOnSubmit={false}
+				schema={testSchema}
+			/>,
+		);
+
+		wrapper.instance().touch('type');
+		wrapper.find('form').simulate('submit', { preventDefault() {} });
+
+		// onSubmit still runs, but the visual state survives the submit (so a
+		// later server-side failure does not leave the user with a blank form
+		// state).
+		expect(onSubmit).toHaveBeenCalled();
+		expect(wrapper.state().touchedFields).toEqual(['type']);
+		expect(wrapper.state().isSubmitted).toBe(true);
+	});
+});
+
+describe('Form.reset()', () => {
+	it('should keep fieldErrorsVersion monotonic (the FieldError registry survives a reset)', () => {
+		const wrapper = mount(<Form onSubmit={() => {}} schema={{}} />);
+		const instance = wrapper.instance();
+
+		instance.registerFieldError('key', 'type', 'jfv1_type_err');
+		instance.touch('type');
+		const versionBeforeReset = wrapper.state().fieldErrorsVersion;
+		expect(versionBeforeReset).toBeGreaterThan(0);
+
+		instance.reset();
+
+		// The touched/submitted state is wiped, but the version counter is
+		// preserved: the registry (instance Map) was not emptied by reset().
+		expect(wrapper.state().touchedFields).toEqual([]);
+		expect(wrapper.state().fieldErrorsVersion).toBe(versionBeforeReset);
+	});
+});
+
+describe('context reset()', () => {
+	it('should expose reset through the form context and reset the state when called', () => {
+		const data = { type: 'invalid-value' };
+
+		const wrapper = mount(
+			<Form
+				data={data}
+				onSubmit={() => {}}
+				schema={testSchema}
+			/>,
+		);
+
+		wrapper.instance().touch('type');
+		// Failed submit (invalid data): isSubmitted stays true, nothing resets.
+		wrapper.find('form').simulate('submit', { preventDefault() {} });
+		expect(wrapper.state().touchedFields).toEqual(['type']);
+		expect(wrapper.state().isSubmitted).toBe(true);
+
+		const context = wrapper.instance().getContext();
+		expect(typeof context.reset).toBe('function');
+		context.reset();
+
+		expect(wrapper.state().touchedFields).toEqual([]);
+		expect(wrapper.state().isSubmitted).toBe(false);
+	});
 });
 
 describe('Form.getFieldErrors()', () => {

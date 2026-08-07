@@ -10,6 +10,23 @@ and dependency-only bumps are omitted.
 
 ## [Unreleased]
 
+### Added
+
+- `resetOnSubmit` prop on `<Form>` — set it to `false` to keep the
+  touched/submitted state after a successful submit (useful when the
+  server-side submit can still fail), then call the context's `reset()`
+  once it succeeds. Defaults to `true` (previous behavior, backward
+  compatible).
+- `reset()` exposed through the form context (`useFormContext().reset`) —
+  lets descendants (e.g. a reset button) reset the form state without
+  holding a ref to the `<Form>` instance.
+
+### Fixed
+
+- The `<Form>` snapshot test no longer serializes the internal AJV
+  instance, whose cache state differed between Jest run modes (flaky in
+  single-suite runs). Contributor-facing only; no runtime change.
+
 ## [0.6.0] — 2026-07-27
 
 First release since 0.5.6 (2020). Bundles a feature that had been sitting

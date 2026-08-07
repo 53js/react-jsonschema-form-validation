@@ -68,6 +68,7 @@ import {
  *   errorMessages?: ErrorMessagesMap,
  *   onChange?: ((data: Record<string, unknown>, event?: FormChangeEvent) => void) | null,
  *   onSubmit: (event: FormEvent) => void,
+ *   resetOnSubmit?: boolean,
  *   schema: JSONSchema7Definition,
  *   scrollToError?: boolean,
  *   scrollOptions?: JfvScrollOptions,
@@ -90,6 +91,12 @@ import {
  * - `data`          — current form values, fully controlled by the parent.
  * - `onChange`      — called with the updated data on every field change.
  * - `onSubmit`      — called only when validation passes at submit time.
+ * - `resetOnSubmit` — when `false`, the touched/submitted state is kept after
+ *                     a successful submit (default `true`: the form state is
+ *                     reset before `onSubmit` runs). Companion of the
+ *                     context's `reset()`: set `resetOnSubmit={false}` and
+ *                     call `reset()` from the context when appropriate
+ *                     (e.g. once the server confirms the submission).
  * - `errorMessages` — map of error messages shared by every `<FieldError>`
  *                     descendant (see `ErrorMessagesMap`).
  * - `ajv`           — optional pre-configured AJV instance, useful to plug
@@ -233,6 +240,7 @@ class Form extends PureComponent {
 		isFieldInvalid: this.isFieldInvalid,
 		isTouched: this.isTouched,
 		registerFieldError: this.registerFieldError,
+		reset: this.reset,
 		touch: this.touch,
 		unregisterFieldError: this.unregisterFieldError,
 	}))
@@ -430,8 +438,12 @@ class Form extends PureComponent {
 
 	/** @param {FormEvent} event */
 	handleSubmitSuccess = (event) => {
-		const { onSubmit } = this.props;
-		this.reset();
+		const { onSubmit, resetOnSubmit } = this.props;
+		// Resetting here wipes touchedFields/isSubmitted even when the
+		// consumer's onSubmit later fails (e.g. server error). Opting out via
+		// `resetOnSubmit={false}` preserves the visual state; the default
+		// stays `true` for backward compatibility.
+		if (resetOnSubmit) this.reset();
 		onSubmit(event);
 	}
 
@@ -462,7 +474,13 @@ class Form extends PureComponent {
 		return !!touchedFields.length;
 	}
 
-	reset = () => this.setState(initialState)
+	reset = () => this.setState(({ fieldErrorsVersion }) => ({
+		...initialState,
+		// `initialState` carries `fieldErrorsVersion: 0`, but the <FieldError>
+		// registry (an instance-level Map) survives a reset: keep the counter
+		// monotonic so nothing can ever observe it going backwards.
+		fieldErrorsVersion,
+	}))
 
 	scrollToFirstError = () => {
 		const { scrollOptions } = this.props;
@@ -535,6 +553,7 @@ class Form extends PureComponent {
 			errorMessages,
 			onChange,
 			onSubmit,
+			resetOnSubmit,
 			schema,
 			scrollOptions,
 			scrollToError,
@@ -565,6 +584,7 @@ Form.propTypes = {
 	errorMessages: PropTypes.shape({}),
 	onChange: PropTypes.func,
 	onSubmit: PropTypes.func.isRequired,
+	resetOnSubmit: PropTypes.bool,
 	schema: PropTypes.shape({}).isRequired,
 	scrollToError: PropTypes.bool,
 	scrollOptions: PropTypes.shape({}),
@@ -578,6 +598,7 @@ Form.defaultProps = {
 	data: DEFAULT_DATA,
 	errorMessages: {},
 	onChange: null,
+	resetOnSubmit: true,
 	scrollToError: true,
 	scrollOptions: {
 		behavior: 'smooth',
