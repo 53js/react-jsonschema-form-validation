@@ -8,6 +8,7 @@ const context = {
 	isFieldInvalid: jest.fn(),
 	isFieldTouched: jest.fn(),
 	registerFieldError: jest.fn(),
+	reset: jest.fn(),
 	touch: jest.fn(),
 	unregisterFieldError: jest.fn(),
 };

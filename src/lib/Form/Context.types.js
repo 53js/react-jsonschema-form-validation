@@ -72,6 +72,7 @@
  *   isFieldInvalid: (names: string | string[]) => boolean,
  *   isTouched: () => boolean,
  *   registerFieldError: (key: string, name: string, id: string) => void,
+ *   reset: () => void,
  *   touch: (names: string | string[]) => void,
  *   unregisterFieldError: (key: string) => void,
  * }} FormContextValue
