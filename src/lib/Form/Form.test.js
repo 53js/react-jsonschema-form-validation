@@ -123,6 +123,25 @@ describe('resetOnSubmit prop', () => {
 	});
 });
 
+describe('Form.reset()', () => {
+	it('should keep fieldErrorsVersion monotonic (the FieldError registry survives a reset)', () => {
+		const wrapper = mount(<Form onSubmit={() => {}} schema={{}} />);
+		const instance = wrapper.instance();
+
+		instance.registerFieldError('key', 'type', 'jfv1_type_err');
+		instance.touch('type');
+		const versionBeforeReset = wrapper.state().fieldErrorsVersion;
+		expect(versionBeforeReset).toBeGreaterThan(0);
+
+		instance.reset();
+
+		// The touched/submitted state is wiped, but the version counter is
+		// preserved: the registry (instance Map) was not emptied by reset().
+		expect(wrapper.state().touchedFields).toEqual([]);
+		expect(wrapper.state().fieldErrorsVersion).toBe(versionBeforeReset);
+	});
+});
+
 describe('context reset()', () => {
 	it('should expose reset through the form context and reset the state when called', () => {
 		const data = { type: 'invalid-value' };

@@ -93,7 +93,10 @@ import {
  * - `onSubmit`      — called only when validation passes at submit time.
  * - `resetOnSubmit` — when `false`, the touched/submitted state is kept after
  *                     a successful submit (default `true`: the form state is
- *                     reset before `onSubmit` runs).
+ *                     reset before `onSubmit` runs). Companion of the
+ *                     context's `reset()`: set `resetOnSubmit={false}` and
+ *                     call `reset()` from the context when appropriate
+ *                     (e.g. once the server confirms the submission).
  * - `errorMessages` — map of error messages shared by every `<FieldError>`
  *                     descendant (see `ErrorMessagesMap`).
  * - `ajv`           — optional pre-configured AJV instance, useful to plug
@@ -471,7 +474,13 @@ class Form extends PureComponent {
 		return !!touchedFields.length;
 	}
 
-	reset = () => this.setState(initialState)
+	reset = () => this.setState(({ fieldErrorsVersion }) => ({
+		...initialState,
+		// `initialState` carries `fieldErrorsVersion: 0`, but the <FieldError>
+		// registry (an instance-level Map) survives a reset: keep the counter
+		// monotonic so nothing can ever observe it going backwards.
+		fieldErrorsVersion,
+	}))
 
 	scrollToFirstError = () => {
 		const { scrollOptions } = this.props;

@@ -78,6 +78,27 @@ const _onChangeInfersT = () => (
 );
 
 // ---------------------------------------------------------------------------
+// 1b. resetOnSubmit opt-out + companion context reset()
+// ---------------------------------------------------------------------------
+const KeepStateOnSubmit = () => (
+	<Form
+		schema={schema}
+		onSubmit={() => {}}
+		resetOnSubmit={false}
+	>
+		<Field name="email" />
+	</Form>
+);
+
+const ResetButton = () => {
+	const ctx = useFormContext();
+	return <button type="button" onClick={ctx.reset}>Reset</button>;
+};
+
+// Type-level check: the context's `reset` is a niladic void function.
+type _ResetIsNiladicVoid = Expect<Equal<FormContextValue['reset'], () => void>>;
+
+// ---------------------------------------------------------------------------
 // 2. Polymorphic component (intrinsic textarea) — native props typed
 // ---------------------------------------------------------------------------
 const Textarea = () => (
@@ -319,6 +340,8 @@ type _AllTypesResolve = {
 
 export {
 	Basic,
+	KeepStateOnSubmit,
+	ResetButton,
 	Textarea,
 	Strict,
 	Ref,
@@ -328,4 +351,6 @@ export {
 	Errors,
 	Legacy,
 };
-export type { _CtxNonNull, _ErrMapValuesAreFns, _AllTypesResolve };
+export type {
+	_CtxNonNull, _ErrMapValuesAreFns, _AllTypesResolve, _ResetIsNiladicVoid,
+};
