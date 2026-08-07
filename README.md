@@ -213,8 +213,9 @@ Main context values:
 | --- | --- |
 | `errors` | Current validation errors (`FormattedError[]`, each with a normalized `field` path) |
 | `valid` | `true` when the data matches the schema. Validation is throttled (200 ms by default, `throttleDuration` prop on `<Form>`), so `valid` can lag one beat behind the latest change |
-| `isSubmitted` | `true` once a submit has been attempted (reset after a successful submit) |
+| `isSubmitted` | `true` once a submit has been attempted (reset after a successful submit, unless `resetOnSubmit={false}`) |
 | `touchedFields` | Names of the fields that have been blurred |
+| `reset()` | Resets `errors`, `touchedFields` and `isSubmitted` to their initial state (called automatically after a successful submit unless `resetOnSubmit={false}`) |
 | `getFieldErrors(names)` | Errors for one or several field paths (wildcards like `emails.*` work) |
 | `isFieldInvalid(names)` | `true` if any of the given fields has an error |
 | `isFieldTouched(names)` | `true` if any of the given fields was touched |
