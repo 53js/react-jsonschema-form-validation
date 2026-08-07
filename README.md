@@ -37,6 +37,16 @@ npm install react-jsonschema-form-validation
 yarn add react-jsonschema-form-validation
 ```
 
+Then import the packaged stylesheet — the minimal CSS mentioned above (a red
+color for error messages, easily overridden):
+
+```js
+import 'react-jsonschema-form-validation/dist/react-jsonschema-form-validation.css';
+```
+
+A minified variant is also shipped:
+`react-jsonschema-form-validation/dist/react-jsonschema-form-validation.min.css`.
+
 ## Getting started
 
 Import modules:  
@@ -202,8 +212,8 @@ Main context values:
 | Name | Description |
 | --- | --- |
 | `errors` | Current validation errors (`FormattedError[]`, each with a normalized `field` path) |
-| `valid` | `true` when the data matches the schema |
-| `isSubmitted` | `true` once a submit has been attempted |
+| `valid` | `true` when the data matches the schema. Validation is throttled (200 ms by default, `throttleDuration` prop on `<Form>`), so `valid` can lag one beat behind the latest change |
+| `isSubmitted` | `true` once a submit has been attempted (reset after a successful submit) |
 | `touchedFields` | Names of the fields that have been blurred |
 | `getFieldErrors(names)` | Errors for one or several field paths (wildcards like `emails.*` work) |
 | `isFieldInvalid(names)` | `true` if any of the given fields has an error |
@@ -214,9 +224,9 @@ Main context values:
 | `formId` | Unique id of the `<Form>` instance (see [Accessibility](#accessibility)) |
 | `errorMessages` | The `errorMessages` map passed to `<Form>`, if any |
 
-(The remaining values — `getFieldErrorDescribedBy`, `registerFieldError`,
-`unregisterFieldError` — are internal wiring between `<Field>` and
-`<FieldError>`.)
+(The remaining values — `fieldErrorsVersion`, `getFieldErrorDescribedBy`,
+`registerFieldError`, `unregisterFieldError` — are internal wiring between
+`<Field>` and `<FieldError>`.)
 
 **Disable the submit button while the form is invalid:**
 
