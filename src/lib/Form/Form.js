@@ -115,6 +115,7 @@ import {
  *
  * @typedef {{
  *   errors: FormattedError[],
+ *   fieldErrorsVersion: number,
  *   isSubmitted: boolean,
  *   touchedFields: string[],
  *   valid: boolean,
@@ -160,9 +161,24 @@ const ALIGN_TO_BLOCK = {
 /** @type {FormState} */
 const initialState = {
 	errors: [],
+	// Bumped whenever the <FieldError> id registry changes, so the memoized
+	// context value is regenerated and consumers (e.g. <Field>'s
+	// aria-describedby) re-render. The registry itself lives on the
+	// instance (`fieldErrorRegistry`), not in state.
+	fieldErrorsVersion: 0,
 	isSubmitted: false,
 	touchedFields: [],
 	valid: true,
+};
+
+// Module-level counter giving each <Form> instance a stable, unique id
+// prefix for its <FieldError> ids (React 16.8 compatible — no useId).
+// Prevents IDREF collisions between two forms holding a field of the same
+// name on the same page.
+let nextFormId = 0;
+const createFormId = () => {
+	nextFormId += 1;
+	return `jfv${nextFormId}`;
 };
 
 /** @extends {PureComponent<FormBaseProps, FormState>} */
@@ -172,6 +188,27 @@ class Form extends PureComponent {
 
 	/** @type {ThrottledValidator | undefined} */
 	throttledValidator;
+
+	/** Unique id of this <Form> instance, exposed through the context. */
+	formId = createFormId();
+
+	/**
+	 * Ordered registry of the <FieldError> descendants: instance key →
+	 * { name, id }. A `Map` preserves insertion order, so the IDREF list
+	 * built by `getFieldErrorDescribedBy` follows mount order
+	 * deterministically. Registration happens in the FieldError lifecycles
+	 * (never during render).
+	 *
+	 * @type {Map<string, { name: string, id: string }>}
+	 */
+	fieldErrorRegistry = new Map();
+
+	/**
+	 * Set while this <Form> unmounts: `unregisterFieldError` becomes a
+	 * no-op so unmounting <FieldError> children do not setState on a
+	 * component being destroyed.
+	 */
+	unmounting = false;
 
 	memoGetClassnames = memoize((
 		/** @type {string | undefined} */ className,
@@ -188,12 +225,16 @@ class Form extends PureComponent {
 	) => ({
 		...state,
 		errorMessages,
+		formId: this.formId,
+		getFieldErrorDescribedBy: this.getFieldErrorDescribedBy,
 		getFieldErrors: this.getFieldErrors,
 		handleFieldChange: this.handleFieldChange,
 		isFieldTouched: this.isFieldTouched,
 		isFieldInvalid: this.isFieldInvalid,
 		isTouched: this.isTouched,
+		registerFieldError: this.registerFieldError,
 		touch: this.touch,
+		unregisterFieldError: this.unregisterFieldError,
 	}))
 
 	memoGetValidator = memoize((
@@ -225,6 +266,11 @@ class Form extends PureComponent {
 	})
 
 	componentDidMount() {
+		// Reset the flag raised by componentWillUnmount: React 18 StrictMode
+		// (dev) unmounts then REMOUNTS the same instance (cWU then cDM) —
+		// without this reset, unregisterFieldError would stay a no-op
+		// forever and the registry would accumulate stale entries.
+		this.unmounting = false;
 		this.validate();
 	}
 
@@ -233,7 +279,70 @@ class Form extends PureComponent {
 	}
 
 	componentWillUnmount() {
+		// Parent willUnmount runs BEFORE the children's: every
+		// unregisterFieldError fired by unmounting <FieldError>s after this
+		// point is a no-op (no setState on a component being destroyed).
+		this.unmounting = true;
 		if (this.throttledValidator) this.throttledValidator.cancel();
+	}
+
+	/**
+	 * Space-separated IDREF list of the registered <FieldError> ids for
+	 * `name` (mount order), or `undefined` when none is registered —
+	 * consumed by <Field> as its default `aria-describedby`.
+	 *
+	 * @param {string} name
+	 * @returns {string | undefined}
+	 */
+	getFieldErrorDescribedBy = (name) => {
+		/** @type {string[]} */
+		const ids = [];
+		this.fieldErrorRegistry.forEach((entry) => {
+			// A registered <FieldError> may target a wildcard (`user.*`):
+			// reuse the display-side matching so its id is referenced by
+			// every field it covers (literal names still match exactly).
+			if (filterByFieldNameWithWildcard([{ field: name }], entry.name).length) {
+				ids.push(entry.id);
+			}
+		});
+		const uniqueIds = [...new Set(ids)];
+		return uniqueIds.length ? uniqueIds.join(' ') : undefined;
+	}
+
+	/**
+	 * Registers (or updates) the <FieldError> instance `key` as rendering
+	 * `id` for field `name`. Bails out without setState when the entry is
+	 * already identical (anti-loop guard, paired with the (name, id) guard
+	 * in FieldError.componentDidUpdate). Updating an existing key keeps its
+	 * original position in the Map, so the IDREF order stays the mount
+	 * order.
+	 *
+	 * @param {string} key
+	 * @param {string} name
+	 * @param {string} id
+	 */
+	registerFieldError = (key, name, id) => {
+		const existing = this.fieldErrorRegistry.get(key);
+		if (existing && existing.name === name && existing.id === id) return;
+		this.fieldErrorRegistry.set(key, { name, id });
+		this.setState(({ fieldErrorsVersion }) => ({
+			fieldErrorsVersion: fieldErrorsVersion + 1,
+		}));
+	}
+
+	/**
+	 * Removes the <FieldError> instance `key` from the registry. No-op
+	 * while the whole <Form> unmounts, or when the key is unknown.
+	 *
+	 * @param {string} key
+	 */
+	unregisterFieldError = (key) => {
+		if (this.unmounting) return;
+		if (!this.fieldErrorRegistry.has(key)) return;
+		this.fieldErrorRegistry.delete(key);
+		this.setState(({ fieldErrorsVersion }) => ({
+			fieldErrorsVersion: fieldErrorsVersion + 1,
+		}));
 	}
 
 	getClassnames = () => {

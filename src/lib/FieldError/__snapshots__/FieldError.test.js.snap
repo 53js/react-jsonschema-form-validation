@@ -1,17 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`should match snapshot 1`] = `
-<FieldError
-  className=""
-  component="div"
-  errorMessages={null}
-  name="username"
->
-  <mockConstructor>
-    <div
-      className="Jfv_FieldError"
-      role="alert"
-    />
-  </mockConstructor>
-</FieldError>
+<div
+  className="Jfv_FieldError"
+  id="jfv1-error-username"
+  role="alert"
+/>
 `;

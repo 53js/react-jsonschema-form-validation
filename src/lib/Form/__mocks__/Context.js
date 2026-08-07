@@ -1,11 +1,15 @@
 import React from 'react';
 
 const context = {
+	formId: 'jfv1',
+	getFieldErrorDescribedBy: jest.fn(),
 	getFieldErrors: jest.fn(() => []),
 	handleFieldChange: jest.fn(),
 	isFieldInvalid: jest.fn(),
 	isFieldTouched: jest.fn(),
+	registerFieldError: jest.fn(),
 	touch: jest.fn(),
+	unregisterFieldError: jest.fn(),
 };
 
 const Consumer = jest.fn().mockImplementation((props) => props.children(context));

@@ -1,3 +1,4 @@
+export { default as getFieldErrorId } from './a11y';
 export { default as Field } from './Field';
 export { default as FieldError } from './FieldError';
 export * from './Form';
