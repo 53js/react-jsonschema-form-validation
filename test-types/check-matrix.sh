@@ -3,8 +3,8 @@
 # @types/react major, then restores the default (16) — even on failure or
 # Ctrl-C, thanks to the trap on EXIT.
 #
-# CI runs the equivalent via CircleCI matrix jobs (see .circleci/config.yml)
-# and does NOT rely on this script.
+# CI runs the equivalent via the GitHub Actions `types` matrix (see
+# .github/workflows/ci.yml) and does NOT rely on this script.
 
 set -euo pipefail
 cd "$(dirname "$0")"
