@@ -32,12 +32,13 @@ local, `.github/workflows/ci.yml` for CI matrix).
 
 ```bash
 # From repo root
-yarn test:types    # ~10s, checks the bundle against @types/react 16 + 17 + 18
+yarn test:types    # checks the bundle against @types/react 16 + 17 + 18 + 19
 yarn test          # unit tests + type tests
 ```
 
 ## CI
 
-Each `@types/react` version runs as a **separate CircleCI matrix job**
-(`types-16`, `types-17`, `types-18`) — parallel, no shell mutation,
-extends in one line if a new major lands.
+Each `@types/react` version runs as a **separate GitHub Actions job** through
+the `types` matrix in `.github/workflows/ci.yml` (`types (@types/react 16)` …
+`types (@types/react 19)`) — parallel, no shell mutation, extends in one line
+if a new major lands.

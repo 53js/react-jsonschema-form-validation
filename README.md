@@ -138,6 +138,128 @@ class DemoForm extends PureComponent {
 
 🎵 _That's all folks !_ 
 
+## Accessibility
+
+`<Field>` and `<FieldError>` wire the essential ARIA attributes for you — no
+extra props needed:
+
+- `<FieldError>` renders with `role="alert"` by default, so assistive
+  technologies announce the message as soon as it appears. Pass your own
+  `role` prop to override it.
+- `<Field>` sets `aria-invalid="true"` on the rendered element when the field
+  is invalid **and** revealed (touched, or the form was submitted) — the same
+  condition as the visual error styling, so nothing is announced on a
+  pristine form. It is a plain default: an explicit `aria-invalid` prop wins.
+- `aria-describedby` is wired automatically: each `<FieldError>` registers its
+  `id` in the parent `<Form>`, and the matching `<Field>` references those ids
+  once the field is revealed. The default id is deterministic —
+  `jfv<N>-error-<name>`, where `jfv<N>` identifies the `<Form>` instance so
+  two forms on the same page never collide. A custom `id` prop on
+  `<FieldError>` is followed automatically.
+- An `aria-describedby` you pass to `<Field>` yourself is **merged**, not
+  replaced: your ids come first (e.g. a hint text), the error ids after.
+- On a failed submit, keyboard focus moves to the first invalid field
+  (disable with `scrollToError={false}` on `<Form>`).
+
+```jsx
+<span id="email-hint">We never share your email.</span>
+<Field name="email" aria-describedby="email-hint" value={formData.email} />
+<FieldError name="email" />
+{/* Once the field is touched (or the form submitted) and invalid,
+    the input renders:
+    aria-invalid="true" aria-describedby="email-hint jfv1-error-email" */}
+```
+
+The default error id can be computed with the exported helper (`formId` is
+available on the form context, see [useFormContext](#reading-the-form-state-useformcontext)):
+
+```js
+import { getFieldErrorId } from 'react-jsonschema-form-validation';
+
+getFieldErrorId('jfv1', 'email'); // 'jfv1-error-email'
+```
+
+Known limitations:
+
+- Rendering several `<FieldError>` with the same `name` in one form produces
+  duplicate default ids (invalid HTML). Override `id` on all but one of them.
+- A `name` containing spaces cannot be referenced through the generated
+  `aria-describedby` (it is a space-separated id list). Give such a
+  `<FieldError>` a custom `id`.
+
+## Reading the form state: useFormContext
+
+Everything `<Form>` knows is available to its descendants through the
+`useFormContext()` hook (a legacy render-prop helper, `withFormContext(cb)`,
+also exists). Both throw a descriptive error when used outside a `<Form>`.
+
+```js
+import { useFormContext } from 'react-jsonschema-form-validation';
+```
+
+Main context values:
+
+| Name | Description |
+| --- | --- |
+| `errors` | Current validation errors (`FormattedError[]`, each with a normalized `field` path) |
+| `valid` | `true` when the data matches the schema |
+| `isSubmitted` | `true` once a submit has been attempted |
+| `touchedFields` | Names of the fields that have been blurred |
+| `getFieldErrors(names)` | Errors for one or several field paths (wildcards like `emails.*` work) |
+| `isFieldInvalid(names)` | `true` if any of the given fields has an error |
+| `isFieldTouched(names)` | `true` if any of the given fields was touched |
+| `isTouched()` | `true` if at least one field was touched |
+| `touch(names)` | Marks fields as touched |
+| `handleFieldChange(event)` or `handleFieldChange(name, value)` | Applies a change programmatically |
+| `formId` | Unique id of the `<Form>` instance (see [Accessibility](#accessibility)) |
+| `errorMessages` | The `errorMessages` map passed to `<Form>`, if any |
+
+(The remaining values — `getFieldErrorDescribedBy`, `registerFieldError`,
+`unregisterFieldError` — are internal wiring between `<Field>` and
+`<FieldError>`.)
+
+**Disable the submit button while the form is invalid:**
+
+```jsx
+const SubmitButton = ({ children }) => {
+	const { valid } = useFormContext();
+	return (
+		<button type="submit" disabled={!valid}>
+			{children}
+		</button>
+	);
+};
+```
+
+**Show an error summary after a failed submit:**
+
+```jsx
+const ErrorSummary = () => {
+	const { errors, isSubmitted } = useFormContext();
+	if (!isSubmitted || !errors.length) return null;
+	return (
+		<ul>
+			{errors.map((error) => (
+				<li key={`${error.field}-${error.keyword}`}>
+					{`${error.field}: ${error.message}`}
+				</li>
+			))}
+		</ul>
+	);
+};
+```
+
+Use them anywhere inside the `<Form>`:
+
+```jsx
+<Form data={formData} onChange={handleChange} onSubmit={handleSubmit} schema={demoSchema}>
+	<ErrorSummary />
+	<Field name="email" value={formData.email} />
+	<FieldError name="email" />
+	<SubmitButton>Submit</SubmitButton>
+</Form>
+```
+
 ## TypeScript
 
 The library is fully typed — `.d.ts` declarations ship with the package, no
