@@ -89,12 +89,21 @@ const form = useForm({ schema, data, onChange: setData });
 The two modes are **mutually exclusive at the type level** (discriminated union):
 
 ```ts
+// Validation config — declared in useForm (hook mode) or on <Form> (sugar mode)
+type FormConfigProps<T> = {
+	schema: …; data?: T; onChange?: …; ajv?: …; errorMessages?: …; throttleDuration?: number;
+};
+// Shared by both modes: submit + presentation
+type FormSharedProps<C> = {
+	onSubmit: …; scrollToError?: boolean; scrollOptions?: …;
+} & PresentationProps<C>;
+
 type FormProps<T, C> =
-	| ({ form: FormApi<T> } & { [K in keyof FormBaseProps<T>]?: never } & PresentationProps<C>)  // hook mode
-	| ({ form?: never } & FormBaseProps<T> & PresentationProps<C>);                              // sugar mode
+	| ({ form: FormApi<T> } & { [K in keyof FormConfigProps<T>]?: never } & FormSharedProps<C>)  // hook mode
+	| ({ form?: never } & FormConfigProps<T> & FormSharedProps<C>);                              // sugar mode
 ```
 
-Passing both `form` and `schema` is a compile error, not a precedence rule. A plain union of intersections would **not** deliver that error (TypeScript narrows such unions poorly); the explicit `never` markers on each branch's foreign props are what make the mixed usage fail. Internally `<Form>` always calls `useForm` (hooks cannot be conditional) and ignores the internal instance when `form` is supplied.
+Passing both `form` and `schema` is a compile error, not a precedence rule. A plain union of intersections would **not** deliver that error (TypeScript narrows such unions poorly); the explicit `never` markers on each branch's foreign props are what make the mixed usage fail. Only the *validation-config* props are masked in hook mode — masking all of the base props would also forbid `onSubmit`/`children`/presentation props that hook mode still needs (caught in review). Internally `<Form>` always calls `useForm` (hooks cannot be conditional) and ignores the internal instance when `form` is supplied.
 
 ### Field association — HTML semantics
 
