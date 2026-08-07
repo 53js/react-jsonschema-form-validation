@@ -35,6 +35,21 @@
 	"main": "dist/index.js",
 	"module": "dist/index.js",
 	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./package.json": "./package.json",
+		"./dist/react-jsonschema-form-validation.css": "./dist/react-jsonschema-form-validation.css",
+		"./dist/react-jsonschema-form-validation.min.css": "./dist/react-jsonschema-form-validation.min.css"
+	},
+	"sideEffects": [
+		"*.css"
+	],
+	"engines": {
+		"node": ">=20"
+	},
 	"files": [
 		"dist",
 		"README.md"
