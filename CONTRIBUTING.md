@@ -14,7 +14,7 @@ describes the actual workflow used in this repository — nothing more.
 yarn install
 ```
 
-To play with the demo app while developing (Create React App):
+To play with the demo app while developing (Vite):
 
 ```bash
 yarn start
@@ -26,7 +26,7 @@ Run these before opening a PR — CI runs the runtime suite, a type-check
 matrix equivalent to `yarn test:types`, and the `yarn dist` build.
 
 ```bash
-# Jest unit tests (via react-scripts)
+# Vitest unit tests (React Testing Library, jsdom)
 yarn test:runtime
 
 # Watch mode
@@ -66,7 +66,8 @@ ci: pin actions to SHA
 
 - Target the `master` branch.
 - CI (GitHub Actions, `.github/workflows/ci.yml`) must pass: the `build` job
-  runs `yarn type-check`, `yarn test:runtime` and `yarn dist`; the `types`
-  matrix type-checks the built bundle against `@types/react` 16/17/18/19.
+  runs `yarn lint`, `yarn type-check`, `yarn test:runtime` and `yarn dist`;
+  the `types` matrix type-checks the built bundle against `@types/react`
+  16/17/18/19.
 - Keep PRs focused; add or update tests for behavior changes.
 - Update `CHANGELOG.md` when the change is user-facing.

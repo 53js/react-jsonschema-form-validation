@@ -27,6 +27,7 @@ jobs:
           node-version-file: .nvmrc
           cache: yarn
       - run: yarn install --frozen-lockfile
+      - run: yarn lint
       - run: yarn type-check
       - run: yarn test:runtime
       - run: yarn dist

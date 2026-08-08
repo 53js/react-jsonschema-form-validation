@@ -4,7 +4,7 @@ import ReactSelect from 'react-select';
 
 import './Select.scss';
 
-const Select = props => (
+const Select = (props) => (
 	<ReactSelect
 		classNamePrefix="Jvf_Select"
 		{...props}
