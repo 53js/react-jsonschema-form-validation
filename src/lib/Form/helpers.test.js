@@ -9,6 +9,41 @@ describe('.createAjv()', () => {
 		const ajv = helpers.createAjv();
 		expect(ajv).toBeInstanceOf(Ajv);
 	});
+
+	it('should compile and validate string formats (ajv-formats)', () => {
+		// AJV 8 moved formats out of the core package: without the
+		// `addFormats(ajv)` call in createAjv, `format: 'email'` would be
+		// silently ignored (strict: false) and every value would pass.
+		const ajv = helpers.createAjv();
+		const validate = ajv.compile({ type: 'string', format: 'email' });
+		expect(validate('hugo@53js.fr')).toBe(true);
+		expect(validate('not-an-email')).toBe(false);
+	});
+
+	it('should resolve $data references', () => {
+		// Password-confirmation pattern: `confirm` must equal the sibling
+		// `password` value. Requires the `$data: true` option.
+		const ajv = helpers.createAjv();
+		const validate = ajv.compile({
+			type: 'object',
+			properties: {
+				password: { type: 'string' },
+				confirm: { type: 'string', const: { $data: '1/password' } },
+			},
+		});
+		expect(validate({ password: 's3cret', confirm: 's3cret' })).toBe(true);
+		expect(validate({ password: 's3cret', confirm: 'nope' })).toBe(false);
+	});
+
+	it('should tolerate unknown keywords (strict mode disabled)', () => {
+		// AJV 8 defaults to strict mode, which throws on unknown keywords at
+		// compile time. createAjv keeps AJV 6's permissive behavior.
+		const ajv = helpers.createAjv();
+		expect(() => ajv.compile({
+			type: 'object',
+			someUnknownKeyword: true,
+		})).not.toThrow();
+	});
 });
 
 describe('.empty(value)', () => {

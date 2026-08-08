@@ -3,6 +3,7 @@
  */
 
 import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 import immutable from 'dot-prop-immutable';
 
 /**
@@ -11,11 +12,11 @@ import immutable from 'dot-prop-immutable';
  * `'items.0.label'`). Used everywhere internally to locate the input
  * associated with an error.
  *
- * `instancePath` is declared here because the bundled AJV 6 typings only
- * know `dataPath`; AJV 8 errors carry `instancePath` instead, and
+ * `dataPath` is declared here because the bundled AJV 8 typings only
+ * know `instancePath`; legacy AJV 6 errors carry `dataPath` instead, and
  * {@link formatErrors} accepts both shapes.
  *
- * @typedef {ErrorObject & { instancePath?: string, field: string }} FormattedError
+ * @typedef {ErrorObject & { dataPath?: string, field: string }} FormattedError
  */
 
 /**
@@ -72,23 +73,28 @@ import immutable from 'dot-prop-immutable';
  */
 
 /**
- * Returns a default AJV instance configured for use with the form.
+ * Returns a default AJV (v8) instance configured for use with the form:
+ * - `allErrors` — report every error, not just the first one, so all
+ *   invalid fields can be highlighted at once;
+ * - `$data` — enable `$data` references (e.g. password confirmation via
+ *   `const: { $data: '1/password' }`);
+ * - `strict: false` — keep AJV 6's permissive behavior: schemas with
+ *   unknown keywords or loose patterns compile instead of throwing.
+ *   Pass your own instance via the `ajv` prop for strict mode;
+ * - `ajv-formats` — restore the string formats (`email`, `date`, `uri`…)
+ *   that AJV 8 moved out of the core package.
  *
- * @returns {Ajv.Ajv}
+ * @returns {Ajv}
  */
-export const createAjv = () => new Ajv(
-	// Cast: the `v5` option no longer exists in AJV 6+ typings (it was a
-	// flag from AJV 3/4 that enabled draft-05 features, which became the
-	// default later). The runtime silently ignores unknown options. Kept
-	// here verbatim from the historical code so the lib stays byte-for-byte
-	// equivalent (notably for the Form snapshot test that captures AJV's
-	// internal `_opts` / `_metaOpts` state).
-	/** @type {Ajv.Options} */ ({
+export const createAjv = () => {
+	const ajv = new Ajv({
 		allErrors: true,
-		v5: true,
 		$data: true,
-	}),
-);
+		strict: false,
+	});
+	addFormats(ajv);
+	return ajv;
+};
 
 /**
  * Normalizes empty form values. Returns `undefined` for `''` and `null`
@@ -180,9 +186,10 @@ export const pointerToFieldPath = (pointer) => pointer
  * Accepts both AJV error shapes: when `error.instancePath` is present
  * (a JSON Pointer, AJV 8+) it takes precedence; otherwise the legacy
  * `error.dataPath` (dot/bracket notation, AJV ≤ 6) is used. The library
- * currently bundles AJV 6, so the `dataPath` branch is the active one —
- * the dual-shape support prepares the AJV 8 upgrade and is a building
- * block for a future Standard Schema adapter.
+ * bundles AJV 8, so the `instancePath` branch is the active one — the
+ * `dataPath` fallback is a soft landing for consumers who still inject a
+ * custom AJV 6 instance via the `ajv` prop (scheduled for removal in the
+ * final 1.0) and is a building block for a future Standard Schema adapter.
  *
  * @param {ErrorObject[] | null | undefined} errors
  * @returns {FormattedError[]}

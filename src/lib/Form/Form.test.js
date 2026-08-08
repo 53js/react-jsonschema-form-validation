@@ -1,3 +1,4 @@
+import Ajv2020 from 'ajv/dist/2020';
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react';
 
@@ -700,6 +701,241 @@ describe('Form.touch(fieldName)', () => {
 		expect(ref.current.state.touchedFields).toEqual(['type', 'name']);
 		ref.current.touch('description');
 		expect(ref.current.state.touchedFields).toEqual(['type', 'name', 'description']);
+	});
+});
+
+describe('AJV 8 integration', () => {
+	it('should validate $data references through the form (password confirmation)', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				password: { type: 'string' },
+				confirm: { type: 'string', const: { $data: '1/password' } },
+			},
+		};
+
+		let ref = React.createRef();
+		render(
+			<Form
+				data={{ password: 's3cret', confirm: 'nope' }}
+				onSubmit={() => {}}
+				ref={ref}
+				schema={schema}
+			/>,
+		);
+
+		const errors = ref.current.getFieldErrors('confirm');
+		expect(errors.length).toStrictEqual(1);
+		expect(errors[0].keyword).toStrictEqual('const');
+
+		ref = React.createRef();
+		render(
+			<Form
+				data={{ password: 's3cret', confirm: 's3cret' }}
+				onSubmit={() => {}}
+				ref={ref}
+				schema={schema}
+			/>,
+		);
+		expect(ref.current.state.valid).toBe(true);
+	});
+
+	it('should report a format error for an invalid email (ajv-formats end-to-end)', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				email: { type: 'string', format: 'email' },
+			},
+		};
+
+		const ref = React.createRef();
+		render(
+			<Form
+				data={{ email: 'not-an-email' }}
+				onSubmit={() => {}}
+				ref={ref}
+				schema={schema}
+			/>,
+		);
+
+		const errors = ref.current.getFieldErrors('email');
+		expect(errors.length).toStrictEqual(1);
+		expect(errors[0].keyword).toStrictEqual('format');
+	});
+
+	it('should map a nested required error to the missing property path', () => {
+		// AJV 8 reports { instancePath: '/user', params: { missingProperty:
+		// 'email' } }: the formatted field must be 'user.email' so that
+		// <FieldError name="user.email"> and the a11y focus/scroll target
+		// the right input.
+		const schema = {
+			type: 'object',
+			properties: {
+				user: {
+					type: 'object',
+					properties: {
+						email: { type: 'string' },
+					},
+					required: ['email'],
+				},
+			},
+		};
+
+		const ref = React.createRef();
+		render(
+			<Form
+				data={{ user: {} }}
+				onSubmit={() => {}}
+				ref={ref}
+				schema={schema}
+			/>,
+		);
+
+		const errors = ref.current.getFieldErrors('user.email');
+		expect(errors.length).toStrictEqual(1);
+		expect(errors[0].keyword).toStrictEqual('required');
+	});
+
+	it('should map multi-index array errors to dotted field paths', () => {
+		// Real AJV 8 validation producing instancePath '/items/0/tags/1',
+		// which must land on the field path 'items.0.tags.1'.
+		const schema = {
+			type: 'object',
+			properties: {
+				items: {
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							tags: {
+								type: 'array',
+								items: { type: 'string', minLength: 3 },
+							},
+						},
+					},
+				},
+			},
+		};
+
+		const ref = React.createRef();
+		render(
+			<Form
+				data={{ items: [{ tags: ['okay', 'x'] }] }}
+				onSubmit={() => {}}
+				ref={ref}
+				schema={schema}
+			/>,
+		);
+
+		const errors = ref.current.getFieldErrors('items.0.tags.1');
+		expect(errors.length).toStrictEqual(1);
+		expect(errors[0].keyword).toStrictEqual('minLength');
+	});
+
+	it('should accept a duck-typed validator through the ajv prop (no PropTypes error)', () => {
+		// The `ajv` prop is duck-typed on `compile()` instead of
+		// `instanceOf(Ajv)`, so alternative validator classes (Ajv2019,
+		// Ajv2020…) are accepted. This fake instance also proves the fake's
+		// compile() is really what runs.
+		const compile = vi.fn(() => {
+			const validate = () => true;
+			validate.errors = null;
+			return validate;
+		});
+		const fakeAjv = { compile };
+
+		const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		const ref = React.createRef();
+		render(
+			<Form
+				ajv={fakeAjv}
+				data={{ anything: 'goes' }}
+				onSubmit={() => {}}
+				ref={ref}
+				schema={{ type: 'object' }}
+			/>,
+		);
+
+		expect(compile).toHaveBeenCalledWith({ type: 'object' });
+		expect(ref.current.state.valid).toBe(true);
+		// No "Invalid prop `ajv`" PropTypes error was logged.
+		expect(consoleErrorSpy).not.toHaveBeenCalled();
+		consoleErrorSpy.mockRestore();
+	});
+
+	it('should reject a non-validator object passed as the ajv prop (PropTypes error)', () => {
+		// The custom validator is exercised directly: PropTypes only warns,
+		// so actually rendering with a broken instance would go on to crash
+		// in `ajv.compile()` anyway. Reading propTypes is safe here — the
+		// published build no longer strips them (see CHANGELOG).
+		// eslint-disable-next-line react/forbid-foreign-prop-types
+		const validator = Form.propTypes.ajv;
+
+		const error = validator({ ajv: { notCompile: true } }, 'ajv', 'Form');
+		expect(error).toBeInstanceOf(Error);
+		expect(error.message).toContain(
+			'expected an AJV-like instance exposing a `compile()` function',
+		);
+		// The message names the received type to speed up debugging.
+		expect(error.message).toContain('received object');
+		expect(validator({ ajv: 42 }, 'ajv', 'Form').message).toContain('received number');
+
+		// The prop stays optional…
+		expect(validator({}, 'ajv', 'Form')).toBeNull();
+		// …and any compile-capable object passes.
+		expect(validator({ ajv: { compile: () => {} } }, 'ajv', 'Form')).toBeNull();
+	});
+
+	it('should log the PropTypes error through console.error when rendering with a broken ajv prop', () => {
+		// End-to-end PropTypes proof: the warning is logged during render,
+		// BEFORE the mount-time validation crashes in `ajv.compile()` — the
+		// crash is expected (PropTypes only warns) and asserted as such.
+		const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+		expect(() => {
+			render(
+				<Form
+					ajv={42}
+					onSubmit={() => {}}
+					schema={{}}
+				/>,
+			);
+		}).toThrow();
+
+		expect(consoleErrorSpy).toHaveBeenCalledWith(
+			expect.stringContaining('expected an AJV-like instance exposing a `compile()` function, received number'),
+		);
+		consoleErrorSpy.mockRestore();
+	});
+
+	it('should work with a real draft 2020-12 Ajv instance passed through the ajv prop', () => {
+		const ajv2020 = new Ajv2020({ allErrors: true });
+		const schema = {
+			type: 'object',
+			properties: {
+				// prefixItems is a 2020-12 keyword: the default draft-07
+				// instance would not apply it.
+				pair: {
+					type: 'array',
+					prefixItems: [{ type: 'string' }, { type: 'number' }],
+				},
+			},
+		};
+
+		const ref = React.createRef();
+		render(
+			<Form
+				ajv={ajv2020}
+				data={{ pair: ['label', 'not-a-number'] }}
+				onSubmit={() => {}}
+				ref={ref}
+				schema={schema}
+			/>,
+		);
+
+		const errors = ref.current.getFieldErrors('pair.1');
+		expect(errors.length).toStrictEqual(1);
+		expect(errors[0].keyword).toStrictEqual('type');
 	});
 });
 

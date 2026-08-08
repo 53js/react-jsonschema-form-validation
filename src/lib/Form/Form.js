@@ -6,6 +6,7 @@
  *   FormHTMLAttributes,
  *   ComponentProps,
  * } from 'react'
+ * @import Ajv from 'ajv'
  * @import { JSONSchema7Definition } from 'json-schema'
  * @import { FormattedError, FormChangeEvent, SafePropsOmit } from './helpers'
  * @import { ErrorMessagesMap } from './Context.types'
@@ -37,7 +38,6 @@
  * }} JfvScrollOptions
  */
 
-import Ajv from 'ajv';
 import classnames from 'classnames';
 import memoize from 'memoize-one';
 import React, { PureComponent } from 'react';
@@ -59,7 +59,7 @@ import {
  * with the props of the underlying component `C` and typed data `T`.
  *
  * @typedef {{
- *   ajv?: Ajv.Ajv,
+ *   ajv?: Ajv,
  *   children?: ReactNode,
  *   className?: string,
  *   component?: ElementType,
@@ -246,7 +246,7 @@ class Form extends PureComponent {
 	}))
 
 	memoGetValidator = memoize((
-		/** @type {Ajv.Ajv} */ ajv,
+		/** @type {Ajv} */ ajv,
 		/** @type {JSONSchema7Definition} */ schema,
 		/** @type {number} */ throttleDuration,
 	) => {
@@ -575,7 +575,38 @@ class Form extends PureComponent {
 }
 
 Form.propTypes = {
-	ajv: PropTypes.instanceOf(Ajv),
+	// Duck-typed on purpose (instead of `PropTypes.instanceOf(Ajv)`): any
+	// object exposing a `compile(schema)` function is accepted, so consumers
+	// can pass an `Ajv2019`/`Ajv2020` instance — or any compatible validator —
+	// without being tied to the exact Ajv class this library bundles.
+	ajv: (
+		/** @type {Record<string, unknown>} */ props,
+		/** @type {string} */ propName,
+		/** @type {string} */ componentName,
+	) => {
+		// A propTypes validator receives the whole props bag positionally —
+		// the indexed access is the documented PropTypes contract, not a
+		// component reading its own props.
+		// eslint-disable-next-line react/destructuring-assignment
+		const value = /** @type {{ compile?: unknown } | null | undefined} */ (props[propName]);
+		if (value == null) return null;
+		if (typeof value.compile !== 'function') {
+			// `String#concat` instead of a template literal: escaped backticks
+			// around `${...}` crash the template-curly-spacing rule under
+			// babel-eslint 10 / ESLint 6 (same quirk as in vite.lib.config.js).
+			return new Error(
+				'Invalid prop `'.concat(
+					propName,
+					'` supplied to `',
+					componentName,
+					'`: expected an AJV-like instance exposing a `compile()` function, received ',
+					typeof value,
+					'.',
+				),
+			);
+		}
+		return null;
+	},
 	children: PropTypes.node,
 	className: PropTypes.string,
 	component: PropTypes.elementType,
