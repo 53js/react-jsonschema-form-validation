@@ -6,8 +6,9 @@ import { defineConfig } from 'vite';
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // Anchored to the project's own src/ so that node_modules/**/src/*.js
-// never matches.
-const srcJsRE = new RegExp(`^${escapeRegExp(projectRoot)}/src/.*\\.js$`);
+// never matches. Vite module ids always use forward slashes, even on
+// Windows: normalize the root the same way before building the regex.
+const srcJsRE = new RegExp(`^${escapeRegExp(projectRoot.split(path.sep).join('/'))}/src/.*\\.js$`);
 
 // Library build (npm `dist`), separate from vite.config.js which builds the
 // demo site. Replaces the previous Babel CLI build (`babel src/lib --out-dir

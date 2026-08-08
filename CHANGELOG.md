@@ -21,15 +21,18 @@ and dependency-only bumps are omitted.
   - `@babel/runtime` is no longer a dependency: Babel helper imports
     are gone from the published files (smaller install, ~56% smaller
     JS in `dist/`).
-  - The `main` field was removed (it pointed to an ES module that
-    `require()` could never load in older Node anyway); the `exports`
-    map is the single source of truth, with `module` kept as a
-    fallback for older bundlers. On Node >= 22.7 the package now loads
-    directly (both `import` and `require`) thanks to Node's module
-    syntax detection.
+  - `main` still points to `dist/index.js`, an ES module — exactly as
+    before this change (non-regression): it is kept so that resolvers
+    that read neither `exports` nor `module` (Jest <= 27, older Metro)
+    can still resolve the package. The `exports` map remains the
+    source of truth. On Node >= 22.7 the package can be `import`ed
+    directly (module syntax detection), and `require()` works on
+    Node >= 22.12 / 20.19 (`require(esm)`).
   - `propTypes` are no longer stripped from the published files:
-    consumers get prop validation warnings in development builds
-    (removed automatically by bundlers in production as before).
+    consumers get prop validation warnings in development builds. In
+    production React turns them into no-ops, but they remain in the
+    consumer's bundle unless a strip plugin (e.g.
+    babel-plugin-transform-react-remove-prop-types) is used.
   - The internal barrel files (`dist/Field/index.js`,
     `dist/FieldError/index.js`, `dist/Form/index.js`) are no longer
     emitted; they were never reachable through the `exports` map.
