@@ -87,6 +87,20 @@ describe('.formatErrors(errors)', () => {
 		expect(helpers.formatErrors(errors)[0].field).toStrictEqual('items.0.tags.1');
 	});
 
+	it('should treat an error with neither instancePath nor dataPath as pointing at the root', () => {
+		// Degenerate input (no AJV version produces it), but it must not
+		// crash: the missing path is treated as the root path ''.
+		const errors = [{
+			keyword: 'required',
+			params: {
+				missingProperty: 'x',
+			},
+		}];
+
+		expect(() => helpers.formatErrors(errors)).not.toThrow();
+		expect(helpers.formatErrors(errors)[0].field).toStrictEqual('x');
+	});
+
 	// AJV 8 shape: `instancePath` is a JSON Pointer (RFC 6901). The cases
 	// below mirror the `dataPath` set above, proving both shapes produce
 	// the same `field` values.
@@ -171,6 +185,20 @@ describe('.pointerToFieldPath(pointer)', () => {
 
 	it('should map the root pointer to the empty string', () => {
 		expect(helpers.pointerToFieldPath('')).toStrictEqual('');
+	});
+
+	it('should map the lone-slash pointer to the empty string', () => {
+		// '/' is the pointer to the property whose key is the empty string
+		// (RFC 6901). Its field path collides with the root pointer '' —
+		// a documented, accepted limitation of the dot-path representation
+		// (an empty-string key is not addressable in dot notation anyway).
+		expect(helpers.pointerToFieldPath('/')).toStrictEqual('');
+	});
+
+	it('should preserve empty segments in the middle of a pointer', () => {
+		// '/a//b' addresses data.a[''].b — empty segments are kept, which
+		// surfaces as consecutive dots in the field path.
+		expect(helpers.pointerToFieldPath('/a//b')).toStrictEqual('a..b');
 	});
 
 	it('should decode RFC 6901 escape sequences', () => {

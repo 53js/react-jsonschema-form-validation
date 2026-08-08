@@ -44,8 +44,9 @@ and dependency-only bumps are omitted.
   decoding) in addition to the AJV 6 `dataPath` used by the bundled
   validator. Behavior with the bundled AJV 6 is strictly unchanged;
   this prepares the AJV 8 upgrade and custom validators that emit
-  JSON Pointer paths. A `pointerToFieldPath(pointer)` helper is
-  exported alongside.
+  JSON Pointer paths. The conversion lives in a new internal
+  `pointerToFieldPath(pointer)` helper (groundwork for AJV 8; not
+  part of the public API).
 - `resetOnSubmit` prop on `<Form>` — set it to `false` to keep the
   touched/submitted state after a successful submit (useful when the
   server-side submit can still fail), then call the context's `reset()`

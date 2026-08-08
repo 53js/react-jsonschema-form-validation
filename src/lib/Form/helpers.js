@@ -194,8 +194,10 @@ export const formatErrors = (errors) => (errors || []).map((error) => {
 		// AJV 8 shape: JSON Pointer.
 		formatted.field = pointerToFieldPath(formatted.instancePath);
 	} else {
-		// AJV 6 shape: dot notation with bracketed array indexes.
-		formatted.field = formatted.dataPath
+		// AJV 6 shape: dot notation with bracketed array indexes. A
+		// degenerate error carrying neither `instancePath` nor `dataPath`
+		// is treated as pointing at the root instead of crashing.
+		formatted.field = (formatted.dataPath ?? '')
 			.replace(/^\./, '')
 			.replace(/\[([0-9]+)\]/g, '.$1');
 	}
