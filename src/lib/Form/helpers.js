@@ -3,7 +3,8 @@
  */
 
 import Ajv from 'ajv';
-import immutable from 'dot-prop-immutable';
+
+import setIn from './setIn';
 
 /**
  * An AJV `ErrorObject` enriched with a `field` property — a normalized,
@@ -301,9 +302,10 @@ export const getFieldValue = (target) => {
 
 /**
  * Returns a copy of `data` with the field paths described by `events` updated
- * to their new values. Uses `dot-prop-immutable` so that only the modified
- * branches of the object tree get new references; untouched siblings keep
- * their identity (useful for `React.memo` / `PureComponent`).
+ * to their new values. Uses {@link setIn} (a local replacement for
+ * `dot-prop-immutable.set`) so that only the modified branches of the object
+ * tree get new references; untouched siblings keep their identity (useful
+ * for `React.memo` / `PureComponent`).
  *
  * @template {object} T
  * @param {T} data
@@ -315,7 +317,7 @@ export const updateDataFromEvents = (data, events) => {
 	const eventsArray = Array.isArray(events) ? events : [events];
 
 	eventsArray.forEach((event) => {
-		data = immutable.set(data, event.target.name, getFieldValue(event.target));
+		data = setIn(data, event.target.name, getFieldValue(event.target));
 	});
 
 	return data;
