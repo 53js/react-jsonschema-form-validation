@@ -73,7 +73,7 @@
 		"@types/react": "^16.14.70",
 		"@types/react-dom": "^16.9.25",
 		"@vitejs/plugin-react": "^4.3.0",
-		"@vitest/coverage-istanbul": "^2.1.9",
+		"@vitest/coverage-istanbul": "^3.2.6",
 		"babel-eslint": "10.0.3",
 		"bootstrap": "^4.4.1",
 		"clean-css-cli": "^4.3.0",
@@ -95,14 +95,15 @@
 		"reactstrap": "^8.4.1",
 		"sass": "^1.101.7",
 		"typescript": "^6.0.3",
-		"vite": "^5.4.0",
-		"vitest": "^2.1.9"
+		"vite": "^6.4.3",
+		"vitest": "^3.2.6"
 	},
 	"peerDependencies": {
 		"react": ">=16.8"
 	},
 	"resolutions": {
-		"dts-bundle-generator/typescript": "^6.0.3"
+		"dts-bundle-generator/typescript": "^6.0.3",
+		"**/vite": "^6.4.3"
 	},
 	"keywords": [
 		"JSON",
