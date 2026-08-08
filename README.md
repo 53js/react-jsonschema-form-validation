@@ -317,6 +317,11 @@ required. Otherwise:
 - **The default instance keeps AJV 6's permissive behavior** — it is created
   with `new Ajv({ allErrors: true, $data: true, strict: false })`:
   schemas containing unknown keywords still compile instead of throwing.
+  Note that this loses one AJV 6 safety net: AJV 6 threw at compile time on
+  an unknown format name (a typo like `format: 'emial'` crashed
+  immediately), while AJV 8 with `strict: false` only logs a warning and
+  ignores the format — every value then passes silently, so double-check
+  your format names (or use a strict instance, below).
   To opt into AJV 8 strict mode — or another JSON Schema draft — pass your
   own instance through the `ajv` prop. Any object exposing a
   `compile(schema)` function is accepted (`Ajv`, `Ajv2019`, `Ajv2020`…):

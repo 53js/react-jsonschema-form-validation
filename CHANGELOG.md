@@ -31,7 +31,12 @@ and dependency-only bumps are omitted.
     must call `addFormats(ajv)` themselves if they rely on formats.
   - The default instance is created with `strict: false`, keeping AJV 6's
     permissive behavior (unknown keywords compile instead of throwing).
-    Pass your own instance via the `ajv` prop for strict mode.
+    One safety net is lost in the process: AJV 6 threw at compile time on
+    an unknown **format name** (a typo like `format: 'emial'` crashed
+    immediately), whereas AJV 8 with `strict: false` only logs a warning
+    and ignores the format — every value then passes silently. Pass your
+    own strict-mode instance via the `ajv` prop to restore
+    compile-time typo detection.
   - A custom instance passed through the `ajv` prop should now be AJV 8+.
     AJV 6 instances keep working for the transition thanks to the
     `dataPath` fallback, which is deprecated and will be removed in the

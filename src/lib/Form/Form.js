@@ -599,7 +599,9 @@ Form.propTypes = {
 					propName,
 					'` supplied to `',
 					componentName,
-					'`: expected an AJV-like instance exposing a `compile()` function.',
+					'`: expected an AJV-like instance exposing a `compile()` function, received ',
+					typeof value,
+					'.',
 				),
 			);
 		}

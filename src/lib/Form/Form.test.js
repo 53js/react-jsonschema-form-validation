@@ -876,11 +876,36 @@ describe('AJV 8 integration', () => {
 		expect(error.message).toContain(
 			'expected an AJV-like instance exposing a `compile()` function',
 		);
+		// The message names the received type to speed up debugging.
+		expect(error.message).toContain('received object');
+		expect(validator({ ajv: 42 }, 'ajv', 'Form').message).toContain('received number');
 
 		// The prop stays optional…
 		expect(validator({}, 'ajv', 'Form')).toBeNull();
 		// …and any compile-capable object passes.
 		expect(validator({ ajv: { compile: () => {} } }, 'ajv', 'Form')).toBeNull();
+	});
+
+	it('should log the PropTypes error through console.error when rendering with a broken ajv prop', () => {
+		// End-to-end PropTypes proof: the warning is logged during render,
+		// BEFORE the mount-time validation crashes in `ajv.compile()` — the
+		// crash is expected (PropTypes only warns) and asserted as such.
+		const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+		expect(() => {
+			render(
+				<Form
+					ajv={42}
+					onSubmit={() => {}}
+					schema={{}}
+				/>,
+			);
+		}).toThrow();
+
+		expect(consoleErrorSpy).toHaveBeenCalledWith(
+			expect.stringContaining('expected an AJV-like instance exposing a `compile()` function, received number'),
+		);
+		consoleErrorSpy.mockRestore();
 	});
 
 	it('should work with a real draft 2020-12 Ajv instance passed through the ajv prop', () => {
