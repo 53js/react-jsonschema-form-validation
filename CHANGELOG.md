@@ -36,6 +36,16 @@ and dependency-only bumps are omitted.
   - The internal barrel files (`dist/Field/index.js`,
     `dist/FieldError/index.js`, `dist/Form/index.js`) are no longer
     emitted; they were never reachable through the `exports` map.
+- `<Form>` no longer dispatches a validation pass on re-renders where
+  none of the validation inputs (`data`, `schema`, `ajv`,
+  `throttleDuration`) changed by reference — e.g. the internal state
+  updates caused by touching a field, submitting, resetting, or the
+  `<FieldError>` id registry. Observable behavior is unchanged: the
+  memoized validator already short-circuited the actual AJV work on an
+  identical `data` reference (and it is kept as defense in depth); the
+  guard removes the redundant per-update dispatch. Validation still
+  runs on mount and whenever `data`, `schema`, `ajv` or
+  `throttleDuration` changes.
 
 ### Added
 
