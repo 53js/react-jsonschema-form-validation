@@ -429,7 +429,7 @@ class Form extends PureComponent {
 	handleSubmitError = () => {
 		const { scrollToError } = this.props;
 		const { errors } = this.state;
-		/* istanbul ignore next */
+		/* istanbul ignore next -- @preserve */
 		if (typeof process !== 'undefined' && process?.env?.REACT_APP_JFV_DEBUG === 'true') {
 			console.log(errors); // eslint-disable-line no-console
 		}

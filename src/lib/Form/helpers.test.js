@@ -1,6 +1,6 @@
 import Ajv from 'ajv';
 import React from 'react';
-import { mount } from 'enzyme';
+import { fireEvent, render } from '@testing-library/react';
 
 import * as helpers from './helpers';
 
@@ -142,21 +142,21 @@ describe('.filterByFieldNameWithWildcard(fields, fieldName)', () => {
 
 describe('.getInputCheckboxValue(target)', () => {
 	it('should return a boolean depending on checked attribute', () => {
-		const input = mount(<input name="field" type="checkbox" />);
-		input.instance().checked = true;
-		const checkbox = input.getDOMNode();
+		const { container } = render(<input name="field" type="checkbox" />);
+		const checkbox = container.querySelector('input');
+		checkbox.checked = true;
 		expect(helpers.getInputCheckboxValue(checkbox)).toBe(true);
-		input.instance().checked = false;
+		checkbox.checked = false;
 		expect(helpers.getInputCheckboxValue(checkbox)).toBe(false);
-		input.instance().checked = undefined;
+		checkbox.checked = undefined;
 		expect(helpers.getInputCheckboxValue(checkbox)).toBe(false);
 	});
 });
 
 describe('.getInputFileValue(target)', () => {
 	it('should return a File if a file is selected and multiple attribute is false', () => {
-		const input = mount(<input name="field" type="file" />);
-		const file = input.getDOMNode();
+		const { container } = render(<input name="field" type="file" />);
+		const file = container.querySelector('input');
 		Object.defineProperty(file, 'files', { value: ['file1'], configurable: true });
 		Object.defineProperty(file, 'value', { value: 'path/file1' });
 		expect(helpers.getInputFileValue(file)).toBe('file1');
@@ -165,8 +165,8 @@ describe('.getInputFileValue(target)', () => {
 	});
 
 	it('should return a list of File if a file is selected and multiple attribute is true', () => {
-		const input = mount(<input name="field" type="file" />);
-		const file = input.getDOMNode();
+		const { container } = render(<input name="field" type="file" />);
+		const file = container.querySelector('input');
 		file.multiple = true;
 		Object.defineProperty(file, 'files', { value: ['file1'], configurable: true });
 		Object.defineProperty(file, 'value', { value: 'path/file1' });
@@ -176,8 +176,8 @@ describe('.getInputFileValue(target)', () => {
 	});
 
 	it('should an empty string if no file is selected', () => {
-		const input = mount(<input name="field" type="file" />);
-		const file = input.getDOMNode();
+		const { container } = render(<input name="field" type="file" />);
+		const file = container.querySelector('input');
 		expect(helpers.getInputFileValue(file)).toBe('');
 		file.multiple = true;
 		expect(helpers.getInputFileValue(file)).toBe('');
@@ -186,8 +186,8 @@ describe('.getInputFileValue(target)', () => {
 
 describe('.getInputNumberValue(target)', () => {
 	it('should return a Number if input is not empty', () => {
-		const input = mount(<input name="field" type="number" />);
-		const number = input.getDOMNode();
+		const { container } = render(<input name="field" type="number" />);
+		const number = container.querySelector('input');
 		number.value = 3;
 		expect(helpers.getInputNumberValue(number)).toBe(3);
 		number.value = Math.PI;
@@ -201,106 +201,106 @@ describe('.getInputNumberValue(target)', () => {
 	});
 
 	it('should an empty string if input is empty', () => {
-		const input = mount(<input name="field" type="number" />);
-		const number = input.getDOMNode();
+		const { container } = render(<input name="field" type="number" />);
+		const number = container.querySelector('input');
 		expect(helpers.getInputNumberValue(number)).toBe('');
 	});
 });
 
 describe('.getFieldValue(target)', () => {
-	it('should return string value for text input type text', (done) => {
-		const handleChange = ({ target }) => {
+	// The `expect`s live inside the change handlers (as in the original,
+	// `done`-based tests — Vitest does not support the `done` callback);
+	// asserting the handler ran replaces the `done()` guarantee.
+	it('should return string value for text input type text', () => {
+		const handleChange = vi.fn(({ target }) => {
 			const value = helpers.getFieldValue(target);
 			expect(value).toBe('newvalue');
-			done();
-		};
-		const input = mount(<input name="field" type="text" onChange={handleChange} />);
-		input.getDOMNode().value = 'newvalue';
-		input.simulate('change');
+		});
+		const { container } = render(<input name="field" type="text" onChange={handleChange} />);
+		fireEvent.change(container.querySelector('input'), { target: { value: 'newvalue' } });
+		expect(handleChange).toHaveBeenCalled();
 	});
 
-	it('should return a string value for textarea', (done) => {
-		const handleChange = (event) => {
+	it('should return a string value for textarea', () => {
+		const handleChange = vi.fn((event) => {
 			const { target } = event;
 			const value = helpers.getFieldValue(target);
 			expect(value).toBe('newvalue');
-			done();
-		};
-		const input = mount(<textarea name="field" type="text" onChange={handleChange} />);
-		input.instance().value = 'newvalue';
-		input.simulate('change');
+		});
+		const { container } = render(<textarea name="field" type="text" onChange={handleChange} />);
+		fireEvent.change(container.querySelector('textarea'), { target: { value: 'newvalue' } });
+		expect(handleChange).toHaveBeenCalled();
 	});
 
-	it('should return a boolean value for checkbox', (done) => {
-		const handleChange = (event) => {
+	it('should return a boolean value for checkbox', () => {
+		const handleChange = vi.fn((event) => {
 			const { target } = event;
 			const value = helpers.getFieldValue(target);
 			expect(value).toBe(true);
-			done();
-		};
-		const input = mount(<input name="field" type="checkbox" onChange={handleChange} />);
-		input.instance().checked = true;
-		input.simulate('change');
+		});
+		const { container } = render(<input name="field" type="checkbox" onChange={handleChange} />);
+		// React listens to click events for checkbox change detection.
+		fireEvent.click(container.querySelector('input'));
+		expect(handleChange).toHaveBeenCalled();
 	});
 
-	it('should return a string value for radio', (done) => {
-		const handleChange = (event) => {
+	it('should return a string value for radio', () => {
+		const handleChange = vi.fn((event) => {
 			const { target } = event;
 			const value = helpers.getFieldValue(target);
 			expect(value).toBe('value1');
-			done();
-		};
-		const input = mount(<input name="field" type="radio" value="value1" onChange={handleChange} />);
-		input.instance().checked = true;
-		input.simulate('change');
+		});
+		const { container } = render(<input name="field" type="radio" value="value1" onChange={handleChange} />);
+		// React listens to click events for radio change detection.
+		fireEvent.click(container.querySelector('input'));
+		expect(handleChange).toHaveBeenCalled();
 	});
 
-	it('should return a file or an array of files as value for input file', (done) => {
-		let handleChange = (event) => {
+	it('should return a file or an array of files as value for input file', () => {
+		const singleHandleChange = vi.fn((event) => {
 			const { target } = event;
 			const value = helpers.getFieldValue(target);
 			expect(value).toBe('file1');
-			done();
-		};
+		});
 
-		let input = mount(<input name="field" type="file" onChange={handleChange} />);
-		let domInput = input.getDOMNode();
+		let { container } = render(<input name="field" type="file" onChange={singleHandleChange} />);
+		let domInput = container.querySelector('input');
 		Object.defineProperty(domInput, 'files', {
 			value: ['file1'],
 		});
 		Object.defineProperty(domInput, 'value', {
 			value: 'path/file1',
 		});
-		input.simulate('change');
+		fireEvent.change(domInput);
+		expect(singleHandleChange).toHaveBeenCalled();
 
-		handleChange = (event) => {
+		const multipleHandleChange = vi.fn((event) => {
 			const { target } = event;
 			const value = helpers.getFieldValue(target);
 			expect(value).toEqual(['file1', 'file2']);
-			done();
-		};
+		});
 
-		input = mount(<input name="field" type="file" multiple onChange={handleChange} />);
-		domInput = input.getDOMNode();
+		({ container } = render(<input name="field" type="file" multiple onChange={multipleHandleChange} />));
+		domInput = container.querySelector('input');
 		Object.defineProperty(domInput, 'files', {
 			value: ['file1', 'file2'],
 		});
 		Object.defineProperty(domInput, 'value', {
 			value: 'path/file1',
 		});
-		input.simulate('change');
+		fireEvent.change(domInput);
+		expect(multipleHandleChange).toHaveBeenCalled();
 	});
 
-	it('should a number value for input number', (done) => {
-		const handleChange = (event) => {
+	it('should a number value for input number', () => {
+		const handleChange = vi.fn((event) => {
 			const { target } = event;
 			const value = helpers.getFieldValue(target);
 			expect(value).toBe(12.2);
-			done();
-		};
-		const input = mount(<input name="field" type="number" onChange={handleChange} />);
-		input.instance().value = '12.2';
-		input.simulate('change');
+		});
+		const { container } = render(<input name="field" type="number" onChange={handleChange} />);
+		fireEvent.change(container.querySelector('input'), { target: { value: '12.2' } });
+		expect(handleChange).toHaveBeenCalled();
 	});
 });
 
@@ -314,7 +314,7 @@ describe('.updateDataFromEvents(data, events)', () => {
 	});
 
 	it('should allow to pass events as a single Event or an array of Events', () => {
-		const spy = jest.spyOn(Array.prototype, 'forEach');
+		const spy = vi.spyOn(Array.prototype, 'forEach');
 		const data = { field: 'val' };
 		const event = { target: { name: 'field', value: 'newval' } };
 		helpers.updateDataFromEvents(data, [event]);

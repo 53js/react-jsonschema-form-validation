@@ -1,9 +1,8 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`should match snapshot 1`] = `
 <form
-  className="Jfv_Form"
-  noValidate={true}
-  onSubmit={[Function]}
+  class="Jfv_Form"
+  novalidate=""
 />
 `;

@@ -2,15 +2,15 @@ import throttle from './throttle';
 
 describe('throttle(func, wait)', () => {
 	beforeEach(() => {
-		jest.useFakeTimers();
+		vi.useFakeTimers();
 	});
 
 	afterEach(() => {
-		jest.useRealTimers();
+		vi.useRealTimers();
 	});
 
 	it('should invoke immediately on the leading edge', () => {
-		const func = jest.fn();
+		const func = vi.fn();
 		const throttled = throttle(func, 200);
 
 		throttled('first');
@@ -20,7 +20,7 @@ describe('throttle(func, wait)', () => {
 	});
 
 	it('should coalesce calls made during the wait window into one trailing call with the latest arguments', () => {
-		const func = jest.fn();
+		const func = vi.fn();
 		const throttled = throttle(func, 200);
 
 		throttled('a');
@@ -31,7 +31,7 @@ describe('throttle(func, wait)', () => {
 		expect(func).toHaveBeenCalledTimes(1);
 		expect(func).toHaveBeenCalledWith('a');
 
-		jest.advanceTimersByTime(200);
+		vi.advanceTimersByTime(200);
 
 		// The two coalesced calls produced a single trailing invocation,
 		// carrying the most recent arguments.
@@ -40,17 +40,17 @@ describe('throttle(func, wait)', () => {
 	});
 
 	it('should not invoke a trailing call when no call happened during the wait window', () => {
-		const func = jest.fn();
+		const func = vi.fn();
 		const throttled = throttle(func, 200);
 
 		throttled('only');
-		jest.advanceTimersByTime(1000);
+		vi.advanceTimersByTime(1000);
 
 		expect(func).toHaveBeenCalledTimes(1);
 	});
 
 	it('cancel() should discard the pending trailing invocation', () => {
-		const func = jest.fn();
+		const func = vi.fn();
 		const throttled = throttle(func, 200);
 
 		throttled('a');
@@ -58,14 +58,14 @@ describe('throttle(func, wait)', () => {
 		expect(func).toHaveBeenCalledTimes(1);
 
 		throttled.cancel();
-		jest.advanceTimersByTime(1000);
+		vi.advanceTimersByTime(1000);
 
 		// The pending trailing call for 'b' never fires.
 		expect(func).toHaveBeenCalledTimes(1);
 	});
 
 	it('should allow a new leading invocation after cancel()', () => {
-		const func = jest.fn();
+		const func = vi.fn();
 		const throttled = throttle(func, 200);
 
 		throttled('a');
