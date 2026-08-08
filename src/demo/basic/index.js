@@ -57,7 +57,7 @@ class BasicForm extends React.Component {
 		if (target.checked) {
 			interests = [...interests, target.value];
 		} else {
-			interests = interests.filter(v => v !== target.value);
+			interests = interests.filter((v) => v !== target.value);
 		}
 
 		handleFieldChange({

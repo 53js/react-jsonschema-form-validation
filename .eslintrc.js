@@ -14,6 +14,14 @@ module.exports = {
 	},
 	overrides: [
 		{
+			// The demo app is not published to npm; it imports its UI stack
+			// (reactstrap, react-select, ...) from devDependencies by design.
+			files: ['src/demo/**/*.js'],
+			rules: {
+				'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
+			},
+		},
+		{
 			// Root build-tool config files import devDependencies by design.
 			files: ['vite.config.js', 'vitest.config.js'],
 			rules: {
