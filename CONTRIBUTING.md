@@ -20,6 +20,14 @@ To play with the demo app while developing (Vite):
 yarn start
 ```
 
+### Dependency upgrades
+
+`package.json` carries a yarn resolution `"**/vite"`: it forces every `vite`
+in the tree (vitest would otherwise resolve its own nested vite of a different
+major). On the next vite major upgrade, bump or remove this resolution in the
+same PR. When bumping dependencies, scan the `yarn install` output for
+"incompatible resolution" warnings — yarn 1 only warns, it does not fail.
+
 ## Tests
 
 Run these before opening a PR — CI runs the runtime suite, a type-check
