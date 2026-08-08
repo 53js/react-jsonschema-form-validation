@@ -18,12 +18,12 @@
 		"dist:types:cleanup": "rm -rf .types-temp",
 		"minify:css": "cleancss --level 1 --source-map --source-map-inline-sources --output dist/$npm_package_name.min.css dist/$npm_package_name.css",
 		"test": "npm-run-all --sequential test:runtime test:types",
-		"test:runtime": "react-scripts test --watchAll=false",
-		"test:runtime:watch": "react-scripts test",
+		"test:runtime": "vitest run",
+		"test:runtime:watch": "vitest",
 		"test:types": "bash test-types/check-matrix.sh",
 		"type-check": "tsc -p tsconfig.json",
 		"eject": "react-scripts eject",
-		"prepublishOnly": "yarn test:runtime --ci --bail --runInBand && yarn test:types && yarn dist",
+		"prepublishOnly": "yarn test:runtime --bail 1 && yarn test:types && yarn dist",
 		"preversion": "npm run docs && git add docs && (git commit -m \"update docs for new version\" || echo \"No changes to commit\")"
 	},
 	"browserslist": [
@@ -70,10 +70,12 @@
 	},
 	"devDependencies": {
 		"@babel/cli": "^7.8.4",
+		"@testing-library/react": "^12.1.5",
 		"@types/prop-types": "^15.7.15",
 		"@types/react": "^16.14.70",
 		"@types/react-dom": "^16.9.25",
 		"@vitejs/plugin-react": "^4.3.0",
+		"@vitest/coverage-istanbul": "^2.1.9",
 		"babel-eslint": "10.0.3",
 		"bootstrap": "^4.4.1",
 		"clean-css-cli": "^4.3.0",
@@ -88,7 +90,9 @@
 		"eslint-plugin-import": "2.20.1",
 		"eslint-plugin-jest": "^23.6.0",
 		"eslint-plugin-react": "7.18.3",
+		"istanbul-lib-coverage": "^3.2.2",
 		"jest": "24.9.0",
+		"jsdom": "^25.0.1",
 		"npm-run-all": "^4.1.5",
 		"react": "^16.12.0",
 		"react-dom": "^16.12.0",
@@ -100,27 +104,14 @@
 		"reactstrap": "^8.4.1",
 		"sass": "^1.101.7",
 		"typescript": "^6.0.3",
-		"vite": "^5.4.0"
+		"vite": "^5.4.0",
+		"vitest": "^2.1.9"
 	},
 	"peerDependencies": {
 		"react": ">=16.8"
 	},
 	"resolutions": {
 		"dts-bundle-generator/typescript": "^6.0.3"
-	},
-	"jest": {
-		"collectCoverageFrom": [
-			"src/lib/**/*.{js,jsx,ts,tsx}"
-		],
-		"watchPathIgnorePatterns": [
-			"/build/",
-			"/dist/",
-			"/docs/",
-			"/node_modules/"
-		],
-		"snapshotSerializers": [
-			"enzyme-to-json/serializer"
-		]
 	},
 	"keywords": [
 		"JSON",

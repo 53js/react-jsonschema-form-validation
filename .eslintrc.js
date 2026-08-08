@@ -18,6 +18,24 @@ module.exports = {
 			files: ['vite.config.js', 'vitest.config.js'],
 			rules: {
 				'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
+				// `vitest/config` is an `exports` subpath; the node resolver
+				// bundled with eslint-plugin-import 2.20 predates package
+				// exports and cannot see it.
+				'import/no-unresolved': ['error', { ignore: ['^vitest/config$'] }],
+			},
+		},
+		{
+			// Vitest injects its globals (`globals: true` in vitest.config.js).
+			// eslint-plugin-vitest would declare them but requires ESLint 8;
+			// declare the ones not already covered by the jest plugin env.
+			files: ['src/**/*.test.js', 'src/**/__mocks__/*.js', 'src/setupTests.js'],
+			globals: {
+				vi: 'readonly',
+			},
+			rules: {
+				// Test setup files import test-only packages (vitest), like
+				// the *.test.js files already allowed by the base config.
+				'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
 			},
 		},
 	],

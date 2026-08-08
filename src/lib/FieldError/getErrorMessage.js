@@ -24,7 +24,9 @@ const getErrorMessage = (fieldError, errorMessages) => {
 
 	let message = customErrorMessage ? customErrorMessage(fieldError) : fieldError.message;
 
-	/* istanbul ignore next */
+	// `@preserve` keeps the pragma through esbuild (Vitest transform), which
+	// drops non-legal comments; istanbul only matches the comment's prefix.
+	/* istanbul ignore next -- @preserve */
 	if (typeof process !== 'undefined' && process?.env?.REACT_APP_JFV_DEBUG === 'true') {
 		message += ` [#${fieldError.keyword}]`;
 	}

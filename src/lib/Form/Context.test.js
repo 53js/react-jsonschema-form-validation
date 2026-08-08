@@ -1,5 +1,5 @@
 import React from 'react';
-import { mount } from 'enzyme';
+import { render } from '@testing-library/react';
 
 import FormContext, { useFormContext, withFormContext } from './Context';
 
@@ -16,23 +16,23 @@ describe('useFormContext', () => {
 			const context = useFormContext();
 			return <span>{context}</span>;
 		};
-		const wrapper = mount(
+		const { container } = render(
 			<FormContext.Provider value="FormContextSnapshot">
 				<UseContextComponent />
 			</FormContext.Provider>,
 		);
-		expect(wrapper).toMatchSnapshot();
+		expect(container.firstChild).toMatchSnapshot();
 	});
 });
 
 describe('withFormContext', () => {
 	it('should match snapshot', () => {
 		const WithContextComponent = () => withFormContext((context) => <span>{context}</span>);
-		const wrapper = mount(
+		const { container } = render(
 			<FormContext.Provider value="FormContextSnapshot">
 				<WithContextComponent />
 			</FormContext.Provider>,
 		);
-		expect(wrapper).toMatchSnapshot();
+		expect(container.firstChild).toMatchSnapshot();
 	});
 });

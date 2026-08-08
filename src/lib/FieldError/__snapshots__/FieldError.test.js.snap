@@ -1,8 +1,8 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`should match snapshot 1`] = `
 <div
-  className="Jfv_FieldError"
+  class="Jfv_FieldError"
   id="jfv1-error-username"
   role="alert"
 />

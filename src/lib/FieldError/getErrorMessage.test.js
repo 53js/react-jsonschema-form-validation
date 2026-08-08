@@ -8,7 +8,7 @@ it('should return a message based on error keyword', () => {
 });
 
 it('should call the error message function with the error as parameter', () => {
-	const errMessage = jest.fn();
+	const errMessage = vi.fn();
 	const error = { keyword: 'err1' };
 	getErrorMessage(error, { err1: errMessage });
 	expect(errMessage).toHaveBeenCalledWith(error);
@@ -16,7 +16,7 @@ it('should call the error message function with the error as parameter', () => {
 
 it('should call the default message function if no handler exists for this error', () => {
 	const error = { keyword: 'err1' };
-	const defaultMessage = jest.fn();
+	const defaultMessage = vi.fn();
 	getErrorMessage(error, { defaultMessage });
 	expect(defaultMessage).toHaveBeenCalled();
 });

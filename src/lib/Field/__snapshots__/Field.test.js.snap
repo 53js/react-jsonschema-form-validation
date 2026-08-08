@@ -1,26 +1,8 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`should match snapshot 1`] = `
-<ForwardRef
+<input
+  class="Jfv_Field"
   name="username"
->
-  <Field
-    aria-describedby={null}
-    className=""
-    component="input"
-    forwardedRef={null}
-    name="username"
-    onBlur={null}
-    onChange={null}
-  >
-    <mockConstructor>
-      <input
-        className="Jfv_Field"
-        name="username"
-        onBlur={[Function]}
-        onChange={[Function]}
-      />
-    </mockConstructor>
-  </Field>
-</ForwardRef>
+/>
 `;

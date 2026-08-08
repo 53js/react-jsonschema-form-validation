@@ -7,7 +7,7 @@
  * <Field> points at it, instead of hardcoding `jfv1` everywhere.
  */
 import React from 'react';
-import { mount } from 'enzyme';
+import { fireEvent, render } from '@testing-library/react';
 
 import Form from './Form';
 import Field from './Field';
@@ -28,39 +28,39 @@ const formProps = {
 };
 
 it('should wire Field aria-describedby to the id rendered by FieldError once touched', () => {
-	const wrapper = mount(
+	const { container } = render(
 		<Form {...formProps}>
 			<Field name="username" />
 			<FieldError name="username" />
 		</Form>,
 	);
 
-	wrapper.find('input').simulate('blur');
-	wrapper.update();
+	const input = container.querySelector('input');
+	fireEvent.blur(input);
 
-	const errorId = wrapper.find('div.Jfv_FieldError').prop('id');
+	const errorId = container.querySelector('div.Jfv_FieldError').getAttribute('id');
 	expect(errorId).toMatch(/^jfv\d+-error-username$/);
-	expect(wrapper.find('input').prop('aria-describedby')).toBe(errorId);
-	expect(wrapper.find('input').prop('aria-invalid')).toBe(true);
+	expect(input.getAttribute('aria-describedby')).toBe(errorId);
+	expect(input.getAttribute('aria-invalid')).toBe('true');
 });
 
 it('should follow a custom FieldError id automatically', () => {
-	const wrapper = mount(
+	const { container } = render(
 		<Form {...formProps}>
 			<Field name="username" />
 			<FieldError id="my-custom-error" name="username" />
 		</Form>,
 	);
 
-	wrapper.find('input').simulate('blur');
-	wrapper.update();
+	const input = container.querySelector('input');
+	fireEvent.blur(input);
 
-	expect(wrapper.find('div.Jfv_FieldError').prop('id')).toBe('my-custom-error');
-	expect(wrapper.find('input').prop('aria-describedby')).toBe('my-custom-error');
+	expect(container.querySelector('div.Jfv_FieldError').getAttribute('id')).toBe('my-custom-error');
+	expect(input.getAttribute('aria-describedby')).toBe('my-custom-error');
 });
 
 it('should keep the error ids of two forms sharing a field name distinct', () => {
-	const wrapper = mount(
+	const { container } = render(
 		<div>
 			<Form {...formProps}>
 				<Field name="username" />
@@ -73,19 +73,20 @@ it('should keep the error ids of two forms sharing a field name distinct', () =>
 		</div>,
 	);
 
-	wrapper.find('input').at(0).simulate('blur');
-	wrapper.find('input').at(1).simulate('blur');
-	wrapper.update();
+	const inputs = container.querySelectorAll('input');
+	fireEvent.blur(inputs[0]);
+	fireEvent.blur(inputs[1]);
 
-	const ids = wrapper.find('div.Jfv_FieldError').map((node) => node.prop('id'));
+	const ids = [...container.querySelectorAll('div.Jfv_FieldError')]
+		.map((node) => node.getAttribute('id'));
 	expect(ids).toHaveLength(2);
 	expect(ids[0]).not.toBe(ids[1]);
-	expect(wrapper.find('input').at(0).prop('aria-describedby')).toBe(ids[0]);
-	expect(wrapper.find('input').at(1).prop('aria-describedby')).toBe(ids[1]);
+	expect(inputs[0].getAttribute('aria-describedby')).toBe(ids[0]);
+	expect(inputs[1].getAttribute('aria-describedby')).toBe(ids[1]);
 });
 
 it('should list every FieldError id of the field in mount order (IDREF list)', () => {
-	const wrapper = mount(
+	const { container } = render(
 		<Form {...formProps}>
 			<Field name="username" />
 			<FieldError name="username" />
@@ -93,11 +94,11 @@ it('should list every FieldError id of the field in mount order (IDREF list)', (
 		</Form>,
 	);
 
-	wrapper.find('input').simulate('blur');
-	wrapper.update();
+	const input = container.querySelector('input');
+	fireEvent.blur(input);
 
-	const firstId = wrapper.find('div.Jfv_FieldError').at(0).prop('id');
-	expect(wrapper.find('input').prop('aria-describedby')).toBe(`${firstId} second-error`);
+	const firstId = container.querySelectorAll('div.Jfv_FieldError')[0].getAttribute('id');
+	expect(input.getAttribute('aria-describedby')).toBe(`${firstId} second-error`);
 });
 
 it('should drop the id of an unmounted FieldError from aria-describedby', () => {
@@ -106,34 +107,33 @@ it('should drop the id of an unmounted FieldError from aria-describedby', () => 
 		<FieldError key="first" name="username" />,
 		<FieldError id="second-error" key="second" name="username" />,
 	];
-	const wrapper = mount(<Form {...formProps}>{children}</Form>);
+	const { container, rerender } = render(<Form {...formProps}>{children}</Form>);
 
-	wrapper.find('input').simulate('blur');
-	wrapper.update();
+	const input = container.querySelector('input');
+	fireEvent.blur(input);
 
-	const firstId = wrapper.find('div.Jfv_FieldError').at(0).prop('id');
-	expect(wrapper.find('input').prop('aria-describedby')).toBe(`${firstId} second-error`);
+	const firstId = container.querySelectorAll('div.Jfv_FieldError')[0].getAttribute('id');
+	expect(input.getAttribute('aria-describedby')).toBe(`${firstId} second-error`);
 
-	wrapper.setProps({ children: children.slice(0, 2) });
-	wrapper.update();
-	expect(wrapper.find('input').prop('aria-describedby')).toBe(firstId);
+	rerender(<Form {...formProps}>{children.slice(0, 2)}</Form>);
+	expect(input.getAttribute('aria-describedby')).toBe(firstId);
 });
 
 it('should merge a user aria-describedby before the registered error ids', () => {
-	const wrapper = mount(
+	const { container } = render(
 		<Form {...formProps}>
 			<Field aria-describedby="username-hint" name="username" />
 			<FieldError name="username" />
 		</Form>,
 	);
 
-	expect(wrapper.find('input').prop('aria-describedby')).toBe('username-hint');
+	const input = container.querySelector('input');
+	expect(input.getAttribute('aria-describedby')).toBe('username-hint');
 
-	wrapper.find('input').simulate('blur');
-	wrapper.update();
+	fireEvent.blur(input);
 
-	const errorId = wrapper.find('div.Jfv_FieldError').prop('id');
-	expect(wrapper.find('input').prop('aria-describedby')).toBe(`username-hint ${errorId}`);
+	const errorId = container.querySelector('div.Jfv_FieldError').getAttribute('id');
+	expect(input.getAttribute('aria-describedby')).toBe(`username-hint ${errorId}`);
 });
 
 it('should reference a wildcard FieldError id from the fields it covers', () => {
@@ -150,28 +150,29 @@ it('should reference a wildcard FieldError id from the fields it covers', () => 
 		},
 		required: ['user'],
 	};
-	const wrapper = mount(
+	const { container } = render(
 		<Form data={{ user: {} }} onSubmit={() => {}} schema={nestedSchema}>
 			<Field name="user.email" />
 			<FieldError name="user.*" />
 		</Form>,
 	);
 
-	wrapper.find('input').simulate('blur');
-	wrapper.update();
+	const input = container.querySelector('input');
+	fireEvent.blur(input);
 
-	const errorId = wrapper.find('div.Jfv_FieldError').prop('id');
+	const errorId = container.querySelector('div.Jfv_FieldError').getAttribute('id');
 	expect(errorId).toMatch(/^jfv\d+-error-user\.\*$/);
-	expect(wrapper.find('input').prop('aria-describedby')).toBe(errorId);
+	expect(input.getAttribute('aria-describedby')).toBe(errorId);
 });
 
 it('should reset the unmounting flag on remount (React 18 StrictMode)', () => {
-	const wrapper = mount(
-		<Form {...formProps}>
+	const ref = React.createRef();
+	const { unmount } = render(
+		<Form {...formProps} ref={ref}>
 			<FieldError name="username" />
 		</Form>,
 	);
-	const instance = wrapper.instance();
+	const instance = ref.current;
 	expect(instance.fieldErrorRegistry.size).toBe(1);
 	const key = [...instance.fieldErrorRegistry.keys()][0];
 
@@ -184,34 +185,35 @@ it('should reset the unmounting flag on remount (React 18 StrictMode)', () => {
 	instance.unregisterFieldError(key);
 	expect(instance.fieldErrorRegistry.size).toBe(0);
 
-	wrapper.unmount();
+	unmount();
 });
 
 it('should make unregisterFieldError a no-op while the form unmounts', () => {
-	const wrapper = mount(
-		<Form {...formProps}>
+	const ref = React.createRef();
+	const { unmount } = render(
+		<Form {...formProps} ref={ref}>
 			<FieldError name="username" />
 		</Form>,
 	);
-	const instance = wrapper.instance();
+	const instance = ref.current;
 	expect(instance.fieldErrorRegistry.size).toBe(1);
 	const key = [...instance.fieldErrorRegistry.keys()][0];
 
 	// Simulate the unmount sequence: the Form's willUnmount runs first and
 	// raises the flag, then the child FieldError unregisters.
 	instance.componentWillUnmount();
-	const setStateSpy = jest.spyOn(instance, 'setState');
+	const setStateSpy = vi.spyOn(instance, 'setState');
 	instance.unregisterFieldError(key);
 
 	expect(setStateSpy).not.toHaveBeenCalled();
 	expect(instance.fieldErrorRegistry.size).toBe(1);
 
 	setStateSpy.mockRestore();
-	wrapper.unmount();
+	unmount();
 });
 
 it('should unmount a whole form silently (unregister no-op while unmounting)', () => {
-	const wrapper = mount(
+	const { unmount } = render(
 		<Form {...formProps}>
 			<Field name="username" />
 			<FieldError name="username" />
@@ -221,9 +223,9 @@ it('should unmount a whole form silently (unregister no-op while unmounting)', (
 	// Without the `unmounting` flag, the unregister fired by the child
 	// FieldError would setState on the Form being destroyed, and React
 	// would report it through console.error.
-	const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+	const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 	try {
-		expect(() => wrapper.unmount()).not.toThrow();
+		expect(() => unmount()).not.toThrow();
 		expect(errorSpy).not.toHaveBeenCalled();
 	} finally {
 		errorSpy.mockRestore();
