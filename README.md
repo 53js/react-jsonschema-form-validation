@@ -290,6 +290,58 @@ import type {
 } from 'react-jsonschema-form-validation';
 ```
 
+## Migrating to v1 (AJV 8)
+
+Version 1.0 upgrades the bundled validator from AJV 6 to
+[AJV 8](https://ajv.js.org/v6-to-v8-migration.html). If you only pass
+`schema`/`data` and read errors through `<FieldError>`, no code change is
+required. Otherwise:
+
+- **`errors[].dataPath` → `errors[].instancePath`** — AJV 8 errors carry a
+  JSON Pointer `instancePath` (`/user/email`) instead of the dot-notation
+  `dataPath` (`.user.email`). The normalized `field` property added by the
+  library (`user.email`) is unchanged — code reading `error.field` keeps
+  working as-is. Code reading the raw `error.dataPath` must switch to
+  `error.instancePath`.
+- **Error message wording changed** — AJV 8 says `must be ...` where AJV 6
+  said `should be ...` (e.g. `must have required property 'email'`). If you
+  match on default AJV messages (tests, custom logic), update the wording —
+  or rather map messages by `error.keyword` via the `errorMessages` prop,
+  which is immune to wording changes.
+- **String formats now come from `ajv-formats`** — AJV 8 removed built-in
+  formats (`email`, `date`, `uri`…). The default instance restores them via
+  [`ajv-formats`](https://github.com/ajv-validator/ajv-formats) (a
+  dependency of this library), in its default `full` validation mode, which
+  is stricter than AJV 6's on some edge values. If you pass a custom `ajv`
+  instance and rely on formats, call `addFormats(ajv)` yourself.
+- **The default instance keeps AJV 6's permissive behavior** — it is created
+  with `new Ajv({ allErrors: true, $data: true, strict: false })`:
+  schemas containing unknown keywords still compile instead of throwing.
+  To opt into AJV 8 strict mode — or another JSON Schema draft — pass your
+  own instance through the `ajv` prop. Any object exposing a
+  `compile(schema)` function is accepted (`Ajv`, `Ajv2019`, `Ajv2020`…):
+
+  ```js
+  import Ajv2020 from 'ajv/dist/2020';
+  import addFormats from 'ajv-formats';
+
+  const ajv = new Ajv2020({ allErrors: true, $data: true }); // strict by default
+  addFormats(ajv);
+
+  <Form ajv={ajv} schema={schema} data={data} onSubmit={handleSubmit} />
+  ```
+
+- **Custom AJV 6 instances still work for now** — the library still
+  understands `dataPath`-shaped errors, so an injected AJV 6 instance keeps
+  functioning during the transition. This fallback is deprecated and will be
+  removed in the final 1.0.
+
+## Known limitations
+
+- Property names containing a dot (`.`) or a slash (`/`) are not supported
+  in field `name`s: the library addresses fields with dot-separated paths
+  (`user.email`), so such keys cannot be addressed unambiguously.
+
 ## Examples
 We’ve got many examples, from the most simple to the most advanced.
 

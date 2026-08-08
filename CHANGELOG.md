@@ -10,6 +10,37 @@ and dependency-only bumps are omitted.
 
 ## [Unreleased]
 
+### Breaking
+
+- **AJV upgraded from v6 to v8** (`ajv@^8.17.0`). No code change is needed
+  if you only pass `schema`/`data` and read errors through `<FieldError>`
+  or `error.field`. Otherwise, see the "Migrating to v1 (AJV 8)" section
+  of the README. In short:
+  - Raw errors now carry the AJV 8 shape: `instancePath` (JSON Pointer,
+    e.g. `/user/email`) replaces `dataPath` (`.user.email`). The
+    normalized `field` property (`user.email`) is unchanged.
+  - Default error message wording changed in AJV 8 (`should …` →
+    `must …`, e.g. `must have required property 'email'`). Code or tests
+    matching on default messages must be updated; the `errorMessages`
+    prop (keyed by `error.keyword`) is immune.
+  - String formats (`email`, `date`, `uri`…) now come from the new
+    `ajv-formats` dependency (AJV 8 removed them from core), registered
+    on the default instance in its default `full` mode — stricter than
+    AJV 6 on some edge values, so a few borderline strings that used to
+    pass may now be rejected. Custom instances passed via the `ajv` prop
+    must call `addFormats(ajv)` themselves if they rely on formats.
+  - The default instance is created with `strict: false`, keeping AJV 6's
+    permissive behavior (unknown keywords compile instead of throwing).
+    Pass your own instance via the `ajv` prop for strict mode.
+  - A custom instance passed through the `ajv` prop should now be AJV 8+.
+    AJV 6 instances keep working for the transition thanks to the
+    `dataPath` fallback, which is deprecated and will be removed in the
+    final 1.0.
+  - The `ajv` prop is now duck-typed (any object exposing a
+    `compile(schema)` function) instead of `instanceOf(Ajv)`: `Ajv2019` /
+    `Ajv2020` instances — e.g. for JSON Schema draft 2020-12 — are
+    accepted.
+
 ### Changed
 
 - The npm package is now built with Vite (Rollup) instead of Babel CLI.
@@ -41,12 +72,10 @@ and dependency-only bumps are omitted.
 
 - Error formatting now understands both AJV error shapes: the AJV 8+
   `instancePath` (JSON Pointer, RFC 6901 — including `~0`/`~1` escape
-  decoding) in addition to the AJV 6 `dataPath` used by the bundled
-  validator. Behavior with the bundled AJV 6 is strictly unchanged;
-  this prepares the AJV 8 upgrade and custom validators that emit
-  JSON Pointer paths. The conversion lives in a new internal
-  `pointerToFieldPath(pointer)` helper (groundwork for AJV 8; not
-  part of the public API).
+  decoding) in addition to the legacy AJV 6 `dataPath` (kept as a
+  deprecated fallback for injected AJV 6 instances, see Breaking above).
+  The conversion lives in a new internal `pointerToFieldPath(pointer)`
+  helper (not part of the public API).
 - `resetOnSubmit` prop on `<Form>` — set it to `false` to keep the
   touched/submitted state after a successful submit (useful when the
   server-side submit can still fail), then call the context's `reset()`

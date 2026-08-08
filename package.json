@@ -61,7 +61,8 @@
 	"repository": "github:53js/react-jsonschema-form-validation",
 	"dependencies": {
 		"@types/json-schema": "^7.0.15",
-		"ajv": "^6.11.0",
+		"ajv": "^8.17.0",
+		"ajv-formats": "^3",
 		"classnames": "^2.2.6",
 		"dot-prop-immutable": "^2.1.0",
 		"memoize-one": "^5.1.1",
