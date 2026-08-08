@@ -23,7 +23,7 @@ module.exports = {
 		},
 		{
 			// Root build-tool config files import devDependencies by design.
-			files: ['vite.config.js', 'vitest.config.js'],
+			files: ['vite.config.js', 'vite.lib.config.js', 'vitest.config.js'],
 			rules: {
 				'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
 				// `vitest/config` is an `exports` subpath; the node resolver

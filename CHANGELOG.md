@@ -10,6 +10,30 @@ and dependency-only bumps are omitted.
 
 ## [Unreleased]
 
+### Changed
+
+- The npm package is now built with Vite (Rollup) instead of Babel CLI.
+  The published surface is unchanged — ES modules mirroring the source
+  layout under `dist/`, one file per module (tree-shaking preserved),
+  plus the two CSS files and `dist/index.d.ts` at their usual paths —
+  and the package is explicitly ESM-only, as it has always been de
+  facto. Notes for consumers:
+  - `@babel/runtime` is no longer a dependency: Babel helper imports
+    are gone from the published files (smaller install, ~56% smaller
+    JS in `dist/`).
+  - The `main` field was removed (it pointed to an ES module that
+    `require()` could never load in older Node anyway); the `exports`
+    map is the single source of truth, with `module` kept as a
+    fallback for older bundlers. On Node >= 22.7 the package now loads
+    directly (both `import` and `require`) thanks to Node's module
+    syntax detection.
+  - `propTypes` are no longer stripped from the published files:
+    consumers get prop validation warnings in development builds
+    (removed automatically by bundlers in production as before).
+  - The internal barrel files (`dist/Field/index.js`,
+    `dist/FieldError/index.js`, `dist/Form/index.js`) are no longer
+    emitted; they were never reachable through the `exports` map.
+
 ### Added
 
 - `resetOnSubmit` prop on `<Form>` — set it to `false` to keep the

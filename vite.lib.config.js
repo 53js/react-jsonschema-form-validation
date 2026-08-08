@@ -1,0 +1,63 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import { defineConfig } from 'vite';
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Anchored to the project's own src/ so that node_modules/**/src/*.js
+// never matches.
+const srcJsRE = new RegExp(`^${escapeRegExp(projectRoot)}/src/.*\\.js$`);
+
+// Library build (npm `dist`), separate from vite.config.js which builds the
+// demo site. Replaces the previous Babel CLI build (`babel src/lib --out-dir
+// dist`): same published surface — ESM modules mirroring the src/lib file
+// structure at the root of dist/ — produced by Vite/Rollup instead.
+export default defineConfig({
+	esbuild: {
+		// The library uses JSX inside plain .js files (same recipe as the
+		// demo/test configs).
+		loader: 'jsx',
+		include: srcJsRE,
+		// Vite's esbuild plugin excludes .js files by default; the default
+		// exclude wins over include, so it must be reset explicitly.
+		exclude: [],
+		// react 16.12 predates react/jsx-runtime -> classic runtime
+		// (React.createElement), like the Babel build before.
+		jsx: 'transform',
+	},
+	build: {
+		outDir: 'dist',
+		// `yarn dist` runs `clean` first and dist:css before dist:js: the
+		// CSS files are already in dist/ when this build runs.
+		emptyOutDir: false,
+		// public/ belongs to the demo app, not to the npm package.
+		copyPublicDir: false,
+		// Keep the output readable and diffable, as the Babel build was.
+		// Consumers minify in their own bundler.
+		minify: false,
+		lib: {
+			entry: path.resolve(projectRoot, 'src/lib/index.js'),
+			formats: ['es'],
+			// Emit .js (not Vite's default .mjs for an ES build): the
+			// package has always published dist/**/*.js and the exports
+			// map/module fields point there. Concatenation instead of a
+			// template literal: a template starting with "${" crashes the
+			// template-curly-spacing rule under babel-eslint 10 / ESLint 6.
+			fileName: (format, entryName) => entryName.concat('.js'),
+		},
+		rollupOptions: {
+			// Externalize every bare import (dependencies and
+			// peerDependencies): nothing is bundled, exactly like the Babel
+			// per-file transform before.
+			external: (id) => !id.startsWith('.') && !path.isAbsolute(id),
+			output: {
+				// Keep the src/lib module structure instead of a single
+				// bundle file: preserves per-module tree-shaking for
+				// consumers and keeps the published layout unchanged.
+				preserveModules: true,
+				preserveModulesRoot: 'src/lib',
+			},
+		},
+	},
+});
