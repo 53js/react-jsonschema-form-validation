@@ -58,3 +58,36 @@ jobs:
         run: |
           yarn add --dev --silent "@types/react@^${{ matrix.types-react }}"
           yarn test
+
+  # Runs the FULL unit-test suite (the same one `build` runs on React 16)
+  # against real React 18 and 19 — the v1 targets. Each job installs a
+  # pinned fixture (test-runtime/react-<version>) and aliases react,
+  # react-dom and Testing Library to it (test-runtime/vitest.config.js).
+  #
+  # NON-BLOCKING (`continue-on-error: true`): this harness exists to REVEAL
+  # the React 18/19 behavioral gaps before the v1 work, not to gate merges
+  # on them. Failures here are expected until v1 lands. Make it blocking
+  # (drop `continue-on-error`) once v1 has fixed the known incompatibilities
+  # (act/automatic-batching test assumptions, function-component
+  # defaultProps) and both jobs are green.
+  runtime:
+    name: runtime (react ${{ matrix.react }}) [non-blocking]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        react: ['18', '19']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: bash test-runtime/setup.sh ${{ matrix.react }}
+      - name: Run the unit-test suite on react@${{ matrix.react }}
+        run: yarn vitest run --config test-runtime/vitest.config.js
+        env:
+          REACT_VERSION: ${{ matrix.react }}
