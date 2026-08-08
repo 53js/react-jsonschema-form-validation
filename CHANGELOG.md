@@ -39,6 +39,13 @@ and dependency-only bumps are omitted.
 
 ### Added
 
+- Error formatting now understands both AJV error shapes: the AJV 8+
+  `instancePath` (JSON Pointer, RFC 6901 — including `~0`/`~1` escape
+  decoding) in addition to the AJV 6 `dataPath` used by the bundled
+  validator. Behavior with the bundled AJV 6 is strictly unchanged;
+  this prepares the AJV 8 upgrade and custom validators that emit
+  JSON Pointer paths. A `pointerToFieldPath(pointer)` helper is
+  exported alongside.
 - `resetOnSubmit` prop on `<Form>` — set it to `false` to keep the
   touched/submitted state after a successful submit (useful when the
   server-side submit can still fail), then call the context's `reset()`

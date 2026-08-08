@@ -11,7 +11,11 @@ import immutable from 'dot-prop-immutable';
  * `'items.0.label'`). Used everywhere internally to locate the input
  * associated with an error.
  *
- * @typedef {ErrorObject & { field: string }} FormattedError
+ * `instancePath` is declared here because the bundled AJV 6 typings only
+ * know `dataPath`; AJV 8 errors carry `instancePath` instead, and
+ * {@link formatErrors} accepts both shapes.
+ *
+ * @typedef {ErrorObject & { instancePath?: string, field: string }} FormattedError
  */
 
 /**
@@ -140,26 +144,70 @@ export const formatData = (data) => {
 };
 
 /**
+ * Decodes a single JSON Pointer reference token (RFC 6901 §4).
+ *
+ * The order of the two replacements is mandated by the RFC: `~1` must be
+ * decoded before `~0`, otherwise the escaped sequence `~01` (which encodes
+ * the literal string `~1`) would first collapse to `~` + `1` and then be
+ * wrongly re-decoded as `/`.
+ *
+ * @param {string} segment
+ * @returns {string}
+ */
+const unescapePointerSegment = (segment) => segment.replace(/~1/g, '/').replace(/~0/g, '~');
+
+/**
+ * Converts a JSON Pointer (RFC 6901, the shape of AJV 8's
+ * `error.instancePath`, e.g. `'/items/0/label'`) into the library's
+ * dot-separated field path (`'items.0.label'`). The root pointer `''`
+ * maps to the empty field path `''`.
+ *
+ * @param {string} pointer
+ * @returns {string}
+ */
+export const pointerToFieldPath = (pointer) => pointer
+	.split('/')
+	.slice(1)
+	.map(unescapePointerSegment)
+	.join('.');
+
+/**
  * Enriches each AJV error with a normalized `field` path. The transformation
  * is in-place — it mutates the original AJV `ErrorObject`, which is consistent
  * with the library's existing behavior (errors come from AJV and are
  * disposable between two runs).
+ *
+ * Accepts both AJV error shapes: when `error.instancePath` is present
+ * (a JSON Pointer, AJV 8+) it takes precedence; otherwise the legacy
+ * `error.dataPath` (dot/bracket notation, AJV ≤ 6) is used. The library
+ * currently bundles AJV 6, so the `dataPath` branch is the active one —
+ * the dual-shape support prepares the AJV 8 upgrade and is a building
+ * block for a future Standard Schema adapter.
  *
  * @param {ErrorObject[] | null | undefined} errors
  * @returns {FormattedError[]}
  */
 export const formatErrors = (errors) => (errors || []).map((error) => {
 	const formatted = /** @type {FormattedError} */ (error);
-	formatted.field = formatted.dataPath;
+
+	if (typeof formatted.instancePath === 'string') {
+		// AJV 8 shape: JSON Pointer.
+		formatted.field = pointerToFieldPath(formatted.instancePath);
+	} else {
+		// AJV 6 shape: dot notation with bracketed array indexes.
+		formatted.field = formatted.dataPath
+			.replace(/^\./, '')
+			.replace(/\[([0-9]+)\]/g, '.$1');
+	}
 
 	if (formatted.keyword === 'required' && 'missingProperty' in formatted.params) {
 		// AJV's `required` errors carry the missing key in `params.missingProperty`.
-		formatted.field = `${formatted.field}.${formatted.params.missingProperty}`;
+		// At the root the field path is empty: the missing key alone is the path
+		// (no leading dot to strip since normalization already happened above).
+		formatted.field = formatted.field
+			? `${formatted.field}.${formatted.params.missingProperty}`
+			: formatted.params.missingProperty;
 	}
-
-	formatted.field = formatted.field
-		.replace(/^\./, '')
-		.replace(/\[([0-9]+)\]/g, '.$1');
 
 	return formatted;
 });

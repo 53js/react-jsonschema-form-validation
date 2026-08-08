@@ -86,6 +86,98 @@ describe('.formatErrors(errors)', () => {
 		const errors = [{ dataPath: 'items[0].tags[1]' }];
 		expect(helpers.formatErrors(errors)[0].field).toStrictEqual('items.0.tags.1');
 	});
+
+	// AJV 8 shape: `instancePath` is a JSON Pointer (RFC 6901). The cases
+	// below mirror the `dataPath` set above, proving both shapes produce
+	// the same `field` values.
+	describe('with AJV 8 instancePath (JSON Pointer)', () => {
+		it('should add a property field to each errors', () => {
+			const errors = [{ instancePath: '/input' }];
+			expect(helpers.formatErrors(errors)[0]).toHaveProperty('field', 'input');
+		});
+
+		it('should add a property field for required errors', () => {
+			let errors = [{
+				instancePath: '/nested',
+				keyword: 'required',
+				params: {
+					missingProperty: 'input',
+				},
+			}];
+
+			expect(helpers.formatErrors(errors)[0].field).toStrictEqual('nested.input');
+
+			errors = [{
+				instancePath: '',
+				keyword: 'required',
+				params: {
+					missingProperty: 'input',
+				},
+			}];
+
+			expect(helpers.formatErrors(errors)[0].field).toStrictEqual('input');
+		});
+
+		it('should convert pointer array segments to dot notation', () => {
+			const errors = [{ instancePath: '/arr/0/input' }];
+			expect(helpers.formatErrors(errors)[0].field).toStrictEqual('arr.0.input');
+		});
+
+		it('should convert every array index when the pointer contains several', () => {
+			const errors = [{ instancePath: '/items/0/tags/1' }];
+			expect(helpers.formatErrors(errors)[0].field).toStrictEqual('items.0.tags.1');
+		});
+
+		it('should map the root pointer to an empty field', () => {
+			const errors = [{ instancePath: '' }];
+			expect(helpers.formatErrors(errors)[0].field).toStrictEqual('');
+		});
+
+		it('should handle required errors inside an array item', () => {
+			const errors = [{
+				instancePath: '/list/0',
+				keyword: 'required',
+				params: {
+					missingProperty: 'x',
+				},
+			}];
+
+			expect(helpers.formatErrors(errors)[0].field).toStrictEqual('list.0.x');
+		});
+
+		it('should decode RFC 6901 escape sequences in pointer segments', () => {
+			// `~1` encodes `/`, `~0` encodes `~`.
+			expect(helpers.formatErrors([{ instancePath: '/a~1b' }])[0].field)
+				.toStrictEqual('a/b');
+			expect(helpers.formatErrors([{ instancePath: '/a~0b' }])[0].field)
+				.toStrictEqual('a~b');
+		});
+
+		it('should decode ~1 before ~0 so that ~01 yields a literal ~1', () => {
+			// `~01` encodes the literal string `~1`; decoding `~0` first
+			// would wrongly produce `/`.
+			expect(helpers.formatErrors([{ instancePath: '/a~01b' }])[0].field)
+				.toStrictEqual('a~1b');
+		});
+	});
+});
+
+describe('.pointerToFieldPath(pointer)', () => {
+	it('should convert a JSON Pointer to a dot-separated field path', () => {
+		expect(helpers.pointerToFieldPath('/input')).toStrictEqual('input');
+		expect(helpers.pointerToFieldPath('/arr/0/input')).toStrictEqual('arr.0.input');
+		expect(helpers.pointerToFieldPath('/items/0/tags/1')).toStrictEqual('items.0.tags.1');
+	});
+
+	it('should map the root pointer to the empty string', () => {
+		expect(helpers.pointerToFieldPath('')).toStrictEqual('');
+	});
+
+	it('should decode RFC 6901 escape sequences', () => {
+		expect(helpers.pointerToFieldPath('/a~1b')).toStrictEqual('a/b');
+		expect(helpers.pointerToFieldPath('/a~0b')).toStrictEqual('a~b');
+		expect(helpers.pointerToFieldPath('/a~01b')).toStrictEqual('a~1b');
+	});
 });
 
 describe('.filterByFieldNameWithWildcard(fields, fieldName)', () => {
