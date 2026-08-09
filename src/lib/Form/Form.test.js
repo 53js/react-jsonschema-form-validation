@@ -3,6 +3,7 @@ import { fireEvent, render } from '@testing-library/react';
 
 import Form from './Form';
 import Field from '../Field';
+import { createAjv } from './helpers';
 
 const testSchema = {
 	type: 'object',
@@ -700,6 +701,144 @@ describe('Form.touch(fieldName)', () => {
 		expect(ref.current.state.touchedFields).toEqual(['type', 'name']);
 		ref.current.touch('description');
 		expect(ref.current.state.touchedFields).toEqual(['type', 'name', 'description']);
+	});
+});
+
+describe('revalidation on update', () => {
+	// Wraps ajv.compile so every compiled validator counts its REAL
+	// invocations — measures actual AJV work, not only validate() dispatches
+	// (the memoized validator can short-circuit a dispatch without running
+	// AJV, so the two counters answer different questions).
+	const makeCountingAjv = () => {
+		const ajv = createAjv();
+		const counters = { compile: 0, run: 0 };
+		const realCompile = ajv.compile.bind(ajv);
+		ajv.compile = (schema) => {
+			counters.compile += 1;
+			const validate = realCompile(schema);
+			/** @param {object} data */
+			const wrapped = (data) => {
+				counters.run += 1;
+				const result = validate(data);
+				wrapped.errors = validate.errors;
+				return result;
+			};
+			wrapped.errors = null;
+			return wrapped;
+		};
+		return { ajv, counters };
+	};
+
+	it('should not dispatch validation on internal state updates with unchanged props (touch, submit)', () => {
+		const { ajv, counters } = makeCountingAjv();
+		const onSubmit = vi.fn();
+		const data = { type: 'te' };
+		const ref = React.createRef();
+
+		const { container } = render(
+			<Form
+				ajv={ajv}
+				data={data}
+				onSubmit={onSubmit}
+				ref={ref}
+				schema={testSchema}
+				throttleDuration={0}
+			/>,
+		);
+
+		// Mount validates once, unconditionally.
+		expect(counters.run).toBe(1);
+
+		const validateSpy = vi.spyOn(ref.current, 'validate');
+
+		// touch: internal setState, no prop changed → no validate() dispatch.
+		ref.current.touch('type');
+		// FieldError registry bump: same story.
+		ref.current.registerFieldError('key1', 'type', 'error-id-1');
+		// Submit on a never-touched-then-touched valid form: isSubmitted
+		// setState plus the default resetOnSubmit reset() — still no prop
+		// change. `valid` was computed at mount, so onSubmit must fire.
+		fireEvent.submit(container.querySelector('form'));
+
+		expect(onSubmit).toHaveBeenCalled();
+		// The guard skips the dispatch entirely…
+		expect(validateSpy).not.toHaveBeenCalled();
+		// …and no real AJV work happened either.
+		expect(counters.run).toBe(1);
+		expect(counters.compile).toBe(1);
+
+		validateSpy.mockRestore();
+	});
+
+	it('should re-validate when the data reference changes', () => {
+		const { ajv, counters } = makeCountingAjv();
+		const ref = React.createRef();
+
+		const formProps = {
+			ajv,
+			onSubmit: () => {},
+			ref,
+			schema: testSchema,
+			throttleDuration: 0,
+		};
+		const { rerender } = render(<Form data={{ type: 'te' }} {...formProps} />);
+		expect(counters.run).toBe(1);
+		expect(ref.current.state.valid).toBe(true);
+
+		// New data reference (nominal handleFieldChange → onChange → parent
+		// setState path) → the validator runs again on the new data.
+		rerender(<Form data={{ type: 'NOT_IN_ENUM' }} {...formProps} />);
+		expect(counters.run).toBe(2);
+		expect(ref.current.state.valid).toBe(false);
+	});
+
+	it('should re-compile and re-validate when the schema reference changes', () => {
+		const { ajv, counters } = makeCountingAjv();
+		const ref = React.createRef();
+
+		const formProps = {
+			ajv,
+			data: { type: 'te' },
+			onSubmit: () => {},
+			ref,
+			throttleDuration: 0,
+		};
+		const { rerender } = render(<Form schema={testSchema} {...formProps} />);
+		expect(counters.compile).toBe(1);
+		expect(counters.run).toBe(1);
+
+		// New schema reference → new compiled validator, immediate run.
+		rerender(<Form schema={{ ...testSchema, required: [] }} {...formProps} />);
+		expect(counters.compile).toBe(2);
+		expect(counters.run).toBe(2);
+	});
+
+	it('should re-validate when the ajv instance or throttleDuration changes', () => {
+		const first = makeCountingAjv();
+		const ref = React.createRef();
+
+		const formProps = {
+			data: { type: 'te' },
+			onSubmit: () => {},
+			ref,
+			schema: testSchema,
+		};
+		const { rerender } = render(
+			<Form ajv={first.ajv} throttleDuration={0} {...formProps} />,
+		);
+		expect(first.counters.run).toBe(1);
+
+		// New AJV instance → validator rebuilt on it and run.
+		const second = makeCountingAjv();
+		rerender(<Form ajv={second.ajv} throttleDuration={0} {...formProps} />);
+		expect(second.counters.compile).toBe(1);
+		expect(second.counters.run).toBe(1);
+
+		// New throttleDuration → throttled validator rebuilt and run.
+		rerender(<Form ajv={second.ajv} throttleDuration={1} {...formProps} />);
+		expect(second.counters.run).toBe(2);
+		// The first instance was never touched again.
+		expect(first.counters.run).toBe(1);
 	});
 });
 
