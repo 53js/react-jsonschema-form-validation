@@ -1,6 +1,6 @@
 import Ajv2020 from 'ajv/dist/2020';
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render } from '@testing-library/react';
 
 import Form from './Form';
 import Field from '../Field';
@@ -90,7 +90,9 @@ describe('resetOnSubmit prop', () => {
 			/>,
 		);
 
-		ref.current.touch('type');
+		act(() => {
+			ref.current.touch('type');
+		});
 		expect(ref.current.state.touchedFields).toEqual(['type']);
 
 		fireEvent.submit(container.querySelector('form'));
@@ -115,7 +117,9 @@ describe('resetOnSubmit prop', () => {
 			/>,
 		);
 
-		ref.current.touch('type');
+		act(() => {
+			ref.current.touch('type');
+		});
 		fireEvent.submit(container.querySelector('form'));
 
 		// onSubmit still runs, but the visual state survives the submit (so a
@@ -133,12 +137,16 @@ describe('Form.reset()', () => {
 		render(<Form onSubmit={() => {}} ref={ref} schema={{}} />);
 		const instance = ref.current;
 
-		instance.registerFieldError('key', 'type', 'jfv1_type_err');
-		instance.touch('type');
+		act(() => {
+			instance.registerFieldError('key', 'type', 'jfv1_type_err');
+			instance.touch('type');
+		});
 		const versionBeforeReset = instance.state.fieldErrorsVersion;
 		expect(versionBeforeReset).toBeGreaterThan(0);
 
-		instance.reset();
+		act(() => {
+			instance.reset();
+		});
 
 		// The touched/submitted state is wiped, but the version counter is
 		// preserved: the registry (instance Map) was not emptied by reset().
@@ -161,7 +169,9 @@ describe('context reset()', () => {
 			/>,
 		);
 
-		ref.current.touch('type');
+		act(() => {
+			ref.current.touch('type');
+		});
 		// Failed submit (invalid data): isSubmitted stays true, nothing resets.
 		fireEvent.submit(container.querySelector('form'));
 		expect(ref.current.state.touchedFields).toEqual(['type']);
@@ -169,7 +179,9 @@ describe('context reset()', () => {
 
 		const context = ref.current.getContext();
 		expect(typeof context.reset).toBe('function');
-		context.reset();
+		act(() => {
+			context.reset();
+		});
 
 		expect(ref.current.state.touchedFields).toEqual([]);
 		expect(ref.current.state.isSubmitted).toBe(false);
@@ -696,11 +708,17 @@ describe('Form.touch(fieldName)', () => {
 		);
 
 		expect(ref.current.state.touchedFields).toEqual([]);
-		ref.current.touch('type');
+		act(() => {
+			ref.current.touch('type');
+		});
 		expect(ref.current.state.touchedFields).toEqual(['type']);
-		ref.current.touch('name');
+		act(() => {
+			ref.current.touch('name');
+		});
 		expect(ref.current.state.touchedFields).toEqual(['type', 'name']);
-		ref.current.touch('description');
+		act(() => {
+			ref.current.touch('description');
+		});
 		expect(ref.current.state.touchedFields).toEqual(['type', 'name', 'description']);
 	});
 });
@@ -988,9 +1006,13 @@ describe('revalidation on update', () => {
 		const validateSpy = vi.spyOn(ref.current, 'validate');
 
 		// touch: internal setState, no prop changed → no validate() dispatch.
-		ref.current.touch('type');
+		act(() => {
+			ref.current.touch('type');
+		});
 		// FieldError registry bump: same story.
-		ref.current.registerFieldError('key1', 'type', 'error-id-1');
+		act(() => {
+			ref.current.registerFieldError('key1', 'type', 'error-id-1');
+		});
 		// Submit on a never-touched-then-touched valid form: isSubmitted
 		// setState plus the default resetOnSubmit reset() — still no prop
 		// change. `valid` was computed at mount, so onSubmit must fire.
