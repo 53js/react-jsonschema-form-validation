@@ -44,19 +44,9 @@ REACT_VERSION=18 yarn vitest run --config test-runtime/vitest.config.js
 
 ## CI
 
-Each version is a separate job in `.github/workflows/ci.yml` —
-`runtime (react 18) [non-blocking]`, `runtime (react 19) [non-blocking]`.
-They are `continue-on-error` **on purpose**: the harness reveals the
-React 18/19 gaps the v1 work must close; it does not gate merges yet.
-Check the job logs for the real pass/fail state. Once v1 is done and both
-jobs are green, drop `continue-on-error` to make them blocking.
-
-## Known failures (pre-v1 baseline)
-
-On both 18 and 19, 4 tests of `src/lib/Form/Form.test.js` fail for the
-same root cause: they call instance methods (`touch()`, `reset()`,
-`getContext().reset()`) outside `act()` and assert `state` synchronously.
-React 18+ automatic batching (createRoot) makes those `setState` calls
-asynchronous, where React 16 legacy mode flushed them synchronously. These
-are test-assumption gaps to fix in dedicated v1 PRs — do not patch them
-here.
+Each version is a separate **blocking** job in `.github/workflows/ci.yml`
+— `runtime (react 18)`, `runtime (react 19)` — gating merges exactly like
+the React 16 run in `build`. The suite is act-safe (#83 wrapped the
+un-acted instance calls that React 18+ automatic batching broke), so a
+failure here is a real React 18/19 regression, not a known gap. Each job
+writes its expected/actual result to the job summary.

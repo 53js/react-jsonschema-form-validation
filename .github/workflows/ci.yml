@@ -64,17 +64,14 @@ jobs:
   # pinned fixture (test-runtime/react-<version>) and aliases react,
   # react-dom and Testing Library to it (test-runtime/vitest.config.js).
   #
-  # NON-BLOCKING (`continue-on-error: true`): this harness exists to REVEAL
-  # the React 18/19 behavioral gaps before the v1 work, not to gate merges
-  # on them. Failures here are expected until v1 lands. Make it blocking
-  # (drop `continue-on-error`) once v1 has fixed the known incompatibilities
-  # (act/automatic-batching test assumptions, function-component
-  # defaultProps) and both jobs are green.
+  # BLOCKING since the suite became act-safe (#83 wrapped the un-acted
+  # instance calls that React 18+ automatic batching broke): a failure here
+  # is a real React 18/19 regression and must gate the merge, exactly like
+  # the React 16 run in `build`.
   runtime:
-    name: runtime (react ${{ matrix.react }}) [non-blocking]
+    name: runtime (react ${{ matrix.react }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -90,18 +87,17 @@ jobs:
       - name: Run the unit-test suite on react@${{ matrix.react }}
         env:
           REACT_VERSION: ${{ matrix.react }}
-        # Also writes the expected pre-v1 baseline vs the actual result to
-        # the job summary, so the real state of these non-blocking jobs is
-        # readable without opening the logs.
+        # Also writes the result to the job summary, readable per job
+        # without opening the logs.
         run: |
           set +e
           yarn vitest run --config test-runtime/vitest.config.js 2>&1 | tee vitest-runtime.log
           STATUS=${PIPESTATUS[0]}
           RESULT=$(sed 's/\x1b\[[0-9;]*m//g' vitest-runtime.log | grep -E '^ *Tests ' | tail -1 | xargs)
           {
-            echo "### runtime (react ${{ matrix.react }}) — non-blocking"
+            echo "### runtime (react ${{ matrix.react }})"
             echo ""
-            echo "- Expected pre-v1 baseline: **4 failed | 123 passed (127)** — known act/automatic-batching failures in \`Form.test.js\` (see \`test-runtime/README.md\`)"
+            echo "- Expected: full pass — the suite is act-safe; a failure here is a real React ${{ matrix.react }} regression (see \`test-runtime/README.md\`)"
             echo "- Actual: **${RESULT:-summary line not found — check the logs}**"
           } >> "$GITHUB_STEP_SUMMARY"
           exit "$STATUS"
