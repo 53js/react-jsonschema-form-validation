@@ -12,6 +12,16 @@ and dependency-only bumps are omitted.
 
 ### Changed
 
+- `dot-prop-immutable` (unmaintained since 2020) is no longer a
+  dependency: the single function the library used (`set`) is now a
+  small internal module with the same semantics, validated against the
+  original with a differential test battery. Behavior of form updates is
+  unchanged — dot paths with numeric indexes, creation of missing
+  intermediate objects, and structural immutability (untouched siblings
+  keep their reference identity) all work exactly as before. The only
+  deviation is a hardening one: `__proto__`/`constructor`-style path
+  segments can no longer touch any prototype (writes create plain own
+  properties instead of invoking inherited setters).
 - The npm package is now built with Vite (Rollup) instead of Babel CLI.
   The published surface is unchanged — ES modules mirroring the source
   layout under `dist/`, one file per module (tree-shaking preserved),

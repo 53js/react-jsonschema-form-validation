@@ -63,7 +63,6 @@
 		"@types/json-schema": "^7.0.15",
 		"ajv": "^6.11.0",
 		"classnames": "^2.2.6",
-		"dot-prop-immutable": "^2.1.0",
 		"memoize-one": "^5.1.1",
 		"prop-types": "^15.7.2"
 	},
