@@ -180,7 +180,12 @@ it('should reset the unmounting flag on remount (React 18 StrictMode)', () => {
 	// componentWillUnmount followed by componentDidMount. Unregistering
 	// must work again after the remount.
 	instance.componentWillUnmount();
-	instance.componentDidMount();
+	// componentDidMount dispatches the initial validation: only the memoized
+	// data-reference short-circuit keeps it setState-free here — act() makes
+	// the test robust to that internal detail.
+	act(() => {
+		instance.componentDidMount();
+	});
 
 	act(() => {
 		instance.unregisterFieldError(key);
