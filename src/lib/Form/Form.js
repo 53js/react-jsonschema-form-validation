@@ -282,8 +282,42 @@ class Form extends PureComponent {
 		this.validate();
 	}
 
-	componentDidUpdate() {
-		this.validate();
+	/** @param {FormBaseProps} prevProps */
+	componentDidUpdate(prevProps) {
+		// Only re-validate when one of the validation inputs changed.
+		// Internal setState updates (touch, submit/isSubmitted, reset, the
+		// <FieldError> id registry…) re-render with the exact same props:
+		// dispatching validate() there is pure overhead — the memoized
+		// validator would short-circuit on the identical `data` reference
+		// anyway. The reference comparisons below use the same keys as
+		// `memoGetValidator` (ajv, schema, throttleDuration) plus the
+		// memoized `data` argument, so this guard skips exactly the updates
+		// the memoization already made no-ops. The memoize itself is kept as
+		// defense in depth (e.g. consecutive validations with the same data
+		// reference coming from the parent).
+		//
+		// Note: the comparisons rely on `Form.defaultProps` — React resolves
+		// `undefined` props to the module-level constants (DEFAULT_AJV,
+		// DEFAULT_DATA, DEFAULT_THROTTLE_DURATION) BEFORE this method runs,
+		// so the guard and `getValidator()` observe the same stable
+		// references. If defaultProps are ever removed (e.g. migrating off
+		// class components), the same destructuring fallbacks used in
+		// `getValidator()`/`validate()` must be applied to both `prevProps`
+		// and `this.props` here.
+		const {
+			ajv,
+			data,
+			schema,
+			throttleDuration,
+		} = this.props;
+		if (
+			prevProps.data !== data
+			|| prevProps.schema !== schema
+			|| prevProps.ajv !== ajv
+			|| prevProps.throttleDuration !== throttleDuration
+		) {
+			this.validate();
+		}
 	}
 
 	componentWillUnmount() {

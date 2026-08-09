@@ -48,6 +48,16 @@ and dependency-only bumps are omitted.
 
 ### Changed
 
+- `dot-prop-immutable` (unmaintained since 2020) is no longer a
+  dependency: the single function the library used (`set`) is now a
+  small internal module with the same semantics, validated against the
+  original with a differential test battery. Behavior of form updates is
+  unchanged — dot paths with numeric indexes, creation of missing
+  intermediate objects, and structural immutability (untouched siblings
+  keep their reference identity) all work exactly as before. The only
+  deviation is a hardening one: `__proto__`/`constructor`-style path
+  segments can no longer touch any prototype (writes create plain own
+  properties instead of invoking inherited setters).
 - The npm package is now built with Vite (Rollup) instead of Babel CLI.
   The published surface is unchanged — ES modules mirroring the source
   layout under `dist/`, one file per module (tree-shaking preserved),
@@ -72,6 +82,20 @@ and dependency-only bumps are omitted.
   - The internal barrel files (`dist/Field/index.js`,
     `dist/FieldError/index.js`, `dist/Form/index.js`) are no longer
     emitted; they were never reachable through the `exports` map.
+- `<Form>` no longer dispatches a validation pass on re-renders where
+  none of the validation inputs (`data`, `schema`, `ajv`,
+  `throttleDuration`) changed by reference — e.g. the internal state
+  updates caused by touching a field, submitting, resetting, or the
+  `<FieldError>` id registry. Observable behavior is unchanged: the
+  memoized validator already short-circuited the actual AJV work on an
+  identical `data` reference (and it is kept as defense in depth); the
+  guard removes the redundant per-update dispatch. Validation still
+  runs on mount and whenever `data`, `schema`, `ajv` or
+  `throttleDuration` changes. Note a pre-existing limitation this
+  change neither introduces nor fixes: mutating `data` in place and
+  re-rendering with the same reference has never triggered a
+  revalidation (the memoized validator already short-circuited on the
+  identical reference) — pass a new `data` object to revalidate.
 
 ### Added
 
