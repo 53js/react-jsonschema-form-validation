@@ -307,6 +307,27 @@ type _ErrMapValuesAreFns = Expect<Equal<
 	ErrorMessageFn
 >>;
 
+// Type-level check (issue #6): the verbose-mode properties inherited from
+// AJV 6's `ErrorObject` (`data?: any`, `parentSchema?: object`) are visible
+// on the error received by an errorMessages callback, so interpolating the
+// current field value compiles without casting. `data` is locked to `any`
+// (AJV's declared type) — if it ever disappeared from the error type,
+// the indexed access below would fail to compile.
+type _ErrCallbackDataExposed = Expect<Equal<
+	Parameters<ErrorMessageFn>[0]['data'],
+	any
+>>;
+type _ErrCallbackParentSchemaExposed = Expect<Equal<
+	Parameters<ErrorMessageFn>[0]['parentSchema'],
+	object | undefined
+>>;
+
+// Usage: a callback quoting the offending value (issue #6) compiles.
+const dataAwareMessages: ErrorMessagesMap = {
+	minLength: (err) => `"${err.data}" is too short`,
+};
+void dataAwareMessages;
+
 // ---------------------------------------------------------------------------
 // 9. Legacy render-prop still works
 // ---------------------------------------------------------------------------

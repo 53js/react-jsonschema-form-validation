@@ -148,6 +148,54 @@ class DemoForm extends PureComponent {
 
 🎵 _That's all folks !_ 
 
+## Custom error messages
+
+Pass an `errorMessages` map (keyword → function) to `<Form>` — or to a
+single `<FieldError>` — to replace AJV's raw messages. Each function
+receives the AJV error, which carries the current value of the offending
+field as `error.data`, so messages can quote what the user actually typed:
+
+```jsx
+<Form
+	data={formData}
+	errorMessages={{
+		minLength: (e) => `"${e.data}" is too short (min ${e.params.limit} characters)`,
+		format: (e) => `"${e.data}" is not a valid ${e.params.format}`,
+		required: () => 'This field is required',
+	}}
+	onChange={handleChange}
+	onSubmit={handleSubmit}
+	schema={demoSchema}
+>
+	<Field name="email" value={formData.email} />
+	<FieldError name="email" />
+	<button type="submit">Submit</button>
+</Form>
+```
+
+What `error.data` contains, per error type:
+
+- value-level keywords (`minLength`, `format`, `enum`, `const`, `pattern`,
+  `minimum`, … including `$data` references): the current value of the field;
+- `required`: the **parent object** missing the property (AJV reports
+  `required` on the parent — the missing value itself does not exist).
+  Use `e.params.missingProperty` for the field name.
+
+Errors also expose `error.schema` (the failing keyword's value, e.g. `5`
+for `minLength: 5`) and `error.parentSchema` (the enclosing subschema).
+
+> **Serialization & logging** — with `verbose`, a `required` error carries
+> the *entire parent object* in `error.data`. A `JSON.stringify(errors)`
+> shipped to monitoring or logs can therefore exfiltrate sensitive sibling
+> fields (a password living next to the missing property, for instance),
+> and cyclic data would make `stringify` throw. Log a projection of chosen
+> fields (`field`, `keyword`, `message`) rather than raw error objects.
+
+> **Note** — these properties come from AJV's `verbose` option, enabled on
+> the default instance. If you pass your own instance through the `ajv`
+> prop of `<Form>`, set `verbose: true` yourself to benefit from
+> `error.data`.
+
 ## Accessibility
 
 `<Field>` and `<FieldError>` wire the essential ARIA attributes for you — no

@@ -43,6 +43,71 @@ describe('.createAjv()', () => {
 			type: 'object',
 			someUnknownKeyword: true,
 		})).not.toThrow();
+	// Issue #6: `verbose: true` makes AJV attach the offending value to each
+	// error as `error.data`, so `errorMessages` callbacks can interpolate it.
+	describe('verbose errors (issue #6)', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				name: { type: 'string', minLength: 5 },
+			},
+			required: ['name', 'age'],
+		};
+
+		it('should attach the current field value as `data` on value-level errors (minLength)', () => {
+			const ajv = helpers.createAjv();
+			const validate = ajv.compile(schema);
+			validate({ name: 'abc' });
+
+			const minLengthError = validate.errors.find((e) => e.keyword === 'minLength');
+			expect(minLengthError.data).toBe('abc');
+			// `schema` is the failing keyword's value, `parentSchema` the
+			// enclosing subschema.
+			expect(minLengthError.schema).toBe(5);
+			expect(minLengthError.parentSchema).toEqual({ type: 'string', minLength: 5 });
+		});
+
+		it('should attach the parent object as `data` on required errors (the missing value itself does not exist)', () => {
+			const ajv = helpers.createAjv();
+			const validate = ajv.compile(schema);
+			const formData = { name: 'valid name' };
+			validate(formData);
+
+			const requiredError = validate.errors.find((e) => e.keyword === 'required');
+			expect(requiredError.params.missingProperty).toBe('age');
+			// AJV reports `required` on the parent object: `data` is that
+			// object, not the (nonexistent) missing value.
+			expect(requiredError.data).toBe(formData);
+		});
+
+		it('should attach the current field value as `data` on $data-reference errors', () => {
+			const ajv = helpers.createAjv();
+			const validate = ajv.compile({
+				type: 'object',
+				properties: {
+					email: { type: 'string' },
+					emailConfirm: { const: { $data: '1/email' } },
+				},
+			});
+			validate({ email: 'a@b.fr', emailConfirm: 'oops' });
+
+			const constError = validate.errors.find((e) => e.keyword === 'const');
+			// `data` is the value of the field under validation; `schema`
+			// stays the raw (unresolved) $data reference.
+			expect(constError.data).toBe('oops');
+			expect(constError.schema).toEqual({ $data: '1/email' });
+		});
+
+		it('should keep `data` available after formatErrors()', () => {
+			const ajv = helpers.createAjv();
+			const validate = ajv.compile(schema);
+			validate({ name: 'abc' });
+
+			const errors = helpers.formatErrors(validate.errors);
+			const minLengthError = errors.find((e) => e.keyword === 'minLength');
+			expect(minLengthError.field).toBe('name');
+			expect(minLengthError.data).toBe('abc');
+		});
 	});
 });
 

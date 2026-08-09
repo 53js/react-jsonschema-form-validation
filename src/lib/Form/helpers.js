@@ -17,6 +17,16 @@ import setIn from './setIn';
  * know `instancePath`; legacy AJV 6 errors carry `dataPath` instead, and
  * {@link formatErrors} accepts both shapes.
  *
+ * Because {@link createAjv} enables AJV's `verbose` option (issue #6),
+ * errors also carry `data` (the current value of the offending field —
+ * for `required` errors it is the parent object missing the property),
+ * `schema` (the failing keyword's value) and `parentSchema` (the
+ * enclosing subschema). Those three properties are already declared as
+ * optional on AJV's `ErrorObject` (`data?: any`, `schema?: any`,
+ * `parentSchema?: object`), so they are inherited here — no re-declaration
+ * needed. They stay `undefined` when a custom `ajv` prop is passed to
+ * `<Form>` without `verbose: true`.
+ *
  * @typedef {ErrorObject & { dataPath?: string, field: string }} FormattedError
  */
 
@@ -85,6 +95,10 @@ import setIn from './setIn';
  * - `ajv-formats` — restore the string formats (`email`, `date`, `uri`…)
  *   that AJV 8 moved out of the core package.
  *
+ * `verbose: true` (issue #6) makes AJV attach `data`, `schema` and
+ * `parentSchema` to every error, so `errorMessages` callbacks can
+ * interpolate the current value of the offending field (`error.data`).
+ *
  * @returns {Ajv}
  */
 export const createAjv = () => {
@@ -92,6 +106,14 @@ export const createAjv = () => {
 		allErrors: true,
 		$data: true,
 		strict: false,
+		// Issue #6: expose the offending value to `errorMessages` callbacks.
+		// For value-level keywords (minLength, format, enum, const — including
+		// `$data` references) `error.data` is the current field value; for
+		// `required` it is the *parent object* missing the property (AJV
+		// reports `required` on the parent, the missing value itself does
+		// not exist). `error.schema` is the failing keyword's value and
+		// `error.parentSchema` the enclosing subschema.
+		verbose: true,
 	});
 	addFormats(ajv);
 	return ajv;
