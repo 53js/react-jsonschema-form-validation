@@ -88,6 +88,20 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: bash test-runtime/setup.sh ${{ matrix.react }}
       - name: Run the unit-test suite on react@${{ matrix.react }}
-        run: yarn vitest run --config test-runtime/vitest.config.js
         env:
           REACT_VERSION: ${{ matrix.react }}
+        # Also writes the expected pre-v1 baseline vs the actual result to
+        # the job summary, so the real state of these non-blocking jobs is
+        # readable without opening the logs.
+        run: |
+          set +e
+          yarn vitest run --config test-runtime/vitest.config.js 2>&1 | tee vitest-runtime.log
+          STATUS=${PIPESTATUS[0]}
+          RESULT=$(sed 's/\x1b\[[0-9;]*m//g' vitest-runtime.log | grep -E '^ *Tests ' | tail -1 | xargs)
+          {
+            echo "### runtime (react ${{ matrix.react }}) — non-blocking"
+            echo ""
+            echo "- Expected pre-v1 baseline: **4 failed | 123 passed (127)** — known act/automatic-batching failures in \`Form.test.js\` (see \`test-runtime/README.md\`)"
+            echo "- Actual: **${RESULT:-summary line not found — check the logs}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$STATUS"

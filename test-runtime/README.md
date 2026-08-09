@@ -9,9 +9,12 @@ tests changes.
 
 - `react-18/`, `react-19/` — one fixture per React major, a mini
   `package.json` pinning `react`, `react-dom`, `@testing-library/react` 16
-  and its explicit `@testing-library/dom` peer. `setup.sh <18|19>` installs
-  it in place; its `node_modules` never touches the root tree (React 16 +
-  RTL 12).
+  and its explicit `@testing-library/dom` peer to **exact versions** (no
+  carets): the fixtures have no committed lockfile, so exact versions are
+  what keeps the matrix — and its documented failure baseline —
+  reproducible across runs. Bump them deliberately, in their own commit.
+  `setup.sh <18|19>` installs the fixture in place; its `node_modules`
+  never touches the root tree (React 16 + RTL 12).
 - `vitest.config.js` — extends the root `vitest.config.js` and aliases the
   four React-coupled bare imports (`react`, `react-dom`,
   `@testing-library/react`, `@testing-library/dom`) to the fixture selected
