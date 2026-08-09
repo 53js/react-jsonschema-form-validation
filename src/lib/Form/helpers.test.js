@@ -43,6 +43,8 @@ describe('.createAjv()', () => {
 			type: 'object',
 			someUnknownKeyword: true,
 		})).not.toThrow();
+	});
+
 	// Issue #6: `verbose: true` makes AJV attach the offending value to each
 	// error as `error.data`, so `errorMessages` callbacks can interpolate it.
 	describe('verbose errors (issue #6)', () => {
