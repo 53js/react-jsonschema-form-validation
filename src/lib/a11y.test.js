@@ -7,7 +7,7 @@
  * <Field> points at it, instead of hardcoding `jfv1` everywhere.
  */
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render } from '@testing-library/react';
 
 import Form from './Form';
 import Field from './Field';
@@ -182,7 +182,9 @@ it('should reset the unmounting flag on remount (React 18 StrictMode)', () => {
 	instance.componentWillUnmount();
 	instance.componentDidMount();
 
-	instance.unregisterFieldError(key);
+	act(() => {
+		instance.unregisterFieldError(key);
+	});
 	expect(instance.fieldErrorRegistry.size).toBe(0);
 
 	unmount();
