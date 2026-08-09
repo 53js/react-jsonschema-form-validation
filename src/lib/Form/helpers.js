@@ -16,6 +16,16 @@ import setIn from './setIn';
  * know `dataPath`; AJV 8 errors carry `instancePath` instead, and
  * {@link formatErrors} accepts both shapes.
  *
+ * Because {@link createAjv} enables AJV's `verbose` option (issue #6),
+ * errors also carry `data` (the current value of the offending field —
+ * for `required` errors it is the parent object missing the property),
+ * `schema` (the failing keyword's value) and `parentSchema` (the
+ * enclosing subschema). Those three properties are already declared as
+ * optional on AJV 6's `ErrorObject` (`data?: any`, `schema?: any`,
+ * `parentSchema?: object`), so they are inherited here — no re-declaration
+ * needed. They stay `undefined` when a custom `ajv` prop is passed to
+ * `<Form>` without `verbose: true`.
+ *
  * @typedef {ErrorObject & { instancePath?: string, field: string }} FormattedError
  */
 
@@ -75,19 +85,29 @@ import setIn from './setIn';
 /**
  * Returns a default AJV instance configured for use with the form.
  *
+ * `verbose: true` (issue #6) makes AJV attach `data`, `schema` and
+ * `parentSchema` to every error, so `errorMessages` callbacks can
+ * interpolate the current value of the offending field (`error.data`).
+ *
  * @returns {Ajv.Ajv}
  */
 export const createAjv = () => new Ajv(
 	// Cast: the `v5` option no longer exists in AJV 6+ typings (it was a
 	// flag from AJV 3/4 that enabled draft-05 features, which became the
 	// default later). The runtime silently ignores unknown options. Kept
-	// here verbatim from the historical code so the lib stays byte-for-byte
-	// equivalent (notably for the Form snapshot test that captures AJV's
-	// internal `_opts` / `_metaOpts` state).
+	// here verbatim from the historical code.
 	/** @type {Ajv.Options} */ ({
 		allErrors: true,
 		v5: true,
 		$data: true,
+		// Issue #6: expose the offending value to `errorMessages` callbacks.
+		// For value-level keywords (minLength, format, enum, const — including
+		// `$data` references) `error.data` is the current field value; for
+		// `required` it is the *parent object* missing the property (AJV
+		// reports `required` on the parent, the missing value itself does
+		// not exist). `error.schema` is the failing keyword's value and
+		// `error.parentSchema` the enclosing subschema.
+		verbose: true,
 	}),
 );
 
