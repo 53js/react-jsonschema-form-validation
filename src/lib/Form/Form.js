@@ -295,6 +295,15 @@ class Form extends PureComponent {
 		// the memoization already made no-ops. The memoize itself is kept as
 		// defense in depth (e.g. consecutive validations with the same data
 		// reference coming from the parent).
+		//
+		// Note: the comparisons rely on `Form.defaultProps` — React resolves
+		// `undefined` props to the module-level constants (DEFAULT_AJV,
+		// DEFAULT_DATA, DEFAULT_THROTTLE_DURATION) BEFORE this method runs,
+		// so the guard and `getValidator()` observe the same stable
+		// references. If defaultProps are ever removed (e.g. migrating off
+		// class components), the same destructuring fallbacks used in
+		// `getValidator()`/`validate()` must be applied to both `prevProps`
+		// and `this.props` here.
 		const {
 			ajv,
 			data,

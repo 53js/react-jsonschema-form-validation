@@ -45,7 +45,11 @@ and dependency-only bumps are omitted.
   identical `data` reference (and it is kept as defense in depth); the
   guard removes the redundant per-update dispatch. Validation still
   runs on mount and whenever `data`, `schema`, `ajv` or
-  `throttleDuration` changes.
+  `throttleDuration` changes. Note a pre-existing limitation this
+  change neither introduces nor fixes: mutating `data` in place and
+  re-rendering with the same reference has never triggered a
+  revalidation (the memoized validator already short-circuited on the
+  identical reference) — pass a new `data` object to revalidate.
 
 ### Added
 
