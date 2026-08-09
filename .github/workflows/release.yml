@@ -1,0 +1,109 @@
+name: Release
+
+# Publishing is tag-driven: pushing a `v*` tag is the deliberate release
+# act. The version must have been bumped beforehand — `yarn version` does
+# both (bump commit + tag). See CONTRIBUTING.md, "Release".
+on:
+  push:
+    tags: ['v*']
+
+# Least-privilege default. `publish` adds id-token: write for itself.
+permissions:
+  contents: read
+
+jobs:
+  # Same checks as ci.yml `build`, re-run on the tagged commit — a tag may
+  # point at any commit (not necessarily master's HEAD), so the release
+  # verifies exactly what it is about to publish.
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      # Guard: the tag must match package.json — tagging without bumping
+      # the version first is a mistake, fail before doing anything else.
+      - name: Check that package.json version matches the tag
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${PKG_VERSION}. Bump the version first — \`yarn version --new-version ${TAG_VERSION}\` creates both the commit and the tag."
+            exit 1
+          fi
+      - run: yarn install --frozen-lockfile
+      - run: yarn lint
+      - run: yarn type-check
+      - run: yarn test:runtime
+      - run: yarn dist
+
+  # Full unit-test suite on real React 18 and 19, same fixtures as ci.yml
+  # (test-runtime/setup.sh + aliased vitest config). Blocking.
+  runtime:
+    name: runtime (react ${{ matrix.react }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        react: ['18', '19']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: bash test-runtime/setup.sh ${{ matrix.react }}
+      - name: Run the unit-test suite on react@${{ matrix.react }}
+        env:
+          REACT_VERSION: ${{ matrix.react }}
+        run: yarn vitest run --config test-runtime/vitest.config.js
+
+  publish:
+    name: publish
+    needs: [verify, runtime]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # npm provenance + trusted publishing (OIDC)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      # Node 20 bundles npm 10, which supports neither trusted publishing
+      # nor OIDC-minted provenance. npm >= 11.5.1 is required.
+      - run: npm install -g npm@11
+      # Auth — configure ONE of these once, then it just works:
+      #
+      #  A. Trusted publishing / OIDC (recommended, no secret to rotate):
+      #     on npmjs.com > package "react-jsonschema-form-validation" >
+      #     Settings > Trusted Publisher, declare this repo
+      #     (53js/react-jsonschema-form-validation) and this workflow file
+      #     (release.yml). Leave the NPM_TOKEN secret unset — npm exchanges
+      #     the GitHub OIDC token at publish time.
+      #
+      #  B. Classic token: create an npm automation token and store it as
+      #     the NPM_TOKEN repository secret. The step below picks it up.
+      #
+      # `npm publish` runs `prepublishOnly` first (unit tests --bail 1,
+      # the @types/react 16-19 matrix, then `yarn dist`), so the published
+      # tarball is built and tested by npm itself, exactly like a local
+      # `npm publish` would.
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$NODE_AUTH_TOKEN" ]; then
+            # Option B: authenticate with the classic token.
+            npm config set "//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}"
+          fi
+          npm publish --provenance --access public
