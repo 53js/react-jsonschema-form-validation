@@ -39,8 +39,8 @@ export default defineConfig({
 		},
 	},
 	build: {
-		// CRA output directory, kept so the `docs` script (mv build docs)
-		// stays unchanged. Not to be confused with dist/ (npm package build).
+		// Demo output, uploaded to GitHub Pages by .github/workflows/pages.yml.
+		// Not to be confused with dist/ (npm package build).
 		outDir: 'build',
 	},
 });
