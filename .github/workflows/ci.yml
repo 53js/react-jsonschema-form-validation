@@ -58,3 +58,46 @@ jobs:
         run: |
           yarn add --dev --silent "@types/react@^${{ matrix.types-react }}"
           yarn test
+
+  # Runs the FULL unit-test suite (the same one `build` runs on React 16)
+  # against real React 18 and 19 — the v1 targets. Each job installs a
+  # pinned fixture (test-runtime/react-<version>) and aliases react,
+  # react-dom and Testing Library to it (test-runtime/vitest.config.js).
+  #
+  # BLOCKING since the suite became act-safe (#83 wrapped the un-acted
+  # instance calls that React 18+ automatic batching broke): a failure here
+  # is a real React 18/19 regression and must gate the merge, exactly like
+  # the React 16 run in `build`.
+  runtime:
+    name: runtime (react ${{ matrix.react }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        react: ['18', '19']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: bash test-runtime/setup.sh ${{ matrix.react }}
+      - name: Run the unit-test suite on react@${{ matrix.react }}
+        env:
+          REACT_VERSION: ${{ matrix.react }}
+        # Also writes the result to the job summary, readable per job
+        # without opening the logs.
+        run: |
+          set +e
+          yarn vitest run --config test-runtime/vitest.config.js 2>&1 | tee vitest-runtime.log
+          STATUS=${PIPESTATUS[0]}
+          RESULT=$(sed 's/\x1b\[[0-9;]*m//g' vitest-runtime.log | grep -E '^ *Tests ' | tail -1 | xargs)
+          {
+            echo "### runtime (react ${{ matrix.react }})"
+            echo ""
+            echo "- Expected: full pass — the suite is act-safe; a failure here is a real React ${{ matrix.react }} regression (see \`test-runtime/README.md\`)"
+            echo "- Actual: **${RESULT:-summary line not found — check the logs}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$STATUS"

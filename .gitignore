@@ -30,3 +30,6 @@ yarn-error.log*
 
 # test-types fixture — regenerated per install / matrix run
 test-types/yarn.lock
+
+# test-runtime fixtures — regenerated per install / matrix run
+test-runtime/*/yarn.lock
