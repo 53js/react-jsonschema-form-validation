@@ -41,6 +41,10 @@ it('should pass the current field value (error.data) to the errorMessages callba
 	validate({ name: 'abc' });
 	const [error] = formatErrors(validate.errors);
 
+	// The arrow is hoisted into a const on purpose: inlined as an object
+	// property inside the getErrorMessage() call, its template literal
+	// crashes babel-eslint 10.0.3 (`template-curly-spacing` token-range
+	// bug, fixed in babel-eslint 10.1.0). Do not re-inline it.
 	const minLength = (e) => `"${e.data}" is too short (min ${e.params.limit})`;
 	const message = getErrorMessage(error, { minLength });
 

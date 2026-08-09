@@ -167,6 +167,10 @@ field as `error.data`, so messages can quote what the user actually typed:
 	onSubmit={handleSubmit}
 	schema={demoSchema}
 >
+	<Field name="email" value={formData.email} />
+	<FieldError name="email" />
+	<button type="submit">Submit</button>
+</Form>
 ```
 
 What `error.data` contains, per error type:
@@ -179,6 +183,13 @@ What `error.data` contains, per error type:
 
 Errors also expose `error.schema` (the failing keyword's value, e.g. `5`
 for `minLength: 5`) and `error.parentSchema` (the enclosing subschema).
+
+> **Serialization & logging** — with `verbose`, a `required` error carries
+> the *entire parent object* in `error.data`. A `JSON.stringify(errors)`
+> shipped to monitoring or logs can therefore exfiltrate sensitive sibling
+> fields (a password living next to the missing property, for instance),
+> and cyclic data would make `stringify` throw. Log a projection of chosen
+> fields (`field`, `keyword`, `message`) rather than raw error objects.
 
 > **Note** — these properties come from AJV's `verbose` option, enabled on
 > the default instance. If you pass your own instance through the `ajv`
