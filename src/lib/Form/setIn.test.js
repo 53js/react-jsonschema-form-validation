@@ -148,6 +148,12 @@ describe('setIn(data, path, value)', () => {
 	});
 
 	describe('dangerous keys (prototype-pollution hardening)', () => {
+		afterEach(() => {
+			// Safety net: if an implementation regression ever polluted the
+			// global prototype, do not let it leak into other tests.
+			delete Object.prototype.polluted;
+		});
+
 		it('should never pollute Object.prototype via __proto__ paths', () => {
 			const result = setIn({}, '__proto__.polluted', true);
 			expect({}.polluted).toBeUndefined();
@@ -158,6 +164,35 @@ describe('setIn(data, path, value)', () => {
 			expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
 			expect(Object.getOwnPropertyDescriptor(result, '__proto__').value)
 				.toEqual({ polluted: true });
+		});
+
+		it('should apply the __proto__ guard at any depth, not only at the root', () => {
+			const result = setIn({ user: { name: 'x' } }, 'user.__proto__.polluted', true);
+
+			// No pollution of the global prototype…
+			expect({}.polluted).toBeUndefined();
+			expect(Object.prototype.polluted).toBeUndefined();
+			// …and no pollution of the nested clone either: its prototype is
+			// untouched and the value does not leak through the prototype
+			// chain — the written key is a plain own property. Without the
+			// defineOwn guard, the inherited __proto__ setter would rewrite
+			// result.user's prototype and result.user.polluted would be true.
+			expect(Object.getPrototypeOf(result.user)).toBe(Object.prototype);
+			expect(result.user.polluted).toBeUndefined();
+			expect(Object.getOwnPropertyDescriptor(result.user, '__proto__').value)
+				.toEqual({ polluted: true });
+			expect(result.user.name).toBe('x');
+		});
+
+		it('should never pollute prototypes via nested constructor.prototype paths', () => {
+			const result = setIn({ user: {} }, 'user.constructor.prototype.polluted', true);
+
+			expect({}.polluted).toBeUndefined();
+			expect(Object.prototype.polluted).toBeUndefined();
+			// The whole chain is rebuilt from fresh clones: plain own keys,
+			// never a write into the real Object.prototype.
+			expect(JSON.parse(JSON.stringify(result.user)))
+				.toEqual({ constructor: { prototype: { polluted: true } } });
 		});
 
 		it('should never pollute prototypes via constructor.prototype paths', () => {
