@@ -39,6 +39,9 @@ jobs:
       - run: yarn lint
       - run: yarn type-check
       - run: yarn test:runtime
+      # The @types/react 16-19 matrix is part of the release gate: fail
+      # here, before publish gets anywhere near npm.
+      - run: yarn test:types
       - run: yarn dist
 
   # Full unit-test suite on real React 18 and 19, same fixtures as ci.yml
@@ -80,8 +83,9 @@ jobs:
           cache: yarn
       - run: yarn install --frozen-lockfile
       # Node 20 bundles npm 10, which supports neither trusted publishing
-      # nor OIDC-minted provenance. npm >= 11.5.1 is required.
-      - run: npm install -g npm@11
+      # nor OIDC-minted provenance. npm >= 11.5.1 is required; pinned
+      # exact, matching the repo's pinning policy.
+      - run: npm install -g npm@11.19.0
       # Auth — configure ONE of these once, then it just works:
       #
       #  A. Trusted publishing / OIDC (recommended, no secret to rotate):
