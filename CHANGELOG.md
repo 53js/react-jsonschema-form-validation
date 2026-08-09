@@ -116,6 +116,14 @@ and dependency-only bumps are omitted.
 
 ### Fixed
 
+- `<FieldError>` no longer attaches `defaultProps` to its public
+  function wrapper — that pattern is deprecated in React 18.3 (runtime
+  warning "Support for defaultProps will be removed from function
+  components") and silently ignored by React 19. The defaults were
+  already applied by the internal class component, so behavior is
+  unchanged on every supported React version; the warning is simply
+  gone. Class components (`<Form>`, and `<Field>`'s implementation)
+  keep their `defaultProps`, which remain fully supported.
 - The `<Form>` snapshot test no longer serializes the internal AJV
   instance, whose cache state differed between Jest run modes (flaky in
   single-suite runs). Contributor-facing only; no runtime change.

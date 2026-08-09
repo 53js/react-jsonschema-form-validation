@@ -239,13 +239,11 @@ FieldError.propTypes = {
 	name: PropTypes.string.isRequired,
 };
 
-FieldError.defaultProps = {
-	children: null,
-	component: 'div',
-	errorMessages: null,
-	className: '',
-	id: null,
-};
+// No `FieldError.defaultProps` here on purpose: defaultProps on FUNCTION
+// components are deprecated in React 18.3 (runtime warning) and silently
+// ignored in React 19. The defaults live on the `FieldErrorInner` CLASS
+// above (still fully supported, like `Form.defaultProps`), which is where
+// the props are actually consumed.
 
 // Polymorphic re-typing: the implementation is non-generic internally (uses
 // `FieldErrorBaseProps`); the cast on the default export restores the
