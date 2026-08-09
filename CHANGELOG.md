@@ -10,6 +10,20 @@ and dependency-only bumps are omitted.
 
 ## [Unreleased]
 
+### Added
+
+- Validation errors now carry the current value of the offending field:
+  the default AJV instance is created with `verbose: true`, so every
+  error passed to `errorMessages` callbacks (and exposed through the
+  form context) has `data` — the field's current value for value-level
+  keywords (`minLength`, `format`, `enum`, `const`, `$data`
+  references, …), or the parent object for `required` errors — plus
+  `schema` (the failing keyword's value) and `parentSchema` (the
+  enclosing subschema). Example:
+  ``minLength: (e) => `"${e.data}" is too short (min ${e.params.limit})` ``.
+  If you pass a custom instance through the `ajv` prop, enable
+  `verbose: true` yourself to get the same behavior. Closes #6.
+
 ### Changed
 
 - `dot-prop-immutable` (unmaintained since 2020) is no longer a
