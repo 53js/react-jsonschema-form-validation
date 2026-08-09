@@ -1,0 +1,53 @@
+name: Pages
+
+# Deploys the demo site to GitHub Pages from Actions on every push to
+# master — the historical committed `docs/` folder is gone. The repo
+# setting "Pages > Source" must be set to "GitHub Actions" (once).
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Least-privilege default. `deploy` adds what deploy-pages needs.
+permissions:
+  contents: read
+
+# One deployment at a time; never cancel a production deploy mid-flight.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      # Vite demo build — `base` is already /react-jsonschema-form-validation/
+      # (vite.config.js), so the Pages URL stays what it always was.
+      - run: yarn build
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: build
+
+  deploy:
+    name: deploy
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+        id: deployment
