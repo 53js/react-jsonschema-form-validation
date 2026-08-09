@@ -56,6 +56,23 @@ type-checks `positive.tsx` / `negative.tsx` against each supported
 `@types/react` major. It restores `@types/react@16` on exit, even on failure.
 See `test-types/README.md` for details.
 
+### Runtime React matrix (18/19)
+
+The same unit-test suite also runs against real React 18 and 19 (the v1
+targets) through per-version fixtures — blocking in CI, like the React 16
+run:
+
+```bash
+# Full matrix: react 18 then 19
+bash test-runtime/check-matrix.sh
+
+# A single version
+bash test-runtime/setup.sh 19
+REACT_VERSION=19 yarn vitest run --config test-runtime/vitest.config.js
+```
+
+See `test-runtime/README.md` for the mechanics.
+
 ## Commit Messages
 
 Use [Conventional Commits](https://www.conventionalcommits.org/), matching the
@@ -76,6 +93,7 @@ ci: pin actions to SHA
 - CI (GitHub Actions, `.github/workflows/ci.yml`) must pass: the `build` job
   runs `yarn lint`, `yarn type-check`, `yarn test:runtime` and `yarn dist`;
   the `types` matrix type-checks the built bundle against `@types/react`
-  16/17/18/19.
+  16/17/18/19. The `runtime (react 18/19)` matrix re-runs the unit tests
+  on real React 18 and 19, and blocks like the rest.
 - Keep PRs focused; add or update tests for behavior changes.
 - Update `CHANGELOG.md` when the change is user-facing.

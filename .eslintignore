@@ -6,4 +6,5 @@ coverage
 .types-temp
 types
 test-types
+test-runtime
 **/*.d.ts
