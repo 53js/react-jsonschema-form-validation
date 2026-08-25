@@ -10,7 +10,6 @@ and dependency-only bumps are omitted.
 
 ## [Unreleased]
 
-<<<<<<< HEAD
 ### Breaking
 
 - **AJV upgraded from v6 to v8** (`ajv@^8.17.0`). No code change is needed
@@ -46,7 +45,8 @@ and dependency-only bumps are omitted.
     `compile(schema)` function) instead of `instanceOf(Ajv)`: `Ajv2019` /
     `Ajv2020` instances — e.g. for JSON Schema draft 2020-12 — are
     accepted.
-=======
+## [0.7.0] — 2026-08-25
+
 ### Added
 
 - Validation errors now carry the current value of the offending field:
@@ -60,7 +60,6 @@ and dependency-only bumps are omitted.
   ``minLength: (e) => `"${e.data}" is too short (min ${e.params.limit})` ``.
   If you pass a custom instance through the `ajv` prop, enable
   `verbose: true` yourself to get the same behavior. Closes #6.
->>>>>>> origin/master
 
 ### Changed
 
@@ -259,7 +258,8 @@ Initial public release.
   copy on every field change.
 - `react-select` wrapper.
 
-[Unreleased]: https://github.com/53js/react-jsonschema-form-validation/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/53js/react-jsonschema-form-validation/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/53js/react-jsonschema-form-validation/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/53js/react-jsonschema-form-validation/compare/71300db...v0.6.0
 [0.5.6]: https://github.com/53js/react-jsonschema-form-validation/compare/8534580...71300db
 [0.5.5]: https://github.com/53js/react-jsonschema-form-validation/compare/53a58a8...8534580
