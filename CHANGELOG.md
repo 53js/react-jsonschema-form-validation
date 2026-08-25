@@ -10,6 +10,8 @@ and dependency-only bumps are omitted.
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-08-25
+
 ### Added
 
 - Validation errors now carry the current value of the offending field:
@@ -223,7 +225,8 @@ Initial public release.
   copy on every field change.
 - `react-select` wrapper.
 
-[Unreleased]: https://github.com/53js/react-jsonschema-form-validation/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/53js/react-jsonschema-form-validation/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/53js/react-jsonschema-form-validation/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/53js/react-jsonschema-form-validation/compare/71300db...v0.6.0
 [0.5.6]: https://github.com/53js/react-jsonschema-form-validation/compare/8534580...71300db
 [0.5.5]: https://github.com/53js/react-jsonschema-form-validation/compare/53a58a8...8534580
