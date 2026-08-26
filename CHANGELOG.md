@@ -41,8 +41,9 @@ The README carries a single migration guide, "Migrating from 0.x to 1.0".
     `strict: false` only logs a warning and ignores the format — every
     value then passes silently. Pass your own strict-mode instance to
     restore compile-time typo detection.
-  - A custom instance passed through `ajv` must be AJV 8+; AJV 6
-    instances are not supported. The option is duck-typed (any object
+  - AJV ≥ 8 is required for a custom instance passed through `ajv`:
+    errors in the AJV 6 shape (`dataPath`) are still understood as a soft
+    landing, but AJV 6 instances are unsupported. The option is duck-typed (any object
     exposing `compile(schema)`), so `Ajv2019` / `Ajv2020` instances — e.g.
     for JSON Schema draft 2020-12 — are accepted; a non-validator throws.
 - **`<Form>`, `<Field>` and `<FieldError>` are function components on a

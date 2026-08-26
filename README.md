@@ -577,9 +577,10 @@ Use them anywhere inside the `<Form>`:
 </Form>
 ```
 
-A component reading the context re-renders like the form owner does, on
-every state change. For finer granularity, subscribe to a slice with
-`useFormSelector(form, selector)` (see [`FormApi`](#the-formapi-object)).
+The two hooks differ in granularity: `useFormContext()` is the coarse path —
+the component re-renders like the form owner does, on every state change —
+while `useFormSelector(form, selector)` re-renders only when the selected
+slice changes (see [`FormApi`](#the-formapi-object)).
 
 ## Server rendering and frameworks
 
@@ -663,8 +664,9 @@ required. Otherwise, go through the list:
     warning and ignores the format — every value then passes silently, so
     double-check your format names, or pass a strict instance (see
     [JSON Schema (AJV)](#json-schema-ajv)).
-  - **A custom `ajv` instance must be AJV 8+.** AJV 6 instances are not
-    supported by 1.0.
+  - **AJV ≥ 8 is required for a custom `ajv` instance.** Errors in the
+    AJV 6 shape (`dataPath`) are still understood as a soft landing, but
+    AJV 6 instances are unsupported.
 
 - **`errorMessages` keys are error codes, not AJV keywords.** For AJV users
   only four keys change:
