@@ -6,6 +6,6 @@
 		"emitDeclarationOnly": true,
 		"removeComments": false,
 		"rootDir": "src/lib",
-		"outDir": ".types-temp"
+		"outDir": "dist"
 	}
 }
