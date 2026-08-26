@@ -11,10 +11,7 @@
 		"dist": "yarn clean && yarn dist:css && yarn dist:js && yarn dist:types && yarn minify:css",
 		"dist:css": "sass --style=expanded --no-source-map src/lib/styles/main.scss dist/$npm_package_name.css",
 		"dist:js": "vite build --config vite.lib.config.js",
-		"dist:types": "yarn dist:types:emit && yarn dist:types:bundle && yarn dist:types:cleanup",
-		"dist:types:emit": "tsc -p tsconfig.build.json",
-		"dist:types:bundle": "dts-bundle-generator -o dist/index.d.ts --no-banner --no-check .types-temp/index.d.ts",
-		"dist:types:cleanup": "rm -rf .types-temp",
+		"dist:types": "tsc -p tsconfig.build.json",
 		"minify:css": "cleancss --level 1 --source-map --source-map-inline-sources --output dist/$npm_package_name.min.css dist/$npm_package_name.css",
 		"test": "yarn test:runtime && yarn test:types",
 		"test:runtime": "vitest run",
@@ -40,7 +37,15 @@
 		},
 		"./package.json": "./package.json",
 		"./dist/react-jsonschema-form-validation.css": "./dist/react-jsonschema-form-validation.css",
-		"./dist/react-jsonschema-form-validation.min.css": "./dist/react-jsonschema-form-validation.min.css"
+		"./dist/react-jsonschema-form-validation.min.css": "./dist/react-jsonschema-form-validation.min.css",
+		"./core": {
+			"types": "./dist/core/index.d.ts",
+			"default": "./dist/core/index.js"
+		},
+		"./providers/ajv": {
+			"types": "./dist/providers/ajv/index.d.ts",
+			"default": "./dist/providers/ajv/index.js"
+		}
 	},
 	"sideEffects": [
 		"*.css"
@@ -63,13 +68,16 @@
 		"ajv-formats": "^3",
 		"classnames": "^2.2.6",
 		"memoize-one": "^5.1.1",
-		"prop-types": "^15.7.2"
+		"prop-types": "^15.7.2",
+		"use-sync-external-store": "^1.6.0"
 	},
 	"devDependencies": {
+		"@testing-library/dom": "^10.4.1",
 		"@testing-library/react": "^16.3.2",
 		"@types/prop-types": "^15.7.15",
 		"@types/react": "^18.3.28",
 		"@types/react-dom": "^18.3.7",
+		"@types/use-sync-external-store": "^1.5.0",
 		"@vitejs/plugin-react": "^4.3.0",
 		"@vitest/coverage-istanbul": "^3.2.6",
 		"babel-eslint": "10.0.3",
@@ -95,7 +103,7 @@
 		"typescript": "^6.0.3",
 		"vite": "^6.4.3",
 		"vitest": "^3.2.6",
-		"@testing-library/dom": "^10.4.1"
+		"zod": "^4"
 	},
 	"peerDependencies": {
 		"react": ">=18"
