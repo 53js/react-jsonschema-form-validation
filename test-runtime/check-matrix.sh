@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # Local dev matrix runner. Executes the full unit-test suite against every
-# React major of the runtime matrix (18, 19), reusing the exact CI recipe
+# React major of the runtime matrix (19 today), reusing the exact CI recipe
 # (see the `runtime` matrix in .github/workflows/ci.yml). The native
-# React 16 run stays `yarn test:runtime` from the repo root.
+# React 18 run stays `yarn test:runtime` from the repo root.
 #
-# Runs BOTH versions even if the first fails (matrix semantics), then
-# exits non-zero if any failed.
+# Runs EVERY version even if one fails (matrix semantics), then exits
+# non-zero if any failed.
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VERSIONS=(18 19)
+VERSIONS=(19)
 FAILED=()
 
 for VERSION in "${VERSIONS[@]}"; do

@@ -6,7 +6,7 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 import baseConfig from '../vitest.config';
 
 // Runs the SAME test suite as the root vitest.config.js, but against the
-// React major selected by $REACT_VERSION (18 or 19), whose packages live in
+// React major selected by $REACT_VERSION (19), whose packages live in
 // test-runtime/react-<version>/node_modules (installed by setup.sh).
 //
 // Mechanics: resolve.alias rewrites the four React-coupled bare imports to
@@ -21,10 +21,10 @@ import baseConfig from '../vitest.config';
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 const reactVersion = process.env.REACT_VERSION;
-if (!['18', '19'].includes(reactVersion)) {
+if (reactVersion !== '19') {
 	throw new Error(
-		`test-runtime: REACT_VERSION must be "18" or "19", got "${reactVersion}". `
-		+ 'Run e.g.: REACT_VERSION=18 yarn vitest run --config test-runtime/vitest.config.js',
+		`test-runtime: REACT_VERSION must be "19", got "${reactVersion}". `
+		+ 'Run: REACT_VERSION=19 yarn vitest run --config test-runtime/vitest.config.js',
 	);
 }
 
@@ -42,10 +42,5 @@ export default mergeConfig(baseConfig, defineConfig({
 			'react-dom': fromFixture('react-dom'),
 			react: fromFixture('react'),
 		},
-	},
-	test: {
-		// mergeConfig concatenates: src/setupTests.js (from the base config)
-		// runs first, then the React >=18 act environment flag.
-		setupFiles: ['test-runtime/act-env.js'],
 	},
 }));

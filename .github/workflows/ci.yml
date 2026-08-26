@@ -2,15 +2,16 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, v1]
   pull_request:
 
 # Least-privilege default.
 permissions:
   contents: read
 
-# Cancel stale PR runs when a new commit is pushed. Runs on `master` are
-# never cancelled — we want every merge to have a green build attached.
+# Cancel stale PR runs when a new commit is pushed. Runs on `master` and
+# `v1` are never cancelled — we want every merge to have a green build
+# attached (a master → v1 sync is a push, not a PR).
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -43,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        types-react: ['16', '17', '18', '19']
+        types-react: ['18', '19']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -59,15 +60,14 @@ jobs:
           yarn add --dev --silent "@types/react@^${{ matrix.types-react }}"
           yarn test
 
-  # Runs the FULL unit-test suite (the same one `build` runs on React 16)
-  # against real React 18 and 19 — the v1 targets. Each job installs a
-  # pinned fixture (test-runtime/react-<version>) and aliases react,
-  # react-dom and Testing Library to it (test-runtime/vitest.config.js).
+  # Runs the FULL unit-test suite (the same one `build` runs on the root
+  # tree's React 18) against real React 19. Each job installs a pinned
+  # fixture (test-runtime/react-<version>) and aliases react, react-dom and
+  # Testing Library to it (test-runtime/vitest.config.js).
   #
-  # BLOCKING since the suite became act-safe (#83 wrapped the un-acted
-  # instance calls that React 18+ automatic batching broke): a failure here
-  # is a real React 18/19 regression and must gate the merge, exactly like
-  # the React 16 run in `build`.
+  # BLOCKING: the suite is act-safe (#83), so a failure here is a real
+  # React 19 regression and must gate the merge, exactly like the React 18
+  # run in `build`.
   runtime:
     name: runtime (react ${{ matrix.react }})
     runs-on: ubuntu-latest
@@ -75,7 +75,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        react: ['18', '19']
+        react: ['19']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0

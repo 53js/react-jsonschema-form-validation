@@ -905,26 +905,37 @@ describe('AJV 8 integration', () => {
 		expect(validator({ ajv: { compile: () => {} } }, 'ajv', 'Form')).toBeNull();
 	});
 
-	it('should log the PropTypes error through console.error when rendering with a broken ajv prop', () => {
-		// End-to-end PropTypes proof: the warning is logged during render,
-		// BEFORE the mount-time validation crashes in `ajv.compile()` — the
-		// crash is expected (PropTypes only warns) and asserted as such.
-		const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+	// React 19 removed propTypes checking altogether, so the warning can
+	// only be observed on React 18 (the test-runtime fixture runs 19).
+	// `describe.skipIf` rather than `it.skipIf`: eslint-plugin-jest 23 does
+	// not recognize the latter as a test block (jest/no-standalone-expect).
+	describe.skipIf(Number(React.version.split('.')[0]) >= 19)('PropTypes runtime check (React < 19)', () => {
+		it('should log the PropTypes error through console.error when rendering with a broken ajv prop', () => {
+			// End-to-end PropTypes proof: the warning is logged during render,
+			// BEFORE the mount-time validation crashes in `ajv.compile()` — the
+			// crash is expected (PropTypes only warns) and asserted as such.
+			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-		expect(() => {
-			render(
-				<Form
-					ajv={42}
-					onSubmit={() => {}}
-					schema={{}}
-				/>,
-			);
-		}).toThrow();
+			expect(() => {
+				render(
+					<Form
+						ajv={42}
+						onSubmit={() => {}}
+						schema={{}}
+					/>,
+				);
+			}).toThrow();
 
-		expect(consoleErrorSpy).toHaveBeenCalledWith(
-			expect.stringContaining('expected an AJV-like instance exposing a `compile()` function, received number'),
-		);
-		consoleErrorSpy.mockRestore();
+			// React >= 18 logs PropTypes failures as a format string plus
+			// arguments (`"Warning: Failed %s type: %s%s", "prop", message, …`),
+			// so the message can sit in ANY argument of ANY call.
+			const logged = consoleErrorSpy.mock.calls.some((args) => args.some((arg) => (
+				typeof arg === 'string'
+				&& arg.includes('expected an AJV-like instance exposing a `compile()` function, received number')
+			)));
+			expect(logged).toBe(true);
+			consoleErrorSpy.mockRestore();
+		});
 	});
 
 	it('should work with a real draft 2020-12 Ajv instance passed through the ajv prop', () => {

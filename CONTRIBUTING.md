@@ -43,7 +43,7 @@ yarn test:runtime:watch
 # TypeScript check of the repo sources
 yarn type-check
 
-# Type-level tests against @types/react 16, 17, 18 and 19
+# Type-level tests against @types/react 18 and 19
 yarn test:types
 
 # Everything (runtime + types)
@@ -53,17 +53,17 @@ yarn test
 `yarn test:types` runs `test-types/check-matrix.sh`: it rebuilds `dist/`,
 packs the library into a tarball, installs it inside `test-types/`, then
 type-checks `positive.tsx` / `negative.tsx` against each supported
-`@types/react` major. It restores `@types/react@16` on exit, even on failure.
+`@types/react` major. It restores `@types/react@18` on exit, even on failure.
 See `test-types/README.md` for details.
 
-### Runtime React matrix (18/19)
+### Runtime React matrix (19)
 
-The same unit-test suite also runs against real React 18 and 19 (the v1
-targets) through per-version fixtures — blocking in CI, like the React 16
-run:
+The same unit-test suite also runs against real React 19 through a
+per-version fixture — blocking in CI, like the React 18 run (the root
+tree's own version):
 
 ```bash
-# Full matrix: react 18 then 19
+# Full matrix
 bash test-runtime/check-matrix.sh
 
 # A single version
@@ -93,8 +93,8 @@ ci: pin actions to SHA
 - CI (GitHub Actions, `.github/workflows/ci.yml`) must pass: the `build` job
   runs `yarn lint`, `yarn type-check`, `yarn test:runtime` and `yarn dist`;
   the `types` matrix type-checks the built bundle against `@types/react`
-  16/17/18/19. The `runtime (react 18/19)` matrix re-runs the unit tests
-  on real React 18 and 19, and blocks like the rest.
+  18/19. The `runtime (react 19)` matrix re-runs the unit tests on real
+  React 19, and blocks like the rest.
 - Keep PRs focused; add or update tests for behavior changes.
 - Update `CHANGELOG.md` when the change is user-facing.
 
@@ -111,7 +111,7 @@ git push origin master --follow-tags
 ```
 
 The workflow re-runs the full verification on the tagged commit (lint,
-type-check, unit tests, the `@types/react` 16-19 matrix, the React 18/19
+type-check, unit tests, the `@types/react` 18-19 matrix, the React 19
 runtime matrix, `yarn dist`), fails if the tag does not match
 `package.json`'s version, then publishes with npm provenance —
 `prepublishOnly` re-runs the tests, the types matrix and the build as part
