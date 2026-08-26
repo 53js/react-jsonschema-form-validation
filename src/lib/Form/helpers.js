@@ -186,19 +186,38 @@ export const formatData = (data) => {
 const unescapePointerSegment = (segment) => segment.replace(/~1/g, '/').replace(/~0/g, '~');
 
 /**
- * Converts a JSON Pointer (RFC 6901, the shape of AJV 8's
- * `error.instancePath`, e.g. `'/items/0/label'`) into the library's
- * dot-separated field path (`'items.0.label'`). The root pointer `''`
- * maps to the empty field path `''`.
+ * Splits a JSON Pointer (RFC 6901, the shape of AJV 8's `error.instancePath`,
+ * e.g. `'/items/0/label'`) into its decoded reference tokens
+ * (`['items', '0', 'label']`). The root pointer `''` yields no segment.
+ *
+ * @param {string} pointer
+ * @returns {string[]}
+ */
+export const pointerToSegments = (pointer) => pointer
+	.split('/')
+	.slice(1)
+	.map(unescapePointerSegment);
+
+/**
+ * Converts a JSON Pointer into the library's dot-separated field path
+ * (`'items.0.label'`). The root pointer `''` maps to the empty field path `''`.
  *
  * @param {string} pointer
  * @returns {string}
  */
-export const pointerToFieldPath = (pointer) => pointer
-	.split('/')
-	.slice(1)
-	.map(unescapePointerSegment)
-	.join('.');
+export const pointerToFieldPath = (pointer) => pointerToSegments(pointer).join('.');
+
+/**
+ * Converts a legacy AJV 6 `error.dataPath` (dot notation with bracketed
+ * array indexes, e.g. `'.items[0].label'`) into the library's dot-separated
+ * field path (`'items.0.label'`).
+ *
+ * @param {string} dataPath
+ * @returns {string}
+ */
+export const dataPathToFieldPath = (dataPath) => dataPath
+	.replace(/^\./, '')
+	.replace(/\[([0-9]+)\]/g, '.$1');
 
 /**
  * Enriches each AJV error with a normalized `field` path. The transformation
@@ -227,9 +246,7 @@ export const formatErrors = (errors) => (errors || []).map((error) => {
 		// AJV 6 shape: dot notation with bracketed array indexes. A
 		// degenerate error carrying neither `instancePath` nor `dataPath`
 		// is treated as pointing at the root instead of crashing.
-		formatted.field = (formatted.dataPath ?? '')
-			.replace(/^\./, '')
-			.replace(/\[([0-9]+)\]/g, '.$1');
+		formatted.field = dataPathToFieldPath(formatted.dataPath ?? '');
 	}
 
 	if (formatted.keyword === 'required' && 'missingProperty' in formatted.params) {

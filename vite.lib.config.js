@@ -38,7 +38,15 @@ export default defineConfig({
 		// Consumers minify in their own bundler.
 		minify: false,
 		lib: {
-			entry: path.resolve(projectRoot, 'src/lib/index.js'),
+			// Multi-entry: the provider subpath is not imported by the root
+			// entry (consumers of other Standard Schema providers must not
+			// bundle AJV), so it needs its own entry to be emitted at all.
+			// With `preserveModules` the two graphs share their common
+			// modules (Form/helpers) as single files.
+			entry: {
+				index: path.resolve(projectRoot, 'src/lib/index.js'),
+				'providers/ajv/index': path.resolve(projectRoot, 'src/lib/providers/ajv/index.js'),
+			},
 			formats: ['es'],
 			// Emit .js (not Vite's default .mjs for an ES build): the
 			// package has always published dist/**/*.js and the exports

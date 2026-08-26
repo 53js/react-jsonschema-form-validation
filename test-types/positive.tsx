@@ -35,6 +35,19 @@ import type {
 	SafePropsOmit,
 } from 'react-jsonschema-form-validation';
 
+import Ajv from 'ajv';
+import Ajv2020 from 'ajv/dist/2020';
+import { ajvSchema, createAjv } from 'react-jsonschema-form-validation/providers/ajv';
+import type {
+	ErrorCode,
+	FormError,
+	ProviderIssue,
+	StandardSchema,
+	StandardSchemaIssue,
+	StandardSchemaProps,
+	StandardSchemaResult,
+} from 'react-jsonschema-form-validation';
+
 import { Expect, Equal } from './_helpers';
 
 type UserData = { email: string; age: number };
@@ -360,6 +373,44 @@ type _AllTypesResolve = {
 	safeOmit: SafePropsOmit<{ a: string; [k: string]: unknown }, 'a'>;
 };
 
+// ---------------------------------------------------------------------------
+// 12. providers/ajv subpath (RFC 0001) — resolves under moduleResolution: node
+//     through `typesVersions`; core types come from the root entry.
+// ---------------------------------------------------------------------------
+const standard: StandardSchema<UserData> = ajvSchema<UserData>(schema, { ajv: createAjv() });
+const _issues = standard['~standard'].validate({ email: 'nope', age: -1 });
+void _issues;
+
+// Real Ajv classes (draft-07 default and 2020-12) are assignable to the
+// `ajv` option — `AjvLike.compile` is a method signature (bivariant).
+const _ajv2020 = ajvSchema(schema, { ajv: new Ajv2020() });
+const _ajvDefault = ajvSchema(schema, { ajv: new Ajv() });
+void [_ajv2020, _ajvDefault];
+
+// The spec types are exported from the root too.
+const _issue: StandardSchemaIssue = { message: 'x', path: ['email', { key: 0 }] };
+const _result: StandardSchemaResult<UserData> = { issues: [_issue] };
+const _props: StandardSchemaProps<UserData> = standard['~standard'];
+const _providerIssue: ProviderIssue = { message: 'x', code: 'min', params: { limit: 1 } };
+void [_result, _props, _providerIssue];
+
+const _formError = (err: FormError) => {
+	const code: ErrorCode = err.code;
+	const field: string = err.field;
+	const params: Record<string, unknown> = err.params;
+	void [code, field, params, err.raw, err.message];
+};
+void _formError;
+
+// ErrorCode keeps the 9 normalized literals AND accepts any provider code.
+const _knownCode: ErrorCode = 'minLength';
+const _providerCode: ErrorCode = 'multipleOf';
+void [_knownCode, _providerCode];
+type _CoreCodesAssignable = Expect<Equal<'min' extends ErrorCode ? true : false, true>>;
+
+// The default AJV instance of createAjv() is AJV 8 (compile-capable).
+type _CreateAjvCompiles = Expect<Equal<'compile' extends keyof ReturnType<typeof createAjv> ? true : false, true>>;
+
 export {
 	Basic,
 	KeepStateOnSubmit,
@@ -375,4 +426,5 @@ export {
 };
 export type {
 	_CtxNonNull, _ErrMapValuesAreFns, _AllTypesResolve, _ResetIsNiladicVoid,
+	_CoreCodesAssignable, _CreateAjvCompiles,
 };

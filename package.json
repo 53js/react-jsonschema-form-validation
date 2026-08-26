@@ -11,10 +11,7 @@
 		"dist": "yarn clean && yarn dist:css && yarn dist:js && yarn dist:types && yarn minify:css",
 		"dist:css": "sass --style=expanded --no-source-map src/lib/styles/main.scss dist/$npm_package_name.css",
 		"dist:js": "vite build --config vite.lib.config.js",
-		"dist:types": "yarn dist:types:emit && yarn dist:types:bundle && yarn dist:types:cleanup",
-		"dist:types:emit": "tsc -p tsconfig.build.json",
-		"dist:types:bundle": "dts-bundle-generator -o dist/index.d.ts --no-banner --no-check .types-temp/index.d.ts",
-		"dist:types:cleanup": "rm -rf .types-temp",
+		"dist:types": "tsc -p tsconfig.build.json",
 		"minify:css": "cleancss --level 1 --source-map --source-map-inline-sources --output dist/$npm_package_name.min.css dist/$npm_package_name.css",
 		"test": "yarn test:runtime && yarn test:types",
 		"test:runtime": "vitest run",
@@ -38,9 +35,20 @@
 			"types": "./dist/index.d.ts",
 			"default": "./dist/index.js"
 		},
+		"./providers/ajv": {
+			"types": "./dist/providers/ajv/index.d.ts",
+			"default": "./dist/providers/ajv/index.js"
+		},
 		"./package.json": "./package.json",
 		"./dist/react-jsonschema-form-validation.css": "./dist/react-jsonschema-form-validation.css",
 		"./dist/react-jsonschema-form-validation.min.css": "./dist/react-jsonschema-form-validation.min.css"
+	},
+	"typesVersions": {
+		"*": {
+			"providers/ajv": [
+				"dist/providers/ajv/index.d.ts"
+			]
+		}
 	},
 	"sideEffects": [
 		"*.css"
@@ -76,7 +84,6 @@
 		"babel-eslint": "10.0.3",
 		"bootstrap": "^4.4.1",
 		"clean-css-cli": "^4.3.0",
-		"dts-bundle-generator": "^9.5.1",
 		"eslint": "^6.1.0",
 		"eslint-config-53js": "^1.2.0",
 		"eslint-config-airbnb": "^18.0.1",
@@ -95,13 +102,13 @@
 		"sass": "^1.101.7",
 		"typescript": "^6.0.3",
 		"vite": "^6.4.3",
-		"vitest": "^3.2.6"
+		"vitest": "^3.2.6",
+		"zod": "^4"
 	},
 	"peerDependencies": {
 		"react": ">=18"
 	},
 	"resolutions": {
-		"dts-bundle-generator/typescript": "^6.0.3",
 		"**/vite": "^6.4.3"
 	},
 	"keywords": [
