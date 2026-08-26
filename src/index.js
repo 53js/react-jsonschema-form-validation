@@ -1,6 +1,6 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import React from 'react';
-import { render } from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { HashRouter as Router, Route, Switch } from 'react-router-dom';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -25,4 +25,6 @@ const App = () => (
 	</Router>
 );
 
-render(<App />, document.getElementById('root'));
+// React 18 concurrent root: the demo exercises the library the way v1
+// consumers will mount it (createRoot), not through the legacy sync render.
+createRoot(document.getElementById('root')).render(<App />);
