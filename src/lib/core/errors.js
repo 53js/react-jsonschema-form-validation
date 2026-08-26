@@ -87,22 +87,34 @@ export const normalizeIssues = (issues) => issues.map((issue) => {
 	};
 });
 
+export const SYNC_ONLY_ERROR_MESSAGE = (
+	'react-jsonschema-form-validation: the schema returned a Promise from validate(). '
+	+ 'Async validation is not supported (sync-only in v1).'
+);
+
 /**
  * Sync-only guard (RFC 0001): Standard Schema allows `validate()` to return
  * a Promise (async refinements). The library validates on every change and
  * has no stale-result handling, so async schemas are rejected loudly.
  *
- * @template Output
- * @param {StandardSchemaResult<Output> | Promise<StandardSchemaResult<Output>>} result
- * @returns {StandardSchemaResult<Output>}
+ * The rejected promise is never left dangling: an AJV `$async` validator
+ * rejects on invalid data, which would surface as an unhandled rejection
+ * on top of the error thrown here.
+ *
+ * Generic on purpose: the AJV provider guards the raw validator return
+ * value (`boolean | Promise`) with it, not only Standard Schema results.
+ *
+ * @template T
+ * @param {T | Promise<T>} result
+ * @returns {T}
  */
 export const assertSyncResult = (result) => {
 	const thenable = /** @type {{ then?: unknown }} */ (result);
 	if (result instanceof Promise || typeof thenable.then === 'function') {
-		throw new Error(
-			'react-jsonschema-form-validation: the schema returned a Promise from validate(). '
-			+ 'Async validation is not supported (sync-only in v1).',
-		);
+		// `Promise.resolve` returns a native promise as-is and adopts any
+		// other thenable, so the rejection handler always lands.
+		Promise.resolve(result).then(undefined, () => {});
+		throw new Error(SYNC_ONLY_ERROR_MESSAGE);
 	}
 	return result;
 };

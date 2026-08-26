@@ -1,18 +1,23 @@
 import Ajv2020 from 'ajv/dist/2020';
 
-import { runSchema } from '../../core/errors';
+import { runSchema, SYNC_ONLY_ERROR_MESSAGE } from '../../core/errors';
 import { isStandardSchema } from '../../core/standard-schema';
 import { createAjv as createAjvFromHelpers } from '../../Form/helpers';
-import {
-	AJV_CODE_MAP,
-	ajvSchema,
-	createAjv,
-	errorToIssue,
-	errorToSegments,
-} from '.';
+import { ajvSchema, createAjv } from '.';
 
 const run = (schema, data, options) => runSchema(ajvSchema(schema, options), data);
 const codesByKeyword = (errors) => Object.fromEntries(errors.map((e) => [e.raw.keyword, e.code]));
+
+// A compile-capable stub whose validator always fails with the given raw
+// AJV-shaped errors — lets the tests feed hand-crafted error objects
+// (legacy AJV 6 shape, edge cases) through the public `ajvSchema()` path.
+const stubAjv = (errors) => ({
+	compile: () => {
+		const validate = () => false;
+		validate.errors = errors;
+		return validate;
+	},
+});
 
 describe('ajvSchema(schema, { ajv })', () => {
 	it('should return a Standard Schema object backed by AJV, keeping the JSON Schema', () => {
@@ -82,6 +87,34 @@ describe('validate(data) — value normalization', () => {
 		const data = { email: '', age: 1 };
 		run(schema, data);
 		expect(data).toEqual({ email: '', age: 1 });
+	});
+});
+
+describe('validate(data) — sync-only', () => {
+	it('should throw the sync-only error on an $async schema and not leak a rejection', async () => {
+		const unhandled = vi.fn();
+		process.on('unhandledRejection', unhandled);
+		try {
+			// `$async: true` makes AJV return a Promise (rejected on invalid data).
+			const schema = ajvSchema({
+				$async: true,
+				type: 'object',
+				properties: { a: { type: 'number' } },
+			});
+			expect(() => schema['~standard'].validate({ a: 'not a number' })).toThrow(SYNC_ONLY_ERROR_MESSAGE);
+			expect(() => schema['~standard'].validate({ a: 1 })).toThrow(SYNC_ONLY_ERROR_MESSAGE);
+			// Let the rejected promise settle: the handler attached by the guard
+			// must have consumed the rejection.
+			await new Promise((resolve) => { setTimeout(resolve, 0); });
+			expect(unhandled).not.toHaveBeenCalled();
+		} finally {
+			process.off('unhandledRejection', unhandled);
+		}
+	});
+
+	it('should throw the sync-only error when the validator returns a non-boolean', () => {
+		const ajv = { compile: () => () => 'yes' };
+		expect(() => ajvSchema({}, { ajv })['~standard'].validate({})).toThrow(SYNC_ONLY_ERROR_MESSAGE);
 	});
 });
 
@@ -158,7 +191,8 @@ describe('error normalization — keyword → code', () => {
 		const { errors } = run(schema, data);
 		const byField = Object.fromEntries(errors.map((e) => [e.field, e]));
 		expect(byField.min.params).toEqual({ comparison: '>=', limit: 5 });
-		expect(byField.min.message).toBe('must be >= 5');
+		expect(byField.min.message).toBe(byField.min.raw.message);
+		expect(byField.min.message).not.toBe('');
 		expect(byField.req.params).toEqual({ missingProperty: 'req' });
 		expect(byField.enm.params).toEqual({ allowedValues: ['a'] });
 		expect(byField.min.raw).toMatchObject({ keyword: 'minimum', instancePath: '/min' });
@@ -173,11 +207,15 @@ describe('error normalization — keyword → code', () => {
 		expect(byField.req.raw.data).toMatchObject({ typ: 'x' });
 	});
 
-	it('should expose the code map as a frozen object', () => {
-		expect(Object.isFrozen(AJV_CODE_MAP)).toBe(true);
-		expect(AJV_CODE_MAP).toEqual({
-			minimum: 'min', exclusiveMinimum: 'min', maximum: 'max', exclusiveMaximum: 'max',
-		});
+	it('should keep the raw AJV error object by reference (no copy)', () => {
+		const rawError = {
+			keyword: 'maximum', instancePath: '/n', params: { limit: 1 }, message: 'too big',
+		};
+		const { errors } = run({}, {}, { ajv: stubAjv([rawError]) });
+		expect(errors).toEqual([{
+			field: 'n', code: 'max', message: 'too big', params: { limit: 1 }, raw: rawError,
+		}]);
+		expect(errors[0].raw).toBe(rawError);
 	});
 });
 
@@ -222,21 +260,24 @@ describe('error normalization — field paths', () => {
 	it('should map a root-level error to the empty field', () => {
 		expect(run({ type: 'object' }, 42).errors.map((e) => [e.field, e.code])).toEqual([['', 'type']]);
 	});
+
+	it('should append missingProperty only for required errors', () => {
+		const { errors } = run({}, {}, {
+			ajv: stubAjv([
+				{ keyword: 'required', instancePath: '/a', params: { missingProperty: 'b' } },
+				{ keyword: 'required', instancePath: '', params: { missingProperty: 'b' } },
+				{ keyword: 'required', instancePath: '/a', params: {} },
+				{ keyword: 'type', instancePath: '/a', params: { missingProperty: 'b' } },
+			]),
+		});
+		expect(errors.map((e) => e.field)).toEqual(['a.b', 'b', 'a', 'a']);
+	});
 });
 
 describe('legacy AJV 6 error shape (dataPath fallback)', () => {
-	// A compile-capable stub emitting AJV-6-shaped errors (no instancePath).
-	const legacyAjv = (errors) => ({
-		compile: () => {
-			const validate = () => false;
-			validate.errors = errors;
-			return validate;
-		},
-	});
-
 	it('should read dataPath (dot/bracket notation) when instancePath is absent', () => {
 		const { errors } = run({}, {}, {
-			ajv: legacyAjv([
+			ajv: stubAjv([
 				{
 					keyword: 'minLength', dataPath: '.items[0].label', params: { limit: 2 }, message: 'short',
 				},
@@ -254,31 +295,8 @@ describe('legacy AJV 6 error shape (dataPath fallback)', () => {
 	});
 
 	it('should default the message to an empty string when the error has none', () => {
-		const { errors } = run({}, {}, { ajv: legacyAjv([{ keyword: 'type', params: {} }]) });
+		const { errors } = run({}, {}, { ajv: stubAjv([{ keyword: 'type', params: {} }]) });
 		expect(errors[0].message).toBe('');
-	});
-});
-
-describe('errorToSegments / errorToIssue (unit)', () => {
-	it('should append missingProperty only for required errors', () => {
-		expect(errorToSegments({ keyword: 'required', instancePath: '/a', params: { missingProperty: 'b' } }))
-			.toEqual(['a', 'b']);
-		expect(errorToSegments({ keyword: 'required', instancePath: '', params: { missingProperty: 'b' } }))
-			.toEqual(['b']);
-		expect(errorToSegments({ keyword: 'required', instancePath: '/a', params: {} })).toEqual(['a']);
-		expect(errorToSegments({ keyword: 'type', instancePath: '/a', params: { missingProperty: 'b' } }))
-			.toEqual(['a']);
-	});
-
-	it('should build a provider issue with the mapped code and the error as raw', () => {
-		const error = {
-			keyword: 'maximum', instancePath: '/n', params: { limit: 1 }, message: 'too big',
-		};
-		const issue = errorToIssue(error);
-		expect(issue).toEqual({
-			message: 'too big', path: ['n'], code: 'max', params: { limit: 1 }, raw: error,
-		});
-		expect(issue.raw).toBe(error);
 	});
 });
 
@@ -312,13 +330,6 @@ describe('defensive branches', () => {
 	it('should report no issue when a failing validator exposes no errors array', () => {
 		// AJV always fills `errors` on failure; a custom compile-capable
 		// object might not. Treated as "no reported problem" rather than crashing.
-		const ajv = {
-			compile: () => {
-				const validate = () => false;
-				validate.errors = null;
-				return validate;
-			},
-		};
-		expect(ajvSchema({}, { ajv })['~standard'].validate({})).toEqual({ issues: [] });
+		expect(ajvSchema({}, { ajv: stubAjv(null) })['~standard'].validate({})).toEqual({ issues: [] });
 	});
 });

@@ -47,7 +47,8 @@
  */
 
 /**
- * Duck-typed guard: does `value` implement Standard Schema v1?
+ * Duck-typed guard: does `value` implement Standard Schema v1? Objects and
+ * functions alike — ArkType's `Type` is a callable carrying `~standard`.
  *
  * @param {unknown} value
  * @returns {value is StandardSchema}
@@ -55,7 +56,7 @@
 // eslint-disable-next-line import/prefer-default-export
 export const isStandardSchema = (value) => (
 	value !== null
-	&& typeof value === 'object'
+	&& (typeof value === 'object' || typeof value === 'function')
 	&& '~standard' in value
 	&& typeof (/** @type {{ '~standard'?: { validate?: unknown } }} */ (value))['~standard']?.validate === 'function'
 );

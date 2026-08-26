@@ -122,7 +122,16 @@ describe('Zod 4 through ~standard (real third-party Standard Schema)', () => {
 		expect(isStandardSchema(schema)).toBe(true);
 		expect(isStandardSchema({})).toBe(false);
 		expect(isStandardSchema(null)).toBe(false);
+		expect(isStandardSchema(42)).toBe(false);
 		expect(isStandardSchema({ '~standard': { validate: 'nope' } })).toBe(false);
+	});
+
+	it('should accept a callable schema carrying ~standard (ArkType-style Type)', () => {
+		const callable = () => {};
+		callable['~standard'] = { version: 1, vendor: 'arktype', validate: () => ({ value: 1 }) };
+		expect(isStandardSchema(callable)).toBe(true);
+		expect(runSchema(callable, 1)).toEqual({ valid: true, errors: [] });
+		expect(isStandardSchema(() => {})).toBe(false);
 	});
 
 	it('should pass Zod codes through unchanged (no zod provider yet) with dot-path fields', () => {
@@ -146,7 +155,10 @@ describe('Zod 4 through ~standard (real third-party Standard Schema)', () => {
 		const minError = errors.find((e) => e.field === 'min');
 		expect(minError.raw).toMatchObject({ code: 'too_small', origin: 'number', minimum: 5 });
 		expect(minError.params).toEqual({});
-		expect(minError.message).toBe('Too small: expected number to be >=5');
+		// Zod's own wording is not ours to lock: the message must be the
+		// provider's, verbatim.
+		expect(minError.message).toBe(minError.raw.message);
+		expect(minError.message).not.toBe('');
 	});
 
 	it('should report valid on conforming data', () => {

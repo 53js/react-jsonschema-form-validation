@@ -13,6 +13,7 @@
  * @import { ProviderIssue } from '../../core/errors'
  */
 
+import { assertSyncResult, SYNC_ONLY_ERROR_MESSAGE } from '../../core/errors';
 import {
 	createAjv,
 	dataPathToFieldPath,
@@ -26,10 +27,12 @@ export { createAjv };
 
 /**
  * Anything exposing `compile(schema)` — the provider never relies on the
- * exact Ajv class (`Ajv2019` / `Ajv2020` instances are fine).
+ * exact Ajv class (`Ajv2019` / `Ajv2020` instances are fine). Method
+ * signature on purpose: methods are bivariant, so the real `Ajv` class
+ * (whose `compile` takes `AnySchema`) stays assignable.
  *
  * @typedef {{
- *   compile: (schema: any) =>
+ *   compile(schema: unknown):
  *     ((data: unknown) => boolean | Promise<unknown>) & { errors?: ErrorObject[] | null },
  * }} AjvLike
  */
@@ -40,7 +43,7 @@ export { createAjv };
  *
  * @type {Readonly<Record<string, string>>}
  */
-export const AJV_CODE_MAP = Object.freeze({
+const AJV_CODE_MAP = Object.freeze({
 	minimum: 'min',
 	exclusiveMinimum: 'min',
 	maximum: 'max',
@@ -55,7 +58,7 @@ export const AJV_CODE_MAP = Object.freeze({
  * @param {ErrorObject & { dataPath?: string }} error
  * @returns {string[]}
  */
-export const errorToSegments = (error) => {
+const errorToSegments = (error) => {
 	/** @type {string[]} */
 	let segments;
 	if (typeof error.instancePath === 'string') {
@@ -74,7 +77,7 @@ export const errorToSegments = (error) => {
  * @param {ErrorObject} error
  * @returns {ProviderIssue}
  */
-export const errorToIssue = (error) => ({
+const errorToIssue = (error) => ({
 	message: error.message ?? '',
 	path: errorToSegments(error),
 	code: AJV_CODE_MAP[error.keyword] ?? error.keyword,
@@ -94,11 +97,17 @@ const getDefaultAjv = () => {
  * schema is compiled once, here: memoize the returned object per
  * `(schema, ajv)` pair when calling from a render.
  *
+ * Without `ajv`, a single default instance (`createAjv()`) is shared by
+ * every call, as the 0.x `<Form>` did: two different schemas declaring the
+ * same `$id` therefore collide at compile time (AJV throws) — pass a
+ * dedicated instance in that case.
+ *
  * `validate(data)` normalizes empty form values first (`''` / `null` →
  * `undefined`, so `required` flags them — see `formatData`), then reports
  * every AJV error as an issue carrying the normalized `code`, the AJV
  * `params` and the verbose `ErrorObject` as `raw` (`raw.data` = current
- * value of the field, issue #6).
+ * value of the field, issue #6). An `$async: true` schema makes AJV return
+ * a Promise instead of a boolean: rejected with the sync-only error.
  *
  * @template [T = unknown]
  * @param {JSONSchema7Definition} schema
@@ -122,8 +131,14 @@ export const ajvSchema = (schema, options = {}) => {
 			vendor: 'ajv',
 			validate: (data) => {
 				const formatted = formatData(data);
-				// Async schemas are not used: the result is a boolean.
-				const valid = /** @type {boolean} */ (validate(formatted));
+				const valid = validate(formatted);
+				if (typeof valid !== 'boolean') {
+					// A Promise (`$async` schema) is caught — and its rejection
+					// swallowed — by the shared guard; anything else non-boolean
+					// is equally unusable as a synchronous verdict.
+					assertSyncResult(valid);
+					throw new Error(SYNC_ONLY_ERROR_MESSAGE);
+				}
 				if (valid) return { value: /** @type {T} */ (formatted) };
 				return { issues: (validate.errors || []).map(errorToIssue) };
 			},
