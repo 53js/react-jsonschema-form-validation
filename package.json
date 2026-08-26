@@ -8,7 +8,7 @@
 		"start": "vite",
 		"build": "vite build",
 		"clean": "rm -rf dist",
-		"dist": "yarn clean && yarn dist:css && yarn dist:js && yarn dist:types && yarn minify:css",
+		"dist": "yarn clean && yarn dist:css && yarn dist:js && yarn dist:types && yarn minify:css && yarn dist:check",
 		"dist:css": "sass --style=expanded --no-source-map src/lib/styles/main.scss dist/$npm_package_name.css",
 		"dist:js": "vite build --config vite.lib.config.js",
 		"dist:types": "tsc -p tsconfig.build.json",
@@ -19,7 +19,8 @@
 		"test:types": "bash test-types/check-matrix.sh",
 		"type-check": "tsc -p tsconfig.json",
 		"lint": "eslint src vite.config.js vite.lib.config.js vitest.config.js",
-		"prepublishOnly": "yarn test:runtime --bail 1 && yarn test:types && yarn dist"
+		"prepublishOnly": "yarn test:runtime --bail 1 && yarn test:types && yarn dist",
+		"dist:check": "grep -q \"^'use client';\" dist/core/Form.js && ! grep -q 'use client' dist/index.js && ! grep -q 'use client' dist/providers/ajv/index.js && ! grep -q 'use client' dist/core/index.js && echo 'dist:check: use client directives in place'"
 	},
 	"browserslist": [
 		">0.2%",
@@ -35,6 +36,10 @@
 			"types": "./dist/index.d.ts",
 			"default": "./dist/index.js"
 		},
+		"./core": {
+			"types": "./dist/core/index.d.ts",
+			"default": "./dist/core/index.js"
+		},
 		"./providers/ajv": {
 			"types": "./dist/providers/ajv/index.d.ts",
 			"default": "./dist/providers/ajv/index.js"
@@ -45,6 +50,9 @@
 	},
 	"typesVersions": {
 		"*": {
+			"core": [
+				"dist/core/index.d.ts"
+			],
 			"providers/ajv": [
 				"dist/providers/ajv/index.d.ts"
 			]
