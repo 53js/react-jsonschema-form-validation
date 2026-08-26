@@ -18,11 +18,10 @@ import { selectFormState, shallowEqual } from './selectors';
  * consumers subscribe to the form store (`useFormContext` coarsely,
  * `<Field>` / `<FieldError>` through fine selectors).
  */
-const FormContext = React.createContext(
+export const FormContext = React.createContext(
 	/** @type {FormApi<any> | undefined} */ (undefined),
 );
 
-export default FormContext;
 
 /**
  * Form-level `errorMessages` map, provided by `<Form>` (its prop in sugar

@@ -110,5 +110,4 @@ Form.displayName = 'Form';
 
 const TypedForm = /** @type {FormComponent} */ (/** @type {unknown} */ (Form));
 
-export default TypedForm;
 export { TypedForm as Form };

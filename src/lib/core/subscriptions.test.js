@@ -8,11 +8,11 @@ import React, { useState } from 'react';
 import { act, fireEvent, render } from '@testing-library/react';
 
 import { ajvSchema } from '../providers/ajv';
-import Form from './Form';
-import Field from './Field';
-import FieldError from './FieldError';
-import useFormSelector from './useFormSelector';
-import FormContext, { useFormContext } from './Context';
+import { Form } from './Form';
+import { Field } from './Field';
+import { FieldError } from './FieldError';
+import { useFormSelector } from './useFormSelector';
+import { FormContext, useFormContext } from './Context';
 
 const schema = ajvSchema({
 	type: 'object',

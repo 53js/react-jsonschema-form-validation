@@ -1,4 +1,4 @@
-import deepEqual from './deepEqual';
+import { deepEqual } from './deepEqual';
 
 describe('deepEqual(a, b)', () => {
 	it('should compare primitives with Object.is', () => {

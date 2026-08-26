@@ -63,6 +63,9 @@ and dependency-only bumps are omitted.
   and `maximum`/`exclusiveMaximum` → `max` change — and message callbacks
   receive `{ field, code, message, params, raw }`: `error.keyword` becomes
   `error.code`, `error.data` (the current value) becomes `error.raw.data`.
+- **Named exports only**: `import Form from 'react-jsonschema-form-validation'`
+  becomes `import { Form } from 'react-jsonschema-form-validation'` (no
+  default export on any entry).
 - **Deep imports removed**: only the package entries are supported
   (`react-jsonschema-form-validation`, `…/core`, `…/providers/ajv`);
   `…/dist/Form/Form` & co never were documented and no longer exist.

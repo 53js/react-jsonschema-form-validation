@@ -17,7 +17,7 @@
  *   then field-level overrides).
  * @returns {string | undefined}
  */
-const getErrorMessage = (error, errorMessages) => {
+export const getErrorMessage = (error, errorMessages) => {
 	const customErrorMessage = errorMessages
 		&& (errorMessages[error.code] || errorMessages.defaultMessage);
 
@@ -31,4 +31,3 @@ const getErrorMessage = (error, errorMessages) => {
 	return message;
 };
 
-export default getErrorMessage;

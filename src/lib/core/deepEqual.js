@@ -23,7 +23,7 @@ const isPlainObject = (value) => {
  * @param {unknown} b
  * @returns {boolean}
  */
-const deepEqual = (a, b) => {
+export const deepEqual = (a, b) => {
 	if (Object.is(a, b)) return true;
 	if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
 	const arrayA = Array.isArray(a);
@@ -44,4 +44,3 @@ const deepEqual = (a, b) => {
 			&& deepEqual(recordA[key], recordB[key]));
 };
 
-export default deepEqual;

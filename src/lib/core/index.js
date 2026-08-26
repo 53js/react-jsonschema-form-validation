@@ -9,15 +9,15 @@
  * types are re-declared below as typedef aliases — a JS module cannot
  * `export type`.
  */
-export { default as getFieldErrorId } from '../a11y';
-export { default as FormContext, useFormContext, withFormContext } from './Context';
-export { default as deepEqual } from './deepEqual';
+export { getFieldErrorId } from '../a11y';
+export { FormContext, useFormContext, withFormContext } from './Context';
+export { deepEqual } from './deepEqual';
 export {
 	assertSyncResult, normalizeIssues, pathToField, runSchema,
 } from './errors';
-export { default as Field } from './Field';
-export { default as FieldError } from './FieldError';
-export { default as Form } from './Form';
+export { Field } from './Field';
+export { FieldError } from './FieldError';
+export { Form } from './Form';
 export { filterByFieldNameWithWildcard, getFieldValue, updateDataFromEvents } from './helpers';
 export {
 	selectFieldErrorDescribedBy,
@@ -28,8 +28,8 @@ export {
 } from './selectors';
 export { isStandardSchema } from './standard-schema';
 export { createFormStore } from './store';
-export { default as useForm } from './useForm';
-export { default as useFormSelector } from './useFormSelector';
+export { useForm } from './useForm';
+export { useFormSelector } from './useFormSelector';
 
 /** @import { ElementType } from 'react' */
 

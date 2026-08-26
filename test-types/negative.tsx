@@ -10,7 +10,7 @@
  * JSON Schema sugar.
  */
 import React, { useRef } from 'react';
-import Form, { Field, FieldError, useForm } from 'react-jsonschema-form-validation';
+import { Form, Field, FieldError, useForm } from 'react-jsonschema-form-validation';
 import { Form as CoreForm, useForm as useCoreForm } from 'react-jsonschema-form-validation/core';
 
 type UserData = { email: string; age: number };

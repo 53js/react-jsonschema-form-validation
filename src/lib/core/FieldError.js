@@ -13,12 +13,12 @@ import React, {
 	memo, useCallback, useContext, useEffect, useId,
 } from 'react';
 
-import getFieldErrorId from '../a11y';
+import { getFieldErrorId } from '../a11y';
 import { ErrorMessagesContext, useResolvedForm } from './Context';
-import deepEqual from './deepEqual';
-import getErrorMessage from './getErrorMessage';
+import { deepEqual } from './deepEqual';
+import { getErrorMessage } from './getErrorMessage';
 import { selectFieldErrors, selectIsFieldTouched } from './selectors';
-import useFormSelector from './useFormSelector';
+import { useFormSelector } from './useFormSelector';
 
 /**
  * @typedef {{
@@ -120,11 +120,11 @@ const FieldErrorRender = (props) => {
 };
 
 // `memo`: see <Field>.
-const FieldError = memo(FieldErrorRender);
-FieldError.displayName = 'FieldError';
+const FieldErrorComponent = memo(FieldErrorRender);
+FieldErrorComponent.displayName = 'FieldError';
 
-export default /** @type {<C extends ElementType = 'div'>(
+export const FieldError = /** @type {<C extends ElementType = 'div'>(
 	props: FieldErrorProps<C>
 ) => JSX.Element | null} */ (
-	/** @type {unknown} */ (FieldError)
+	/** @type {unknown} */ (FieldErrorComponent)
 );

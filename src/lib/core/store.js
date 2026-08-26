@@ -43,7 +43,6 @@
  * @param {FormState} initialState
  * @returns {FormStore}
  */
-// eslint-disable-next-line import/prefer-default-export
 export const createFormStore = (initialState) => {
 	let state = initialState;
 	/** @type {Set<() => void>} */

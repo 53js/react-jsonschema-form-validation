@@ -23,7 +23,7 @@ import {
 	selectIsFieldInvalid,
 	selectIsFieldTouched,
 } from './selectors';
-import useFormSelector from './useFormSelector';
+import { useFormSelector } from './useFormSelector';
 
 /**
  * `onChange` handler for a default `<Field>` (intrinsic `<input>`).
@@ -196,11 +196,11 @@ const FieldRender = (props, ref) => {
 // `component`… are stable) bails out; the store subscription alone decides
 // when a Field re-renders. Same role as `PureComponent` in 0.x, but this
 // time nothing inside forces a render on unrelated state changes.
-const Field = memo(forwardRef(/** @type {ForwardRefRenderFunction<unknown, any>} */ (FieldRender)));
-Field.displayName = 'Field';
+const FieldComponent = memo(forwardRef(/** @type {ForwardRefRenderFunction<unknown, any>} */ (FieldRender)));
+FieldComponent.displayName = 'Field';
 
-export default /** @type {<C extends ElementType = 'input'>(
+export const Field = /** @type {<C extends ElementType = 'input'>(
 	props: FieldProps<C> & { ref?: ComponentPropsWithRef<C>['ref'] }
 ) => JSX.Element | null} */ (
-	/** @type {unknown} */ (Field)
+	/** @type {unknown} */ (FieldComponent)
 );

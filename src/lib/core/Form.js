@@ -17,11 +17,11 @@ import React, {
 	forwardRef, useCallback, useEffect, useRef, useSyncExternalStore,
 } from 'react';
 
-import FormContext, { ErrorMessagesContext } from './Context';
+import { FormContext, ErrorMessagesContext } from './Context';
 import { getInternals } from './internals';
 import { useFormStore } from './useForm';
-import useFormSelector from './useFormSelector';
-import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect';
+import { useFormSelector } from './useFormSelector';
+import { useIsomorphicLayoutEffect } from './useIsomorphicLayoutEffect';
 
 /**
  * Validation configuration accepted by `<Form>` in sugar mode — forwarded
@@ -253,13 +253,13 @@ const FormRender = (props, ref) => {
 	);
 };
 
-const Form = forwardRef(FormRender);
-Form.displayName = 'Form';
+const FormElement = forwardRef(FormRender);
+FormElement.displayName = 'Form';
 
 // Polymorphic re-typing: the implementation is loosely typed; the cast on
 // the export restores the discriminated union and both generics.
-export default /** @type {<T = Record<string, unknown>, C extends ElementType = 'form'>(
+export const Form = /** @type {<T = Record<string, unknown>, C extends ElementType = 'form'>(
 	props: FormProps<T, C> & { ref?: React.Ref<HTMLFormElement> }
 ) => JSX.Element | null} */ (
-	/** @type {unknown} */ (Form)
+	/** @type {unknown} */ (FormElement)
 );

@@ -1,4 +1,4 @@
-import setIn from './setIn';
+import { setIn } from './setIn';
 
 describe('setIn(data, path, value)', () => {
 	describe('basic writes', () => {
