@@ -35,6 +35,9 @@ import type {
 	SafePropsOmit,
 } from 'react-jsonschema-form-validation';
 
+import { ajvSchema, createAjv } from 'react-jsonschema-form-validation/providers/ajv';
+import type { ErrorCode, FormError, StandardSchema } from 'react-jsonschema-form-validation';
+
 import { Expect, Equal } from './_helpers';
 
 type UserData = { email: string; age: number };
@@ -360,6 +363,31 @@ type _AllTypesResolve = {
 	safeOmit: SafePropsOmit<{ a: string; [k: string]: unknown }, 'a'>;
 };
 
+// ---------------------------------------------------------------------------
+// 12. providers/ajv subpath (RFC 0001) — resolves under moduleResolution: node
+//     through `typesVersions`; core types come from the root entry.
+// ---------------------------------------------------------------------------
+const standard: StandardSchema<UserData> = ajvSchema<UserData>(schema, { ajv: createAjv() });
+const _issues = standard['~standard'].validate({ email: 'nope', age: -1 });
+void _issues;
+
+const _formError = (err: FormError) => {
+	const code: ErrorCode = err.code;
+	const field: string = err.field;
+	const params: Record<string, unknown> = err.params;
+	void [code, field, params, err.raw, err.message];
+};
+void _formError;
+
+// ErrorCode keeps the 9 normalized literals AND accepts any provider code.
+const _knownCode: ErrorCode = 'minLength';
+const _providerCode: ErrorCode = 'multipleOf';
+void [_knownCode, _providerCode];
+type _CoreCodesAssignable = Expect<Equal<'min' extends ErrorCode ? true : false, true>>;
+
+// The default AJV instance of createAjv() is AJV 8 (compile-capable).
+type _CreateAjvCompiles = Expect<Equal<'compile' extends keyof ReturnType<typeof createAjv> ? true : false, true>>;
+
 export {
 	Basic,
 	KeepStateOnSubmit,
@@ -375,4 +403,5 @@ export {
 };
 export type {
 	_CtxNonNull, _ErrMapValuesAreFns, _AllTypesResolve, _ResetIsNiladicVoid,
+	_CoreCodesAssignable, _CreateAjvCompiles,
 };
