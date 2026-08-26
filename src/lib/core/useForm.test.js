@@ -173,6 +173,23 @@ describe('checkValidity() / reportValidity() / requestSubmit()', () => {
 		expect(scrollIntoViewMock).toHaveBeenLastCalledWith({ behavior: 'auto', block: 'end', inline: 'start' });
 	});
 
+	it('reportValidity focuses the invalid field of ITS form when two forms share a field name', () => {
+		let second;
+		const Two = () => {
+			const a = useForm({ schema: stableSchema, data: { type: 'nope' }, id: 'a' });
+			second = useForm({ schema: stableSchema, data: { type: 'nope' }, id: 'b' });
+			return (
+				<>
+					<Form form={a} onSubmit={() => {}}><Field name="type" /></Form>
+					<Form form={second} onSubmit={() => {}}><Field name="type" /></Form>
+				</>
+			);
+		};
+		render(<Two />);
+		act(() => second.reportValidity());
+		expect(document.activeElement.getAttribute('form')).toBe('b');
+	});
+
 	it('reportValidity skips focus when no element carries the field name, and copes without scrollIntoView', () => {
 		const { form } = renderForm({ data: { type: 'nope' } });
 		expect(() => act(() => form().reportValidity())).not.toThrow();
@@ -387,29 +404,52 @@ describe('revalidation', () => {
 });
 
 describe('render-time data objects', () => {
-	it('does not loop when the owner rebuilds data on every render (equivalent results do not emit)', () => {
+	it('does not loop when the owner rebuilds INVALID data on every render, before and after a state update', () => {
 		const { ajv, counters } = countingAjv();
 		const schema = ajvSchema(testSchema, { ajv });
 		let renders = 0;
-		const Harness = () => {
+		let api;
+		const Owner = () => {
 			renders += 1;
-			// Anti-pattern, but common: a fresh object each render. Without the
-			// equivalent-result guard this loops (render → effect → validate →
-			// emit → render) until React throws "Maximum update depth exceeded".
-			const form = useForm({ schema, data: { ...{ type: 'te' } }, throttleDuration: 0 });
-			return <Form form={form} onSubmit={() => {}} />;
+			const [tick, setTick] = useState(0);
+			// Anti-pattern, but common: a fresh (invalid) object each render.
+			api = useForm({ schema, data: { ...{ type: 'nope' } }, throttleDuration: 0 });
+			return (
+				<Form form={api} onSubmit={() => {}}>
+					<output>{tick}</output>
+					<button type="button" onClick={() => setTick((t) => t + 1)}>tick</button>
+				</Form>
+			);
 		};
 		const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-		expect(() => render(<React.StrictMode><Harness /></React.StrictMode>)).not.toThrow();
+		const { container } = render(<React.StrictMode><Owner /></React.StrictMode>);
+		expect(api.valid).toBe(false);
+		fireEvent.click(container.querySelector('button'));
+		expect(container.querySelector('output').textContent).toBe('1');
 		expect(spy).not.toHaveBeenCalled();
 		spy.mockRestore();
-		expect(counters.run).toBeLessThanOrEqual(4);
-		expect(renders).toBeLessThanOrEqual(6);
+		// Structurally equal data never re-validates: only the creation
+		// runs (StrictMode double-invokes the initializer).
+		expect(counters.run).toBe(2);
+		// StrictMode double-renders: mount (2) + one state update (2).
+		expect(renders).toBeLessThanOrEqual(4);
+	});
+
+	it('re-validates when data changes structurally, even through a fresh object', () => {
+		let api;
+		const Harness = ({ value }) => {
+			api = useForm({ schema: stableSchema, data: { type: value }, throttleDuration: 0 });
+			return <Form form={api} onSubmit={() => {}} />;
+		};
+		const { rerender } = render(<Harness value="te" />);
+		expect(api.valid).toBe(true);
+		rerender(<Harness value="nope" />);
+		expect(api.valid).toBe(false);
 	});
 });
 
 describe('errorMessages', () => {
-	it('lives in the snapshot and follows identity changes', () => {
+	it('is read from the latest config (no store write) and follows identity changes', () => {
 		const first = { min: () => 'first' };
 		const second = { min: () => 'second' };
 		let api;
@@ -421,11 +461,10 @@ describe('errorMessages', () => {
 		expect(api.errorMessages).toBe(first);
 		const listener = vi.fn();
 		api.subscribe(listener);
-		rerender(<Harness errorMessages={first} />);
-		expect(listener).not.toHaveBeenCalled();
 		rerender(<Harness errorMessages={second} />);
 		expect(api.errorMessages).toBe(second);
-		expect(listener).toHaveBeenCalledTimes(1);
+		expect(listener).not.toHaveBeenCalled();
+		expect(api.getState()).not.toHaveProperty('errorMessages');
 	});
 });
 
@@ -455,6 +494,48 @@ describe('defaults', () => {
 	it('getInternals() rejects objects that were not created by useForm()', async () => {
 		const { getInternals } = await import('./internals');
 		expect(() => getInternals({})).toThrow(/not a form object created by useForm\(\)/);
+	});
+
+	it('reportValidity falls back to a document lookup when the form element is not a <form>', () => {
+		const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		const { form, container } = renderForm({ data: { type: 'nope' } }, <Field name="type" />, { component: 'section' });
+		act(() => form().reportValidity());
+		expect(document.activeElement).toBe(container.querySelector('input[name="type"]'));
+		spy.mockRestore();
+	});
+
+	it('does not re-render the owner when the FieldError registry changes', () => {
+		let ownerRenders = 0;
+		let api;
+		const Registrar = () => {
+			const form = useFormContext();
+			React.useEffect(() => {
+				form.registerFieldError('late', 'type', 'late-id');
+				return () => form.unregisterFieldError('late');
+			}, [form]);
+			return null;
+		};
+		const Owner = () => {
+			ownerRenders += 1;
+			api = useForm({ schema: stableSchema, data: { type: 'te' } });
+			return <Form form={api} onSubmit={() => {}}><Registrar /></Form>;
+		};
+		render(<Owner />);
+		expect(api.getState().fieldErrorRegistry).toHaveLength(1);
+		expect(ownerRenders).toBe(1);
+		act(() => api.touch('type'));
+		expect(ownerRenders).toBe(2);
+	});
+
+	it('reportValidity focuses the first control of a radio group (RadioNodeList)', () => {
+		const { form, container } = renderForm({ data: { type: 'nope' } }, (
+			<>
+				<Field name="type" type="radio" value="te" />
+				<Field name="type" type="radio" value="ta" />
+			</>
+		));
+		act(() => form().reportValidity());
+		expect(document.activeElement).toBe(container.querySelector('input[value="te"]'));
 	});
 });
 

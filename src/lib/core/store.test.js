@@ -6,7 +6,6 @@ const initial = () => ({
 	touchedFields: [],
 	isSubmitted: false,
 	fieldErrorRegistry: [],
-	errorMessages: undefined,
 });
 
 describe('createFormStore(initialState)', () => {

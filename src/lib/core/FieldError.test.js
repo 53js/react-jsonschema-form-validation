@@ -30,9 +30,13 @@ const renderError = (errorProps = {}, formProps = {}, extra = null) => {
 	return { ...utils, form: () => form, error: () => utils.container.querySelector('.Jfv_FieldError') };
 };
 
-it('should match snapshot', () => {
-	const { error } = renderError();
-	expect(error()).toMatchSnapshot();
+it('should render a div.Jfv_FieldError[role=alert] with the deterministic id and the provider message', () => {
+	const { error, form } = renderError();
+	expect(error().tagName).toBe('DIV');
+	expect(error().className).toBe('Jfv_FieldError');
+	expect(error().id).toBe('f-error-username');
+	expect(error().getAttribute('role')).toBe('alert');
+	expect(error().textContent).toBe(form().getFieldErrors('username')[0].raw.message);
 });
 
 describe('display', () => {
@@ -70,7 +74,7 @@ describe('display', () => {
 			minLength: (e) => ['form', e.code, e.params.limit].join(':'),
 			defaultMessage: (e) => 'default:'.concat(e.code),
 		};
-		const { error, rerender } = renderError({}, { errorMessages: formMessages });
+		const { error, form, rerender } = renderError({}, { errorMessages: formMessages });
 		expect(error().textContent).toBe('form:minLength:3');
 		rerender(
 			<Form id="f" onSubmit={() => {}} schema={schema} data={{ username: 'ab' }} errorMessages={formMessages}>
@@ -89,7 +93,7 @@ describe('display', () => {
 				<FieldError name="username" />
 			</Form>,
 		);
-		expect(error().textContent).toBe('must NOT have fewer than 3 characters');
+		expect(error().textContent).toBe(form().getFieldErrors('username')[0].raw.message);
 	});
 
 	it('should pass the normalized error (code, params, raw.data) to message callbacks', () => {
@@ -186,7 +190,72 @@ describe('registration', () => {
 		expect(container.querySelector('.Jfv_FieldError').id).toBe('x-error-username');
 	});
 
-	it('should not re-render when a validation run yields the same error', () => {
+	it('should update a message that reads raw.data when the value changes', () => {
+		const Parent = () => {
+			const [data, setData] = useState({ username: 'a' });
+			return (
+				<Form
+					id="f"
+					onSubmit={() => {}}
+					schema={schema}
+					data={data}
+					onChange={setData}
+					throttleDuration={0}
+					errorMessages={{ minLength: (e) => 'got '.concat(String(e.raw.data)) }}
+				>
+					<Field name="username" />
+					<FieldError name="username" />
+				</Form>
+			);
+		};
+		const { container } = render(<Parent />);
+		expect(container.querySelector('.Jfv_FieldError').textContent).toBe('got a');
+		fireEvent.change(container.querySelector('input'), { target: { name: 'username', value: 'ab' } });
+		expect(container.querySelector('.Jfv_FieldError').textContent).toBe('got ab');
+	});
+
+	it('should keep the IDREF order when a FieldError changes its id (in-place update)', () => {
+		const Harness = ({ firstId }) => (
+			<Form id="f" onSubmit={() => {}} schema={schema} data={{ username: 'ab' }}>
+				<Field name="username" />
+				<FieldError name="username" id={firstId} />
+				<FieldError name="username" id="second" />
+			</Form>
+		);
+		const { container, rerender } = render(<Harness firstId="first" />);
+		fireEvent.blur(container.querySelector('input'));
+		expect(container.querySelector('input').getAttribute('aria-describedby')).toBe('first second');
+		rerender(<Harness firstId="first2" />);
+		expect(container.querySelector('input').getAttribute('aria-describedby')).toBe('first2 second');
+	});
+
+	it('does not loop when a hook-mode owner passes an inline errorMessages literal', () => {
+		let renders = 0;
+		const Owner = () => {
+			renders += 1;
+			const [tick, setTick] = useState(0);
+			const form = useForm({
+				schema, data: { username: 'ab' }, errorMessages: { minLength: () => 'inline '.concat(String(tick)) },
+			});
+			return (
+				<Form form={form} onSubmit={() => {}}>
+					<FieldError name="username" />
+					<button type="button" onClick={() => setTick((t) => t + 1)}>tick</button>
+				</Form>
+			);
+		};
+		const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		const { container } = render(<React.StrictMode><Owner /></React.StrictMode>);
+		expect(container.querySelector('.Jfv_FieldError').textContent).toBe('inline 0');
+		fireEvent.click(container.querySelector('button'));
+		expect(container.querySelector('.Jfv_FieldError').textContent).toBe('inline 1');
+		expect(spy).not.toHaveBeenCalled();
+		spy.mockRestore();
+		// StrictMode double-renders: mount (2) + one state update (2).
+		expect(renders).toBeLessThanOrEqual(4);
+	});
+
+	it('should re-render when a validation run yields a structurally different error (raw.data)', () => {
 		let renders = 0;
 		const Probe = (props) => { renders += 1; return <div {...props} />; };
 		const Parent = () => {
@@ -201,8 +270,9 @@ describe('registration', () => {
 		const { container } = render(<Parent />);
 		expect(renders).toBe(1);
 		fireEvent.change(container.querySelector('input'), { target: { name: 'username', value: 'ab' } });
-		expect(renders).toBe(1);
-		fireEvent.change(container.querySelector('input'), { target: { name: 'username', value: 'abcdef' } });
+		expect(renders).toBe(2);
+		fireEvent.change(container.querySelector('input'), { target: { name: 'username', value: 'abcd' } });
+		// Valid now: the component renders null, the probe is not rendered.
 		expect(renders).toBe(2);
 	});
 });
