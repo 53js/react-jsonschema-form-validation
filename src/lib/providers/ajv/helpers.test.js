@@ -150,6 +150,11 @@ describe('.formatData(data)', () => {
 });
 
 describe('.formatErrors(errors)', () => {
+	it('should return an empty list for null or undefined (AJV leaves errors null on success)', () => {
+		expect(helpers.formatErrors(null)).toEqual([]);
+		expect(helpers.formatErrors(undefined)).toEqual([]);
+	});
+
 	it('should add a property field to each errors', () => {
 		const errors = [{ dataPath: 'input' }];
 		expect(helpers.formatErrors(errors)[0]).toHaveProperty('field');

@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`rendering > should match snapshot (explicit id: auto ids differ between React majors) 1`] = `
+<form
+  class="Jfv_Form"
+  id="snap"
+  novalidate=""
+/>
+`;
