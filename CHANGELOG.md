@@ -10,6 +10,20 @@ and dependency-only bumps are omitted.
 
 ## [Unreleased]
 
+### Added
+
+- **Standard Schema groundwork (RFC 0001).** New subpath
+  `react-jsonschema-form-validation/providers/ajv` exporting `ajvSchema(jsonSchema, { ajv })`,
+  which wraps a JSON Schema into a [Standard Schema v1](https://standardschema.dev)
+  object (plus `createAjv()` to build a custom AJV 8 instance). Its errors
+  use the normalized `FormError` shape (`{ field, code, message, params, raw }`;
+  `code` maps `minimum`/`exclusiveMinimum` → `min` and `maximum`/`exclusiveMaximum`
+  → `max`, every other AJV keyword passes through; `raw` is the verbose AJV
+  error, so `raw.data` is the current field value). The root entry exports the
+  `FormError` / `ErrorCode` / `StandardSchema` types, `isStandardSchema()` and
+  `runSchema()`. Validation is synchronous only: a schema returning a Promise
+  throws. `<Form>` is not wired to it yet — that lands with `useForm`.
+
 ### Breaking
 
 - **React 18 is now the minimum supported version** (`peerDependencies:
