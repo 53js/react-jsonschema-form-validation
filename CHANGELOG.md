@@ -20,9 +20,10 @@ and dependency-only bumps are omitted.
   `code` maps `minimum`/`exclusiveMinimum` → `min` and `maximum`/`exclusiveMaximum`
   → `max`, every other AJV keyword passes through; `raw` is the verbose AJV
   error, so `raw.data` is the current field value). The root entry exports the
-  `FormError` / `ErrorCode` / `StandardSchema` types, `isStandardSchema()` and
-  `runSchema()`. Validation is synchronous only: a schema returning a Promise
-  throws. `<Form>` is not wired to it yet — that lands with `useForm`.
+  `FormError` / `ErrorCode` / `StandardSchema` types (types only). Validation
+  is synchronous only: a schema returning a Promise (an `$async` JSON Schema,
+  an async refinement) throws. `<Form>` is not wired to it yet — that lands
+  with `useForm`.
 
 ### Breaking
 

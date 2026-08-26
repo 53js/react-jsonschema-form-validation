@@ -35,8 +35,18 @@ import type {
 	SafePropsOmit,
 } from 'react-jsonschema-form-validation';
 
+import Ajv from 'ajv';
+import Ajv2020 from 'ajv/dist/2020';
 import { ajvSchema, createAjv } from 'react-jsonschema-form-validation/providers/ajv';
-import type { ErrorCode, FormError, StandardSchema } from 'react-jsonschema-form-validation';
+import type {
+	ErrorCode,
+	FormError,
+	ProviderIssue,
+	StandardSchema,
+	StandardSchemaIssue,
+	StandardSchemaProps,
+	StandardSchemaResult,
+} from 'react-jsonschema-form-validation';
 
 import { Expect, Equal } from './_helpers';
 
@@ -370,6 +380,19 @@ type _AllTypesResolve = {
 const standard: StandardSchema<UserData> = ajvSchema<UserData>(schema, { ajv: createAjv() });
 const _issues = standard['~standard'].validate({ email: 'nope', age: -1 });
 void _issues;
+
+// Real Ajv classes (draft-07 default and 2020-12) are assignable to the
+// `ajv` option — `AjvLike.compile` is a method signature (bivariant).
+const _ajv2020 = ajvSchema(schema, { ajv: new Ajv2020() });
+const _ajvDefault = ajvSchema(schema, { ajv: new Ajv() });
+void [_ajv2020, _ajvDefault];
+
+// The spec types are exported from the root too.
+const _issue: StandardSchemaIssue = { message: 'x', path: ['email', { key: 0 }] };
+const _result: StandardSchemaResult<UserData> = { issues: [_issue] };
+const _props: StandardSchemaProps<UserData> = standard['~standard'];
+const _providerIssue: ProviderIssue = { message: 'x', code: 'min', params: { limit: 1 } };
+void [_result, _props, _providerIssue];
 
 const _formError = (err: FormError) => {
 	const code: ErrorCode = err.code;
