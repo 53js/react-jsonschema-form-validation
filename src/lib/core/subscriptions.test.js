@@ -12,7 +12,7 @@ import Form from './Form';
 import Field from './Field';
 import FieldError from './FieldError';
 import useFormSelector from './useFormSelector';
-import { useFormContext } from './Context';
+import FormContext, { useFormContext } from './Context';
 
 const schema = ajvSchema({
 	type: 'object',
@@ -81,9 +81,11 @@ it('re-renders only the subscribers whose selection changed', () => {
 	expect(report.k1).toEqual({
 		'Field:a': 1, 'Field:b': 0, 'Field:c': 0, 'Error:a': 1, 'Error:b': 0, 'Error:c': 0, App: 1,
 	});
-	// Keystroke 2 (same error): nothing but the parent.
+	// Keystroke 2 (same error code, new value): Field:a's selection is
+	// unchanged; Error:a re-renders because the error differs structurally
+	// (raw.data — a message callback may display it).
 	expect(report.k2).toEqual({
-		'Field:a': 0, 'Field:b': 0, 'Field:c': 0, 'Error:a': 0, 'Error:b': 0, 'Error:c': 0, App: 1,
+		'Field:a': 0, 'Field:b': 0, 'Field:c': 0, 'Error:a': 1, 'Error:b': 0, 'Error:c': 0, App: 1,
 	});
 	// Keystroke 3 (invalid → valid): Field:a re-renders, Error:a renders null.
 	expect(report.k3).toEqual({
@@ -91,12 +93,42 @@ it('re-renders only the subscribers whose selection changed', () => {
 	});
 });
 
+it('coarse useFormContext() consumers do not affect the fields\' render counts', () => {
+	let consumerRenders = 0;
+	// memo: parent-driven renders are not what is measured here.
+	const Consumer = React.memo(() => {
+		consumerRenders += 1;
+		const { valid } = useFormContext();
+		return <output>{String(valid)}</output>;
+	});
+	const AppWithConsumer = () => {
+		const [data, setData] = useState({ a: '', b: '', c: '' });
+		return (
+			<Form data={data} onChange={setData} onSubmit={() => {}} schema={schema} throttleDuration={0}>
+				<Field name="a" component={InputProbe} label="Field:a" />
+				<Field name="b" component={InputProbe} label="Field:b" />
+				<FieldError name="b" component={DivProbe} label="Error:b" />
+				<Consumer />
+			</Form>
+		);
+	};
+	const { container } = render(<AppWithConsumer />);
+	const before = snapshot();
+	fireEvent.change(container.querySelector('input[name="a"]'), { target: { name: 'a', value: 'x' } });
+	expect(consumerRenders).toBe(2);
+	expect(container.querySelector('output').textContent).toBe('false');
+	const after = snapshot();
+	expect(after['Field:b'] - before['Field:b']).toBe(0);
+	expect(after['Error:b'] - before['Error:b']).toBe(0);
+});
+
 describe('useFormSelector', () => {
 	it('re-renders a consumer only when its selection changes (default shallow equality)', () => {
 		let renders = 0;
 		let form;
 		const Probe = () => {
-			form = useFormContext();
+			// Raw context: no coarse subscription, only the selector below.
+			form = React.useContext(FormContext);
 			const { touched } = useFormSelector(form, (s) => ({ touched: s.touchedFields.length }));
 			renders += 1;
 			return <output>{touched}</output>;
@@ -118,7 +150,7 @@ describe('useFormSelector', () => {
 		let renders = 0;
 		let form;
 		const Probe = () => {
-			form = useFormContext();
+			form = React.useContext(FormContext);
 			useFormSelector(form, (s) => s.touchedFields, () => true);
 			renders += 1;
 			return null;

@@ -20,7 +20,7 @@
 		"type-check": "tsc -p tsconfig.json",
 		"lint": "eslint src vite.config.js vite.lib.config.js vitest.config.js",
 		"prepublishOnly": "yarn test:runtime --bail 1 && yarn test:types && yarn dist",
-		"dist:check": "grep -q -E \"^.use client.;\" dist/core/Form.js && grep -q -E \"^.use client.;\" dist/core/useForm.js && ! grep -q 'use client' dist/index.js && ! grep -q 'use client' dist/providers/ajv/index.js && ! grep -q 'use client' dist/core/index.js && echo 'dist:check: use client directives in place'"
+		"dist:check": "grep -q -E \"^.use client.;\" dist/core/Form.js && grep -q -E \"^.use client.;\" dist/core/Field.js && grep -q -E \"^.use client.;\" dist/core/FieldError.js && grep -q -E \"^.use client.;\" dist/core/useForm.js && grep -q -E \"^.use client.;\" dist/core/useFormSelector.js && grep -q -E \"^.use client.;\" dist/core/Context.js && ! grep -q 'use client' dist/index.js && ! grep -q 'use client' dist/core/index.js && ! grep -q 'use client' dist/providers/ajv/index.js && echo 'dist:check: use client on the 6 client chunks only'"
 	},
 	"browserslist": [
 		">0.2%",

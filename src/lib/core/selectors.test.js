@@ -1,5 +1,4 @@
 import {
-	isSameError,
 	selectFieldErrorDescribedBy,
 	selectFieldErrors,
 	selectIsFieldInvalid,
@@ -71,26 +70,13 @@ describe('selectFieldErrorDescribedBy', () => {
 	});
 });
 
-describe('shallowEqual / isSameError', () => {
-	it('shallowEqual compares own keys by reference', () => {
+describe('shallowEqual', () => {
+	it('should compare own keys by reference', () => {
 		const shared = {};
 		expect(shallowEqual(shared, shared)).toBe(true);
 		expect(shallowEqual({ a: 1, b: shared }, { a: 1, b: shared })).toBe(true);
 		expect(shallowEqual({ a: 1 }, { a: 1, b: 2 })).toBe(false);
 		expect(shallowEqual({ a: {} }, { a: {} })).toBe(false);
 		expect(shallowEqual({ a: NaN }, { a: NaN })).toBe(true);
-	});
-
-	it('isSameError matches by field, code, message and shallow params — not by reference', () => {
-		const a = error('x', 'min', { params: { limit: 5 } });
-		const b = error('x', 'min', { params: { limit: 5 }, raw: { different: true } });
-		expect(isSameError(a, b)).toBe(true);
-		expect(isSameError(a, a)).toBe(true);
-		expect(isSameError(a, error('x', 'min', { params: { limit: 6 } }))).toBe(false);
-		expect(isSameError(a, error('x', 'max', { params: { limit: 5 } }))).toBe(false);
-		expect(isSameError(a, error('y', 'min', { params: { limit: 5 } }))).toBe(false);
-		expect(isSameError(a, { ...a, message: 'other' })).toBe(false);
-		expect(isSameError(a, undefined)).toBe(false);
-		expect(isSameError(undefined, undefined)).toBe(true);
 	});
 });

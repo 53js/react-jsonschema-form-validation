@@ -43,17 +43,75 @@ describe('rendering', () => {
 	});
 
 	it('should render noValidate on the native form only, and forward the ref to the <form>', () => {
+		const spy = silenceReactErrors(); // the <section> variant triggers the dev-time check
 		const ref = React.createRef();
 		const first = render(<Form onSubmit={() => {}} schema={schema} ref={ref} />);
 		expect(first.container.querySelector('form').hasAttribute('novalidate')).toBe(true);
 		expect(ref.current).toBe(first.container.querySelector('form'));
 		first.unmount();
+		const callbackRef = vi.fn();
+		render(<Form onSubmit={() => {}} schema={schema} ref={callbackRef} />).unmount();
+		expect(callbackRef).toHaveBeenNthCalledWith(1, expect.any(HTMLFormElement));
+		expect(callbackRef).toHaveBeenLastCalledWith(null);
 		// The id is fixed at mount (it seeds the store): mount a fresh form.
 		const { container } = render(<Form onSubmit={() => {}} schema={schema} component="section" id="s" className="x" />);
 		const section = container.querySelector('section');
 		expect(section.hasAttribute('novalidate')).toBe(false);
 		expect(section.id).toBe('s');
 		expect(section.className).toBe('Jfv_Form x');
+		spy.mockRestore();
+	});
+
+	it('should skip the dev-time check in production', () => {
+		const saved = process.env.NODE_ENV;
+		process.env.NODE_ENV = 'production';
+		const spy = silenceReactErrors();
+		try {
+			render(<Form onSubmit={() => {}} schema={schema} component="section" id="prod" />);
+			expect(spy).not.toHaveBeenCalled();
+		} finally {
+			process.env.NODE_ENV = saved;
+			spy.mockRestore();
+		}
+	});
+
+	it('should warn (dev) when the element at form.id is not the <form> element', () => {
+		const spy = silenceReactErrors();
+		render(
+			<Form onSubmit={() => {}} schema={schema} component="section" id="sec">
+				<Field name="type" />
+			</Form>,
+		);
+		const messages = () => spy.mock.calls.map((call) => String(call[0]));
+		expect(messages()).toEqual([
+			expect.stringMatching(/must render a <form> element and forward the `id` prop.*Found a <section> at id "sec"/),
+		]);
+		spy.mockClear();
+
+		const Forgetful = ({ children, onSubmit }) => <form onSubmit={onSubmit}>{children}</form>;
+		render(
+			<Form onSubmit={() => {}} schema={schema} component={Forgetful} id="lost">
+				<Field name="type" />
+			</Form>,
+		);
+		// Besides ours, React 18 warns that a plain function component cannot
+		// receive the ref <Form> hands to its `component` (React 19 passes it
+		// as a prop and stays silent): nothing else is acceptable.
+		const ours = messages().filter((m) => m.includes('react-jsonschema-form-validation'));
+		expect(ours).toHaveLength(1);
+		expect(ours[0]).toMatch(/Found nothing at id "lost"/);
+		const others = messages().filter((m) => !m.includes('react-jsonschema-form-validation'));
+		expect(others.every((m) => /Function components cannot be given refs/.test(m))).toBe(true);
+		spy.mockClear();
+
+		const Forwarding = React.forwardRef((props, ref) => <form ref={ref} {...props} />);
+		render(
+			<Form onSubmit={() => {}} schema={schema} component={Forwarding} id="ok">
+				<Field name="type" />
+			</Form>,
+		);
+		expect(spy).not.toHaveBeenCalled();
+		spy.mockRestore();
 	});
 
 	it('should add the isSubmitted class after a submit attempt', () => {
@@ -201,13 +259,12 @@ describe('modes', () => {
 });
 
 describe('server rendering', () => {
+	// Like a real server: no `window` / `document` at all (any access throws
+	// a TypeError), so `useIsomorphicLayoutEffect` takes the server branch.
 	const withoutDom = (fn) => {
 		const saved = { document: global.document, window: global.window };
-		const trap = (name) => new Proxy({}, {
-			get: (_, prop) => { throw new Error(name.concat('.', String(prop), ' accessed during SSR render')); },
-		});
-		Object.defineProperty(global, 'document', { value: trap('document'), configurable: true });
-		Object.defineProperty(global, 'window', { value: trap('window'), configurable: true });
+		Object.defineProperty(global, 'document', { value: undefined, configurable: true });
+		Object.defineProperty(global, 'window', { value: undefined, configurable: true });
 		try {
 			return fn();
 		} finally {

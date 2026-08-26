@@ -14,21 +14,25 @@ import {
 	useId,
 	useRef,
 	useState,
-	useSyncExternalStore,
 } from 'react';
+import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector';
+
+import deepEqual from './deepEqual';
 
 import { runSchema } from './errors';
 import { updateDataFromEvents } from './helpers';
 import { getInternals, setInternals } from './internals';
 import {
-	isSameError,
 	selectFieldErrorDescribedBy,
 	selectFieldErrors,
 	selectIsFieldInvalid,
+	selectFormState,
 	selectIsFieldTouched,
+	shallowEqual,
 } from './selectors';
 import { createFormStore } from './store';
 import throttle from './throttle';
+import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect';
 
 /**
  * Options controlling how the form scrolls to the first invalid field on
@@ -129,18 +133,45 @@ const ALIGN_TO_BLOCK = {
 };
 
 /**
- * Builds the api around a fresh store. `getConfig` reads the latest
- * configuration (a ref updated on every render of the owning component):
- * `data`, `onChange`, `schema`… are never captured, so the api can stay
+ * The control of field `field` in the form `formId`: through the form
+ * element's own `elements` collection first (native association — includes
+ * portaled controls, excludes another form's field of the same name), then
+ * the document as a fallback (custom components without native
+ * association).
+ *
+ * @param {string} formId
+ * @param {string} field
+ * @returns {HTMLElement | undefined}
+ */
+const findControl = (formId, field) => {
+	const formElement = document.getElementById(formId);
+	const owned = formElement instanceof HTMLFormElement
+		? formElement.elements.namedItem(field)
+		: null;
+	if (owned) {
+		// A RadioNodeList (radio group) has no focus(): take its first control.
+		const control = 'focus' in owned ? owned : /** @type {RadioNodeList} */ (owned)[0];
+		return /** @type {HTMLElement | undefined} */ (control);
+	}
+	return document.getElementsByName(field)[0];
+};
+
+/**
+ * Builds the api around a fresh store. The configuration is held here and
+ * refreshed by the owning hook after each commit (`setConfig`): `data`,
+ * `onChange`, `schema`… are never captured, so the api can stay
  * referentially stable.
  *
  * @template T
  * @param {string} id
- * @param {() => UseFormConfig<T>} getConfig
+ * @param {UseFormConfig<T>} initialConfig
  * @returns {FormApi<T>}
  */
-const createFormApi = (id, getConfig) => {
-	const initialConfig = getConfig();
+const createFormApi = (id, initialConfig) => {
+	let config = initialConfig;
+	const getConfig = () => config;
+	/** @type {Set<() => void>} */
+	const configListeners = new Set();
 	// First validation is synchronous: the very first render already sees
 	// the right `valid` / `errors` (no flash of a wrongly enabled button).
 	const store = createFormStore({
@@ -148,7 +179,6 @@ const createFormApi = (id, getConfig) => {
 		touchedFields: [],
 		isSubmitted: false,
 		fieldErrorRegistry: [],
-		errorMessages: initialConfig.errorMessages,
 	});
 
 	/** @type {FormBindings} */
@@ -160,15 +190,7 @@ const createFormApi = (id, getConfig) => {
 	/** @param {unknown} data */
 	const validateNow = (data) => {
 		const result = runSchema(getConfig().schema, data);
-		// Equivalent result → no new snapshot. Besides sparing a render, this
-		// is what keeps a hook-mode parent that rebuilds `data` on every
-		// render (`data: { ...state }`) from looping: render → effect →
-		// validate → emit → render…
-		const current = store.getState();
-		const equivalent = current.valid === result.valid
-			&& current.errors.length === result.errors.length
-			&& result.errors.every((error, index) => isSameError(error, current.errors[index]));
-		if (!equivalent) store.setState(result);
+		store.setState(result);
 		return result.valid;
 	};
 
@@ -185,7 +207,7 @@ const createFormApi = (id, getConfig) => {
 	const scrollToFirstError = () => {
 		const firstError = store.getState().errors[0];
 		if (!firstError) return;
-		const element = document.getElementsByName(firstError.field)[0];
+		const element = findControl(id, firstError.field);
 		if (!element) return;
 		const {
 			align,
@@ -205,7 +227,7 @@ const createFormApi = (id, getConfig) => {
 		get errors() { return store.getState().errors; },
 		get touchedFields() { return store.getState().touchedFields; },
 		get isSubmitted() { return store.getState().isSubmitted; },
-		get errorMessages() { return store.getState().errorMessages; },
+		get errorMessages() { return getConfig().errorMessages; },
 		id,
 		subscribe: store.subscribe,
 		getState: store.getState,
@@ -311,8 +333,21 @@ const createFormApi = (id, getConfig) => {
 	// Hooks-only members (see internals.js): never on the public api object.
 	setInternals(api, {
 		bindSubmit: (next) => { bindings = next; },
+		setConfig: (next) => {
+			const previous = config;
+			config = next;
+			// Only `errorMessages` has render-time readers (<Form> provides it
+			// through a context): notify them when its identity changes.
+			if (previous.errorMessages !== next.errorMessages) {
+				configListeners.forEach((listener) => listener());
+			}
+		},
+		subscribeConfig: (listener) => {
+			configListeners.add(listener);
+			return () => { configListeners.delete(listener); };
+		},
+		getErrorMessages: () => getConfig().errorMessages,
 		revalidate: (data) => { getThrottledValidator()(data ?? DEFAULT_DATA); },
-		setErrorMessages: (errorMessages) => { store.setState({ errorMessages }); },
 		dispose: () => { if (throttled) throttled.cancel(); },
 	});
 
@@ -321,12 +356,15 @@ const createFormApi = (id, getConfig) => {
 
 const noopSubscribe = () => () => {};
 const getNothing = () => null;
+/** @param {unknown} value */
+const identity = (value) => value;
 
 /**
  * Internal hook behind `useForm` and `<Form>`: owns the store for the
- * lifetime of the component, keeps the configuration reachable through a
- * latest-ref, drives re-validation, and subscribes the owning component to
- * the whole snapshot. `config === null` (hook-mode `<Form>`, which receives
+ * lifetime of the component, hands the latest configuration to the api
+ * after each commit, drives re-validation, and subscribes the owning
+ * component to the form state (registry changes excluded).
+ * `config === null` (hook-mode `<Form>`, which receives
  * an external form) creates nothing and returns `null`. The mode is fixed
  * at mount.
  *
@@ -336,45 +374,53 @@ const getNothing = () => null;
  */
 export const useFormStore = (config) => {
 	const reactId = useId();
-	const latest = useRef(config);
-	latest.current = config;
-
 	const [api] = useState(() => (
-		config
-			? createFormApi(config.id ?? reactId, () => /** @type {UseFormConfig<T>} */ (latest.current))
-			: null
+		config ? createFormApi(config.id ?? reactId, config) : null
 	));
 
-	// Subscribe the owner to every state change (`form.valid` in the parent
-	// must be reactive). The snapshot itself is read through the getters.
-	useSyncExternalStore(
+	// The api reads the configuration at call time: refresh it once the
+	// render is committed (never during render), before any event can fire.
+	useIsomorphicLayoutEffect(() => {
+		if (api && config) getInternals(api).setConfig(config);
+	});
+
+	// Subscribe the owner to the form state (`form.valid` in the parent must
+	// be reactive) — not to the <FieldError> registry, which is the
+	// components' business. The values are read through the getters.
+	// Cast: with no api the snapshot is `null` and the selector the identity.
+	const ownerSelector = /** @type {(state: FormState | null) => Record<string, unknown>} */ (
+		/** @type {unknown} */ (api ? selectFormState : identity)
+	);
+	useSyncExternalStoreWithSelector(
 		api ? api.subscribe : noopSubscribe,
 		api ? api.getState : getNothing,
 		api ? api.getState : getNothing,
+		ownerSelector,
+		shallowEqual,
 	);
 
 	const data = config ? config.data : undefined;
 	const schema = config ? config.schema : undefined;
 	const throttleDuration = config ? config.throttleDuration : undefined;
-	const errorMessages = config ? config.errorMessages : undefined;
 
-	// Re-validate when a validation input changes. The inputs validated
-	// synchronously at store creation are remembered, so the mount-time run
-	// of this effect — and its StrictMode re-run, which sees the same refs —
-	// does not repeat that first validation.
+	// Re-validate when a validation input changes. `data` is compared
+	// structurally: validation is a pure function of (schema, data), so a
+	// fresh but equal object (`data: { ...state }` in the owner's render)
+	// would only recompute the same result — and, through the emitted
+	// snapshot, re-render the owner into another fresh object: a loop. The
+	// inputs validated synchronously at store creation are remembered, so
+	// the mount-time run of this effect (and its StrictMode re-run) does not
+	// repeat that first validation either.
 	const lastValidated = useRef(config ? { data, schema, throttleDuration } : null);
 	useEffect(() => {
 		if (!api) return;
 		const last = lastValidated.current;
-		if (last && last.data === data && last.schema === schema
-			&& last.throttleDuration === throttleDuration) return;
+		if (last && last.schema === schema
+			&& last.throttleDuration === throttleDuration
+			&& deepEqual(last.data, data)) return;
 		lastValidated.current = { data, schema, throttleDuration };
 		getInternals(api).revalidate(data);
 	}, [api, data, schema, throttleDuration]);
-
-	useEffect(() => {
-		if (api) getInternals(api).setErrorMessages(errorMessages);
-	}, [api, errorMessages]);
 
 	useEffect(() => () => { if (api) getInternals(api).dispose(); }, [api]);
 

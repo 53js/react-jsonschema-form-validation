@@ -10,13 +10,14 @@
 
 import classnames from 'classnames';
 import React, {
-	memo, useCallback, useEffect, useId,
+	memo, useCallback, useContext, useEffect, useId,
 } from 'react';
 
 import getFieldErrorId from '../a11y';
-import { useResolvedForm } from './Context';
+import { ErrorMessagesContext, useResolvedForm } from './Context';
+import deepEqual from './deepEqual';
 import getErrorMessage from './getErrorMessage';
-import { isSameError, selectFieldErrors, selectIsFieldTouched } from './selectors';
+import { selectFieldErrors, selectIsFieldTouched } from './selectors';
 import useFormSelector from './useFormSelector';
 
 /**
@@ -45,7 +46,6 @@ import useFormSelector from './useFormSelector';
  *   error: FormError | undefined,
  *   isTouched: boolean,
  *   isSubmitted: boolean,
- *   errorMessages: ErrorMessagesMap | undefined,
  * }} FieldErrorSelection
  */
 
@@ -53,10 +53,11 @@ import useFormSelector from './useFormSelector';
  * @param {FieldErrorSelection} a
  * @param {FieldErrorSelection} b
  */
-const isEqualSelection = (a, b) => isSameError(a.error, b.error)
+// The error is compared structurally: any change (`params`, `raw.data`…)
+// may change the displayed message.
+const isEqualSelection = (a, b) => deepEqual(a.error, b.error)
 	&& a.isTouched === b.isTouched
-	&& a.isSubmitted === b.isSubmitted
-	&& a.errorMessages === b.errorMessages;
+	&& a.isSubmitted === b.isSubmitted;
 
 /**
  * Displays the first error of field `name`. Its DOM id (deterministic,
@@ -83,11 +84,15 @@ const FieldErrorRender = (props) => {
 	const registryKey = useId();
 	const effectiveId = id != null ? id : getFieldErrorId(form.id, name);
 
-	// Registration happens in an effect, never during render.
+	// Registration happens in effects, never during render. Two effects:
+	// a `name` / `id` change updates the entry in place (mount order of the
+	// IDREF list preserved) instead of unregister + append.
+	useEffect(() => () => form.unregisterFieldError(registryKey), [form, registryKey]);
 	useEffect(() => {
 		form.registerFieldError(registryKey, name, effectiveId);
-		return () => form.unregisterFieldError(registryKey);
 	}, [form, registryKey, name, effectiveId]);
+
+	const formErrorMessages = useContext(ErrorMessagesContext);
 
 	const selector = useCallback(
 		/** @param {FormState} state @returns {FieldErrorSelection} */
@@ -95,13 +100,10 @@ const FieldErrorRender = (props) => {
 			error: selectFieldErrors(state, name)[0],
 			isTouched: selectIsFieldTouched(state, name),
 			isSubmitted: state.isSubmitted,
-			errorMessages: state.errorMessages,
 		}),
 		[name],
 	);
-	const {
-		error, isTouched, isSubmitted, errorMessages,
-	} = useFormSelector(form, selector, isEqualSelection);
+	const { error, isTouched, isSubmitted } = useFormSelector(form, selector, isEqualSelection);
 
 	if (!error) return null;
 
@@ -112,7 +114,7 @@ const FieldErrorRender = (props) => {
 			role="alert"
 			{...rest}
 		>
-			{children || getErrorMessage(error, { ...errorMessages, ...fieldErrorMessages })}
+			{children || getErrorMessage(error, { ...formErrorMessages, ...fieldErrorMessages })}
 		</Component>
 	);
 };

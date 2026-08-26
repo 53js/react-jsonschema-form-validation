@@ -3,15 +3,17 @@
  * it (`useFormStore`, `<Form>`). Kept out of the `FormApi` type and of the
  * barrel on purpose: consumers never see `bindSubmit` & co.
  *
- * @import { FormBindings } from './useForm'
+ * @import { FormBindings, UseFormConfig } from './useForm'
  * @import { ErrorMessagesMap } from './types'
  */
 
 /**
  * @typedef {{
  *   bindSubmit: (bindings: FormBindings) => void,
+ *   setConfig: (config: UseFormConfig<any>) => void,
+ *   subscribeConfig: (listener: () => void) => () => void,
+ *   getErrorMessages: () => ErrorMessagesMap | undefined,
  *   revalidate: (data: unknown) => void,
- *   setErrorMessages: (errorMessages: ErrorMessagesMap | undefined) => void,
  *   dispose: () => void,
  * }} FormInternals
  */

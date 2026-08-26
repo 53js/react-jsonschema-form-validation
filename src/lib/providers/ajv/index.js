@@ -4,9 +4,6 @@
  * its own entry (`react-jsonschema-form-validation/providers/ajv`) so
  * consumers of other providers never bundle AJV.
  *
- * Not wired into `<Form>` yet — the class component keeps its direct AJV
- * path until `useForm` lands (RFC 0001, PR 3).
- *
  * @import { ErrorObject } from 'ajv'
  * @import { JSONSchema7Definition } from 'json-schema'
  * @import { StandardSchema } from '../../core/standard-schema'

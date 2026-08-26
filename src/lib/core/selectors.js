@@ -56,6 +56,20 @@ export const selectFieldErrorDescribedBy = (state, name) => {
 };
 
 /**
+ * The coarse, 0.x-like slice of the state: what `useFormContext()` and the
+ * form owner (`useForm`) re-render on — everything but the <FieldError>
+ * registry, which only the components care about.
+ *
+ * @param {FormState} state
+ */
+export const selectFormState = (state) => ({
+	valid: state.valid,
+	errors: state.errors,
+	touchedFields: state.touchedFields,
+	isSubmitted: state.isSubmitted,
+});
+
+/**
  * Shallow equality on plain objects — the `isEqual` of the selector-based
  * subscriptions.
  *
@@ -68,23 +82,4 @@ export const shallowEqual = (a, b) => {
 	const keysA = Object.keys(a);
 	const keysB = Object.keys(b);
 	return keysA.length === keysB.length && keysA.every((key) => Object.is(a[key], b[key]));
-};
-
-/**
- * Two errors are "the same" for display purposes when they target the same
- * field with the same code, message and (shallowly) the same params —
- * validation produces fresh error objects on every run, and comparing by
- * reference would re-render every `<FieldError>` on each keystroke.
- *
- * @param {FormError | undefined} a
- * @param {FormError | undefined} b
- * @returns {boolean}
- */
-export const isSameError = (a, b) => {
-	if (a === b) return true;
-	if (!a || !b) return false;
-	return a.field === b.field
-		&& a.code === b.code
-		&& a.message === b.message
-		&& shallowEqual(a.params, b.params);
 };

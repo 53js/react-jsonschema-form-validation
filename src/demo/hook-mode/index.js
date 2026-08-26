@@ -45,12 +45,12 @@ const HookModeForm = () => {
 		<Form form={form} onSubmit={() => setSuccess(true)}>
 			<div className="form-group">
 				<label htmlFor="hook-email">Email :</label>
-				<Field className="form-control" id="hook-email" name="email" type="email" />
+				<Field className="form-control" id="hook-email" name="email" type="email" value={data.email} />
 				<FieldError name="email" />
 			</div>
 			<div className="form-group">
 				<label htmlFor="hook-age">Age :</label>
-				<Field className="form-control" id="hook-age" name="age" type="number" />
+				<Field className="form-control" id="hook-age" name="age" type="number" value={data.age} />
 				<FieldError name="age" />
 			</div>
 			<p className="text-muted">
