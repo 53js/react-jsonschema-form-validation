@@ -2,13 +2,16 @@
  * Negative type tests — usages that MUST NOT compile.
  *
  * Each block is preceded by `// @ts-expect-error`. If TypeScript stops
- * flagging the underlying error (e.g. a public typing regression makes it
- * legal), the directive becomes "unused" and CI fails with an explicit
- * error. This gives us a two-way safety net: positive tests ensure valid
- * usage works, negative tests ensure invalid usage is rejected.
+ * flagging the underlying error, the directive becomes "unused" and CI
+ * fails with an explicit error.
+ *
+ * v1 (RFC 0001): the dual-mode union checks (`form` + config props), the
+ * `FormApi`-typed `form` prop, `useForm` config, `/core` without a
+ * JSON Schema sugar.
  */
 import React, { useRef } from 'react';
-import Form, { Field, FieldError } from 'react-jsonschema-form-validation';
+import Form, { Field, FieldError, useForm } from 'react-jsonschema-form-validation';
+import { Form as CoreForm, useForm as useCoreForm } from 'react-jsonschema-form-validation/core';
 
 type UserData = { email: string; age: number };
 const schema = { type: 'object' as const };
@@ -16,7 +19,6 @@ const schema = { type: 'object' as const };
 type MyInputProps = { label: string; flavor: 'sweet' | 'savory' };
 const MyInput = (p: MyInputProps) => <input data-flavor={p.flavor} />;
 
-// Reactstrap-like: typed keys + `[key: string]: any` index signature
 type LooseInputProps = {
 	cssModule?: { className: string };
 	bsSize?: 'sm' | 'lg';
@@ -26,45 +28,85 @@ type LooseInputProps = {
 const LooseInput = (_p: LooseInputProps) => <input />;
 
 // ---------------------------------------------------------------------------
-// Field — required prop and prop-type checks
+// Form — dual mode: hook mode masks every validation-config prop and `id`
+// ---------------------------------------------------------------------------
+
+const HookAndSchema = () => {
+	const form = useForm<UserData>({ schema });
+	// @ts-expect-error — `form` and `schema` are mutually exclusive
+	return <Form form={form} schema={schema} onSubmit={() => {}} />;
+};
+
+const HookAndData = () => {
+	const form = useForm<UserData>({ schema });
+	// @ts-expect-error — `data` belongs to useForm in hook mode
+	return <Form form={form} data={{ email: '', age: 0 }} onSubmit={() => {}} />;
+};
+
+const HookAndAjv = () => {
+	const form = useForm<UserData>({ schema });
+	// @ts-expect-error — `ajv` belongs to useForm in hook mode
+	return <Form form={form} ajv={{ compile: () => () => true }} onSubmit={() => {}} />;
+};
+
+const HookAndErrorMessages = () => {
+	const form = useForm<UserData>({ schema });
+	// @ts-expect-error — `errorMessages` belongs to useForm in hook mode
+	return <Form form={form} errorMessages={{}} onSubmit={() => {}} />;
+};
+
+const HookAndId = () => {
+	const form = useForm<UserData>({ schema });
+	// @ts-expect-error — the id lives on the form object (useForm({ id }))
+	return <Form form={form} id="checkout" onSubmit={() => {}} />;
+};
+
+const HookWithoutOnSubmit = () => {
+	const form = useForm<UserData>({ schema });
+	// @ts-expect-error — onSubmit is required in hook mode too
+	return <Form form={form} />;
+};
+
+// `form` props take the FormApi object, never a string id.
+// @ts-expect-error — string ids would let the DOM and React associations diverge
+const f0 = <Field name="a" form="checkout" />;
+// @ts-expect-error — same for FieldError
+const e0 = <FieldError name="a" form="checkout" />;
+
+// useForm — schema is required and must be a Standard Schema or JSON Schema
+// @ts-expect-error — schema missing
+const u1 = () => useForm<UserData>({});
+// @ts-expect-error — a string is neither
+const u2 = () => useForm<UserData>({ schema: 'nope' });
+// @ts-expect-error — data must match T
+const u3 = () => useForm<UserData>({ schema, data: { wrong: true } });
+
+// /core — Standard Schema only: no JSON Schema sugar, no `ajv`
+// @ts-expect-error — a plain JSON Schema is not a Standard Schema
+const c1 = () => useCoreForm<UserData>({ schema });
+// @ts-expect-error — `ajv` is a root-entry option
+const c2 = () => useCoreForm<UserData>({ schema: { '~standard': { version: 1, vendor: 'x', validate: (v: unknown) => ({ value: v as UserData }) } }, ajv: {} });
+// @ts-expect-error — the core <Form> does not accept a plain JSON Schema either
+const c3 = <CoreForm schema={schema} onSubmit={() => {}} />;
+
+// ---------------------------------------------------------------------------
+// Field — unchanged from 0.x
 // ---------------------------------------------------------------------------
 
 // @ts-expect-error — name is required
 const f1 = <Field />;
-
 // @ts-expect-error — name must be string
 const f2 = <Field name={42} />;
-
 // @ts-expect-error — 'textarea' has no `href` prop
 const f3 = <Field name="a" component="textarea" href="/x" />;
-
-// ---------------------------------------------------------------------------
-// Field with custom component — inference must be strict
-// ---------------------------------------------------------------------------
-
 // @ts-expect-error — flavor must be 'sweet' | 'savory'
 const f4 = <Field name="a" component={MyInput} label="l" flavor="WRONG" />;
-
 // @ts-expect-error — required `label` missing
 const f5 = <Field name="a" component={MyInput} flavor="sweet" />;
-
-// ---------------------------------------------------------------------------
-// Field with reactstrap-like component (index signature): typed keys STAY strict
-// ---------------------------------------------------------------------------
-
 // @ts-expect-error — cssModule must match { className: string }
 const f6 = <Field name="a" component={LooseInput} cssModule={12} />;
-
 // @ts-expect-error — bsSize must be 'sm' | 'lg'
 const f7 = <Field name="a" component={LooseInput} bsSize={42} />;
-
-// (typos on properties that only exist via the index signature ARE accepted —
-// e.g. `<Field component={LooseInput} anythingAtAll="ok" />` — this is the
-// documented trade-off of SafePropsOmit.)
-
-// ---------------------------------------------------------------------------
-// Field — ref must match the underlying component's ref type
-// ---------------------------------------------------------------------------
 
 const WrongRefKind = () => {
 	const wrongRef = useRef<HTMLDivElement>(null);
@@ -72,17 +114,8 @@ const WrongRefKind = () => {
 	return <Field name="a" component="input" ref={wrongRef} />;
 };
 
-// ---------------------------------------------------------------------------
-// Field — polymorphic onChange must match component's onChange signature
-// ---------------------------------------------------------------------------
-
-// Component that emits a raw string, not a DOM event.
-type ValueEmitterProps = {
-	value?: string;
-	onChange: (value: string) => void;
-};
+type ValueEmitterProps = { value?: string; onChange: (value: string) => void };
 const ValueEmitter = (_p: ValueEmitterProps) => <input />;
-
 const WrongValueEmitterHandler = () => (
 	<Field
 		name="phone"
@@ -93,64 +126,39 @@ const WrongValueEmitterHandler = () => (
 );
 
 // ---------------------------------------------------------------------------
-// Form — required props
+// Form — sugar mode required props and typing
 // ---------------------------------------------------------------------------
 
 // @ts-expect-error — schema + onSubmit missing
 const F1 = <Form />;
-
 // @ts-expect-error — onSubmit missing
 const F2 = <Form schema={schema} />;
-
 // @ts-expect-error — schema missing
 const F3 = <Form onSubmit={() => {}} />;
-
-// ---------------------------------------------------------------------------
-// Form schema — JSONSchema7Definition typing catches typos
-// ---------------------------------------------------------------------------
-
 // @ts-expect-error — 'objct' is not a valid JSONSchema7 type
 const F4 = <Form schema={{ type: 'objct' }} onSubmit={() => {}} />;
-
-// ---------------------------------------------------------------------------
-// Form.errorMessages — values must be functions
-// ---------------------------------------------------------------------------
-
 // @ts-expect-error — 'not a function' is not an ErrorMessageFn
 const F5 = <Form schema={schema} onSubmit={() => {}} errorMessages={{ required: 'not a function' }} />;
-
-// ---------------------------------------------------------------------------
-// Form<T> — data shape must match T
-// ---------------------------------------------------------------------------
-
 // @ts-expect-error — { wrong: 'x' } is not assignable to UserData
 const F6 = <Form<UserData> data={{ wrong: 'x' }} schema={schema} onSubmit={() => {}} />;
-
-// ---------------------------------------------------------------------------
-// Form<T>.onChange — handler param must accept `T`, not an unrelated type
-// ---------------------------------------------------------------------------
-
 type OtherData = { totallyDifferent: boolean };
 // @ts-expect-error — onChange param type is incompatible with declared UserData
 const F7 = <Form<UserData> schema={schema} onSubmit={() => {}} onChange={(d: OtherData) => void d} />;
 
 // ---------------------------------------------------------------------------
-// FieldError — required prop + typed errorMessages
+// FieldError
 // ---------------------------------------------------------------------------
 
 // @ts-expect-error — name is required
 const E1 = <FieldError />;
-
 // @ts-expect-error — errorMessages must have function values
 const E2 = <FieldError name="x" errorMessages={{ required: 42 }} />;
 
-// ---------------------------------------------------------------------------
-// Consume all bindings so the compiler doesn't drop them
-// ---------------------------------------------------------------------------
 export {
+	HookAndSchema, HookAndData, HookAndAjv, HookAndErrorMessages, HookAndId, HookWithoutOnSubmit,
+	f0, e0, u1, u2, u3, c1, c2, c3,
 	f1, f2, f3, f4, f5, f6, f7,
-	WrongRefKind,
-	WrongValueEmitterHandler,
+	WrongRefKind, WrongValueEmitterHandler,
 	F1, F2, F3, F4, F5, F6, F7,
 	E1, E2,
 };
