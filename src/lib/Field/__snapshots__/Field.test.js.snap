@@ -1,8 +1,0 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
-
-exports[`should match snapshot 1`] = `
-<input
-  class="Jfv_Field"
-  name="username"
-/>
-`;
