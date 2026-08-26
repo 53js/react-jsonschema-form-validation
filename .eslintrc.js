@@ -11,6 +11,8 @@ module.exports = {
 		'react/jsx-one-expression-per-line': 0, // Buggy
 		'react/jsx-props-no-spreading': 'off',
 		'react/state-in-constructor': 'off',
+		// v1 drops prop-types (RFC 0001): props are typed by JSDoc + tsc.
+		'react/prop-types': 'off',
 	},
 	overrides: [
 		{
