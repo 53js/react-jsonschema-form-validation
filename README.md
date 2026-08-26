@@ -212,7 +212,8 @@ as `emails.*` work):
 For external subscribers — a custom hook, a devtools panel, a Constraint
 Validation projection — the store itself is exposed: `subscribe(listener)`
 and `getState()` return the immutable `FormState` snapshot
-`{ valid, errors, touchedFields, isSubmitted, fieldErrorRegistry, errorMessages }`.
+`{ valid, errors, touchedFields, isSubmitted, fieldErrorRegistry }`
+(`errorMessages` is configuration, read through `form.errorMessages`).
 Components should rather use `useFormSelector(form, selector, isEqual?)`,
 which re-renders only when the selected slice changes (shallow equality by
 default):
@@ -220,6 +221,11 @@ default):
 ```jsx
 const touchedCount = useFormSelector(form, (state) => state.touchedFields.length);
 ```
+
+The pure selectors the components use (`selectFieldErrors`,
+`selectIsFieldInvalid`, `selectIsFieldTouched`, `selectFieldErrorDescribedBy`),
+`runSchema` / `isStandardSchema`, `createFormStore` and the `deepEqual` /
+`shallowEqual` comparators are exported too, for such subscribers.
 
 (`handleSubmit`, `getFieldErrorDescribedBy`, `registerFieldError` and
 `unregisterFieldError` are also on the object — internal wiring between
