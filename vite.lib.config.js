@@ -73,6 +73,12 @@ export default defineConfig({
 			fileName: (format, entryName) => entryName.concat('.js'),
 		},
 		rollupOptions: {
+			// The 'use client' directives are handled by preserveUseClient above;
+			// Rollup's own warning about them is expected noise.
+			onwarn(warning, warn) {
+				if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+				warn(warning);
+			},
 			// Externalize every bare import (dependencies and
 			// peerDependencies): nothing is bundled, exactly like the Babel
 			// per-file transform before.
