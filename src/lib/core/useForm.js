@@ -21,6 +21,7 @@ import { runSchema } from './errors';
 import { updateDataFromEvents } from './helpers';
 import { getInternals, setInternals } from './internals';
 import {
+	isSameError,
 	selectFieldErrorDescribedBy,
 	selectFieldErrors,
 	selectIsFieldInvalid,
@@ -159,7 +160,15 @@ const createFormApi = (id, getConfig) => {
 	/** @param {unknown} data */
 	const validateNow = (data) => {
 		const result = runSchema(getConfig().schema, data);
-		store.setState(result);
+		// Equivalent result → no new snapshot. Besides sparing a render, this
+		// is what keeps a hook-mode parent that rebuilds `data` on every
+		// render (`data: { ...state }`) from looping: render → effect →
+		// validate → emit → render…
+		const current = store.getState();
+		const equivalent = current.valid === result.valid
+			&& current.errors.length === result.errors.length
+			&& result.errors.every((error, index) => isSameError(error, current.errors[index]));
+		if (!equivalent) store.setState(result);
 		return result.valid;
 	};
 

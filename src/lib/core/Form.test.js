@@ -231,7 +231,8 @@ describe('server rendering', () => {
 		));
 		expect(spy).not.toHaveBeenCalled();
 		spy.mockRestore();
-		expect(html).toContain('<form id="s" class="Jfv_Form" novalidate=""');
+		// React 18 serializes the attribute as `novalidate`, React 19 as `noValidate`.
+		expect(html).toMatch(/<form id="s" class="Jfv_Form" novalidate=""/i);
 		expect(html).toContain('form="s"');
 		expect(html).toContain('id="s-error-email" role="alert"');
 		expect(html).not.toContain('aria-invalid');

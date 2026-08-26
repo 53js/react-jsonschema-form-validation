@@ -372,8 +372,9 @@ describe('revalidation', () => {
 	it('does not repeat the creation-time validation on mount, even under StrictMode', () => {
 		const { ajv, counters } = countingAjv();
 		const schema = ajvSchema(testSchema, { ajv });
+		const data = { type: 'te' };
 		const Harness = () => {
-			const form = useForm({ schema, data: { type: 'te' }, throttleDuration: 0 });
+			const form = useForm({ schema, data, throttleDuration: 0 });
 			return <Form form={form} onSubmit={() => {}} />;
 		};
 		render(<React.StrictMode><Harness /></React.StrictMode>);
@@ -382,6 +383,32 @@ describe('revalidation', () => {
 		// last-validated tuple keeps the effect from validating a third time.
 		expect(counters.compile).toBe(1);
 		expect(counters.run).toBe(2);
+	});
+});
+
+describe('render-time data objects', () => {
+	it('does not loop when the owner rebuilds data on every render (equivalent results do not emit)', () => {
+		vi.useFakeTimers();
+		const { ajv, counters } = countingAjv();
+		const schema = ajvSchema(testSchema, { ajv });
+		let renders = 0;
+		const Harness = () => {
+			renders += 1;
+			// Anti-pattern, but common: a fresh object each render.
+			const form = useForm({ schema, data: { ...{ type: 'te' } }, throttleDuration: 0 });
+			return <Form form={form} onSubmit={() => {}} />;
+		};
+		const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		render(<Harness />);
+		act(() => { vi.runAllTimers(); });
+		act(() => { vi.runAllTimers(); });
+		expect(spy).not.toHaveBeenCalled();
+		spy.mockRestore();
+		// Creation run + the mount effect (new object) + at most one trailing
+		// throttled run — then the equivalent result stops the cycle.
+		expect(counters.run).toBeLessThanOrEqual(3);
+		expect(renders).toBeLessThanOrEqual(3);
+		vi.useRealTimers();
 	});
 });
 
