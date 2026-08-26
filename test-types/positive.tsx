@@ -1,6 +1,6 @@
 /**
  * Positive type tests — real-world usage patterns that MUST compile.
- * Run against @types/react 16, 17 and 18 in CI (matrix jobs) and locally
+ * Run against @types/react 18 and 19 in CI (matrix jobs) and locally
  * via `yarn test:types` (see check-matrix.sh).
  *
  * Structure of each block:
@@ -8,6 +8,7 @@
  * - if useful, a type-level assertion via `Expect<Equal<...>>` proving that
  *   inference gives what we expect
  */
+import type { AnySchemaObject } from 'ajv';
 import React, { useRef, useState } from 'react';
 import Form, {
 	Field,
@@ -308,18 +309,18 @@ type _ErrMapValuesAreFns = Expect<Equal<
 >>;
 
 // Type-level check (issue #6): the verbose-mode properties inherited from
-// AJV 6's `ErrorObject` (`data?: any`, `parentSchema?: object`) are visible
-// on the error received by an errorMessages callback, so interpolating the
-// current field value compiles without casting. `data` is locked to `any`
-// (AJV's declared type) — if it ever disappeared from the error type,
-// the indexed access below would fail to compile.
+// AJV 8's `ErrorObject` (`data?: unknown`, `parentSchema?: AnySchemaObject`)
+// are visible on the error received by an errorMessages callback, so
+// interpolating the current field value compiles without casting. Locked
+// to AJV's declared types — if either ever disappeared from the error
+// type, the indexed access below would fail to compile.
 type _ErrCallbackDataExposed = Expect<Equal<
 	Parameters<ErrorMessageFn>[0]['data'],
-	any
+	unknown
 >>;
 type _ErrCallbackParentSchemaExposed = Expect<Equal<
 	Parameters<ErrorMessageFn>[0]['parentSchema'],
-	object | undefined
+	AnySchemaObject | undefined
 >>;
 
 // Usage: a callback quoting the offending value (issue #6) compiles.
