@@ -13,12 +13,15 @@
  */
 
 import classnames from 'classnames';
-import React, { forwardRef } from 'react';
+import React, {
+	forwardRef, useCallback, useEffect, useRef, useSyncExternalStore,
+} from 'react';
 
-import FormContext from './Context';
+import FormContext, { ErrorMessagesContext } from './Context';
 import { getInternals } from './internals';
 import { useFormStore } from './useForm';
 import useFormSelector from './useFormSelector';
+import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect';
 
 /**
  * Validation configuration accepted by `<Form>` in sugar mode — forwarded
@@ -176,16 +179,57 @@ const FormRender = (props, ref) => {
 	});
 	const form = /** @type {FormApi<any>} */ (externalForm || internalForm);
 
+	const internals = getInternals(form);
+
 	// Latest-props binding for the submit path (`handleSubmit`,
-	// `reportValidity` read them at call time).
-	getInternals(form).bindSubmit({
-		onSubmit,
-		resetOnSubmit,
-		scrollToError,
-		scrollOptions,
+	// `reportValidity` read them at call time) — after commit, never during
+	// render.
+	useIsomorphicLayoutEffect(() => {
+		internals.bindSubmit({
+			onSubmit,
+			resetOnSubmit,
+			scrollToError,
+			scrollOptions,
+		});
 	});
 
+	// Form-level errorMessages for the <FieldError>s: the prop in sugar mode;
+	// in hook mode the owner's latest map, read through the api's config
+	// channel so a change re-renders this provider once committed.
+	const ownerErrorMessages = useSyncExternalStore(
+		internals.subscribeConfig,
+		internals.getErrorMessages,
+		internals.getErrorMessages,
+	);
+	const providedErrorMessages = externalForm ? ownerErrorMessages : errorMessages;
+
 	const isSubmitted = useFormSelector(form, selectIsSubmitted, Object.is);
+
+	// Dev-time check: the element carrying `form.id` must be THE <form>
+	// element, or the native association (`form` attribute on the fields)
+	// and requestSubmit() silently break — a custom `component` that does
+	// not forward `id`, or that renders something else than a <form>.
+	const elementRef = useRef(/** @type {HTMLElement | null} */ (null));
+	const setElement = useCallback(
+		/** @param {HTMLFormElement | null} node */
+		(node) => {
+			elementRef.current = node;
+			if (typeof ref === 'function') ref(node);
+			else if (ref) ref.current = node;
+		},
+		[ref],
+	);
+	useEffect(() => {
+		if (typeof process !== 'undefined' && process?.env?.NODE_ENV === 'production') return;
+		const found = document.getElementById(form.id);
+		if (found === elementRef.current && found instanceof HTMLFormElement) return;
+		const got = found ? `a <${found.tagName.toLowerCase()}>` : 'nothing';
+		console.error( // eslint-disable-line no-console
+			'react-jsonschema-form-validation: <Form component> must render a <form> element '
+			+ 'and forward the `id` prop — native association (form attribute) and '
+			+ `requestSubmit() break otherwise. Found ${got} at id "${form.id}".`,
+		);
+	}, [form]);
 
 	// `noValidate` on the native element only: the library owns validation
 	// and the unstylable native bubbles must stay out of the way.
@@ -193,16 +237,18 @@ const FormRender = (props, ref) => {
 
 	return (
 		<FormContext.Provider value={form}>
-			<FormComponent
-				id={form.id}
-				className={classnames('Jfv_Form', className, { isSubmitted })}
-				onSubmit={form.handleSubmit}
-				ref={ref}
-				{...nativeProps}
-				{...rest}
-			>
-				{children}
-			</FormComponent>
+			<ErrorMessagesContext.Provider value={providedErrorMessages}>
+				<FormComponent
+					id={form.id}
+					className={classnames('Jfv_Form', className, { isSubmitted })}
+					onSubmit={form.handleSubmit}
+					ref={setElement}
+					{...nativeProps}
+					{...rest}
+				>
+					{children}
+				</FormComponent>
+			</ErrorMessagesContext.Provider>
 		</FormContext.Provider>
 	);
 };

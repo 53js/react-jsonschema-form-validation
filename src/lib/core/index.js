@@ -4,27 +4,115 @@
  * Zod, Valibot… The root entry re-exports everything here and adds the
  * JSON Schema sugar.
  *
- * Every module is star-exported on top of its default so its JSDoc
- * typedefs (`FormApi`, `FieldProps`…) reach the public `.d.ts` — a JS
- * module has no `export type`. `import/export` is silenced for the file:
- * the rule cannot see type-only exports and reports "no named exports".
+ * Runtime exports are explicit (no hooks-only member leaks: `useFormStore`,
+ * `useResolvedForm`, the internals registry stay private). The public
+ * types are re-declared below as typedef aliases — a JS module cannot
+ * `export type`.
  */
-/* eslint-disable import/export */
 export { default as getFieldErrorId } from '../a11y';
-export * from './Context';
-export { default as FormContext } from './Context';
-export * from './errors';
-export * from './Field';
+export { default as FormContext, useFormContext, withFormContext } from './Context';
+export { default as deepEqual } from './deepEqual';
+export {
+	assertSyncResult, normalizeIssues, pathToField, runSchema,
+} from './errors';
 export { default as Field } from './Field';
-export * from './FieldError';
 export { default as FieldError } from './FieldError';
-export * from './Form';
 export { default as Form } from './Form';
-export * from './helpers';
-export * from './selectors';
-export * from './standard-schema';
-export * from './store';
-export * from './types';
-export * from './useForm';
+export { filterByFieldNameWithWildcard, getFieldValue, updateDataFromEvents } from './helpers';
+export {
+	selectFieldErrorDescribedBy,
+	selectFieldErrors,
+	selectIsFieldInvalid,
+	selectIsFieldTouched,
+	shallowEqual,
+} from './selectors';
+export { isStandardSchema } from './standard-schema';
+export { createFormStore } from './store';
 export { default as useForm } from './useForm';
 export { default as useFormSelector } from './useFormSelector';
+
+/** @import { ElementType } from 'react' */
+
+/** @typedef {import('./errors').FormError} FormError */
+/** @typedef {import('./errors').ErrorCode} ErrorCode */
+/** @typedef {import('./errors').ProviderIssue} ProviderIssue */
+/** @typedef {import('./standard-schema').StandardSchemaIssue} StandardSchemaIssue */
+/** @typedef {import('./store').FormState} FormState */
+/** @typedef {import('./store').FieldErrorEntry} FieldErrorEntry */
+/** @typedef {import('./store').FormStore} FormStore */
+/** @typedef {import('./types').ErrorMessageFn} ErrorMessageFn */
+/** @typedef {import('./types').ErrorMessagesMap} ErrorMessagesMap */
+/** @typedef {import('./types').FormChangeEvent} FormChangeEvent */
+/** @typedef {import('./types').FormInputTarget} FormInputTarget */
+/** @typedef {import('./useForm').JfvScrollOptions} JfvScrollOptions */
+/** @typedef {import('./Form').FormSharedProps} FormSharedProps */
+/** @typedef {import('./Field').FieldBaseProps} FieldBaseProps */
+/** @typedef {import('./Field').FieldChangeHandler} FieldChangeHandler */
+/** @typedef {import('./FieldError').FieldErrorBaseProps} FieldErrorBaseProps */
+
+/**
+ * @template [T = Record<string, unknown>]
+ * @typedef {import('./useForm').FormApi<T>} FormApi
+ */
+
+/**
+ * @template [T = Record<string, unknown>]
+ * @typedef {import('./useForm').UseFormConfig<T>} UseFormConfig
+ */
+
+/**
+ * @template [T = Record<string, unknown>]
+ * @typedef {import('./Form').FormConfigProps<T>} FormConfigProps
+ */
+
+/**
+ * @template [T = Record<string, unknown>]
+ * @template {ElementType} [C = 'form']
+ * @typedef {import('./Form').FormHookModeProps<T, C>} FormHookModeProps
+ */
+
+/**
+ * @template [T = Record<string, unknown>]
+ * @template {ElementType} [C = 'form']
+ * @typedef {import('./Form').FormSugarModeProps<T, C>} FormSugarModeProps
+ */
+
+/**
+ * @template [T = Record<string, unknown>]
+ * @template {ElementType} [C = 'form']
+ * @typedef {import('./Form').FormProps<T, C>} FormProps
+ */
+
+/**
+ * @template {ElementType} [C = 'input']
+ * @typedef {import('./Field').FieldProps<C>} FieldProps
+ */
+
+/**
+ * @template {ElementType} [C = 'div']
+ * @typedef {import('./FieldError').FieldErrorProps<C>} FieldErrorProps
+ */
+
+/**
+ * @template T
+ * @template {PropertyKey} K
+ * @typedef {import('./types').SafePropsOmit<T, K>} SafePropsOmit
+ */
+
+/**
+ * @template Output
+ * @typedef {import('./standard-schema').StandardSchemaResult<Output>} StandardSchemaResult
+ */
+
+/**
+ * @template [Input = unknown]
+ * @template [Output = Input]
+ * @typedef {import('./standard-schema').StandardSchemaProps<Input, Output>
+ * } StandardSchemaProps
+ */
+
+/**
+ * @template [Input = unknown]
+ * @template [Output = Input]
+ * @typedef {import('./standard-schema').StandardSchema<Input, Output>} StandardSchema
+ */

@@ -1,6 +1,5 @@
 /**
  * @import { FormError } from './errors'
- * @import { ErrorMessagesMap } from './types'
  */
 
 /**
@@ -24,7 +23,6 @@
  *   touchedFields: string[],
  *   isSubmitted: boolean,
  *   fieldErrorRegistry: FieldErrorEntry[],
- *   errorMessages: ErrorMessagesMap | undefined,
  * }} FormState
  */
 
