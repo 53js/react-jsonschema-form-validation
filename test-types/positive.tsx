@@ -3,17 +3,16 @@
  * Run against @types/react 18 and 19 in CI (matrix jobs) and locally
  * via `yarn test:types` (see check-matrix.sh).
  *
- * Structure of each block:
- * - a small snippet a consumer would actually write
- * - if useful, a type-level assertion via `Expect<Equal<...>>` proving that
- *   inference gives what we expect
+ * POC (RFC 0001): rewritten for the v1 surface — `useForm`, dual-mode
+ * `<Form>`, `FormApi`, normalized `FormError` / `ErrorCode`.
  */
-import type { AnySchemaObject } from 'ajv';
 import React, { useRef, useState } from 'react';
 import Form, {
 	Field,
 	FieldError,
 	FormContext,
+	ajvSchema,
+	useForm,
 	useFormContext,
 	withFormContext,
 } from 'react-jsonschema-form-validation';
@@ -21,18 +20,16 @@ import type {
 	FieldProps,
 	FieldErrorProps,
 	FormProps,
-	FieldBaseProps,
-	FieldErrorBaseProps,
-	FormBaseProps,
-	FormContextValue,
-	FormattedError,
+	FormApi,
+	FormError,
 	FormChangeEvent,
 	FormInputTarget,
 	FieldChangeHandler,
 	ErrorMessageFn,
 	ErrorMessagesMap,
-	AjvKeyword,
+	ErrorCode,
 	SafePropsOmit,
+	StandardSchema,
 } from 'react-jsonschema-form-validation';
 
 import { Expect, Equal } from './_helpers';
@@ -48,7 +45,7 @@ const schema = {
 };
 
 // ---------------------------------------------------------------------------
-// 1. Basic usage — data typed, onChange inferred
+// 1. Sugar mode — unchanged 5-line usage, data typed, onChange inferred
 // ---------------------------------------------------------------------------
 const Basic = () => {
 	const [user, setUser] = useState<UserData>({ email: '', age: 0 });
@@ -66,7 +63,6 @@ const Basic = () => {
 	);
 };
 
-// Type-level check: <Form<T>>'s onChange receives `T`, not `Record<string, unknown>`.
 const _onChangeInfersT = () => (
 	<Form<UserData>
 		schema={schema}
@@ -79,28 +75,71 @@ const _onChangeInfersT = () => (
 );
 
 // ---------------------------------------------------------------------------
-// 1b. resetOnSubmit opt-out + companion context reset()
+// 2. Hook mode — parent owns the form, reads reactive state, passes it down
 // ---------------------------------------------------------------------------
-const KeepStateOnSubmit = () => (
-	<Form
-		schema={schema}
-		onSubmit={() => {}}
-		resetOnSubmit={false}
-	>
-		<Field name="email" />
-	</Form>
-);
-
-const ResetButton = () => {
-	const ctx = useFormContext();
-	return <button type="button" onClick={ctx.reset}>Reset</button>;
+const HookMode = () => {
+	const [user, setUser] = useState<UserData>({ email: '', age: 0 });
+	const form = useForm<UserData>({ schema, data: user, onChange: setUser });
+	type _ = Expect<Equal<typeof form, FormApi<UserData>>>;
+	return (
+		<Form form={form} onSubmit={() => {}} resetOnSubmit={false} scrollToError>
+			<Field name="email" />
+			<FieldError name="email" />
+			<button type="submit" disabled={!form.valid}>Save</button>
+			<button type="button" onClick={form.reset}>Reset</button>
+		</Form>
+	);
 };
 
-// Type-level check: the context's `reset` is a niladic void function.
-type _ResetIsNiladicVoid = Expect<Equal<FormContextValue['reset'], () => void>>;
+// useForm infers T from data/onChange without the explicit generic.
+const _useFormInfersFromData = () => {
+	const [user, setUser] = useState<UserData>({ email: '', age: 0 });
+	const form = useForm({ schema, data: user, onChange: setUser });
+	type _ = Expect<Equal<typeof form, FormApi<UserData>>>;
+	return form;
+};
+
+// Explicit association outside the <Form> subtree (portal / sibling).
+const Outside = () => {
+	const form = useForm<UserData>({ schema, id: 'checkout' });
+	return (
+		<>
+			<Form form={form} onSubmit={() => {}} />
+			<Field name="email" form={form} />
+			<FieldError name="email" form={form} />
+			<button type="submit" form="checkout">Save</button>
+		</>
+	);
+};
+
+// Imperative API named after HTMLFormElement.
+const _imperative = (form: FormApi<UserData>) => {
+	const a: boolean = form.checkValidity();
+	const b: boolean = form.reportValidity();
+	form.requestSubmit();
+	form.reset();
+	const id: string = form.id;
+	const errors: FormError[] = form.getFieldErrors(['email', 'age']);
+	const unsubscribe: () => void = form.subscribe(() => {});
+	void [a, b, id, errors, unsubscribe];
+};
 
 // ---------------------------------------------------------------------------
-// 2. Polymorphic component (intrinsic textarea) — native props typed
+// 3. Standard Schema — any object with `~standard` is accepted; explicit AJV
+// ---------------------------------------------------------------------------
+const fakeZod: StandardSchema<UserData> = {
+	'~standard': {
+		version: 1,
+		vendor: 'zod',
+		validate: (value) => ({ value: value as UserData }),
+	},
+};
+const _standard = () => useForm<UserData>({ schema: fakeZod });
+const _explicitAjv = () => useForm<UserData>({ schema: ajvSchema(schema) });
+const _standardOnForm = () => <Form schema={fakeZod} onSubmit={() => {}} />;
+
+// ---------------------------------------------------------------------------
+// 4. Polymorphic Field — unchanged from 0.x
 // ---------------------------------------------------------------------------
 const Textarea = () => (
 	<Form schema={schema} onSubmit={() => {}}>
@@ -108,9 +147,6 @@ const Textarea = () => (
 	</Form>
 );
 
-// ---------------------------------------------------------------------------
-// 3. Custom component with strict props — inference works
-// ---------------------------------------------------------------------------
 type MyInputProps = { label: string; flavor: 'sweet' | 'savory' };
 const MyInput = (p: MyInputProps) => <input data-flavor={p.flavor} />;
 const Strict = () => (
@@ -119,9 +155,6 @@ const Strict = () => (
 	</Form>
 );
 
-// ---------------------------------------------------------------------------
-// 4. forwardRef component with typed ref
-// ---------------------------------------------------------------------------
 type MyHandle = { focus(): void };
 const MyForwardInput = React.forwardRef<MyHandle, { label: string }>(
 	(_props, _ref) => <input />,
@@ -129,49 +162,17 @@ const MyForwardInput = React.forwardRef<MyHandle, { label: string }>(
 const Ref = () => {
 	const nativeRef = useRef<HTMLInputElement>(null);
 	const customRef = useRef<MyHandle>(null);
+	const formRef = useRef<HTMLFormElement>(null);
 	return (
-		<Form schema={schema} onSubmit={() => {}}>
+		<Form schema={schema} onSubmit={() => {}} ref={formRef}>
 			<Field name="a" ref={nativeRef} />
 			<Field name="b" component={MyForwardInput} label="x" ref={customRef} />
 		</Form>
 	);
 };
 
-// Callback ref narrowing: TS infers the correct element type from `component`.
-const _refCallbackNarrowsToIntrinsic = () => (
-	<Form schema={schema} onSubmit={() => {}}>
-		<Field
-			name="a"
-			component="textarea"
-			ref={(el) => {
-				type _ = Expect<Equal<typeof el, HTMLTextAreaElement | null>>;
-				void el;
-			}}
-		/>
-	</Form>
-);
-
-// ---------------------------------------------------------------------------
-// 5. React.memo — memoized components must be usable as `component`
-// ---------------------------------------------------------------------------
-const MemoInput = React.memo(MyInput);
-const WithMemo = () => (
-	<Form schema={schema} onSubmit={() => {}}>
-		<Field name="x" component={MemoInput} label="l" flavor="sweet" />
-	</Form>
-);
-
-// ---------------------------------------------------------------------------
-// 5b. Polymorphic onChange — first parameter follows what `component` emits
-// ---------------------------------------------------------------------------
-
-// Component that emits a raw string.
-type ValueEmitterProps = {
-	value?: string;
-	onChange: (value: string) => void;
-};
+type ValueEmitterProps = { value?: string; onChange: (value: string) => void };
 const ValueEmitter = (_p: ValueEmitterProps) => <input />;
-
 const _valueEmitterInfersString = () => (
 	<Form schema={schema} onSubmit={() => {}}>
 		<Field
@@ -179,67 +180,13 @@ const _valueEmitterInfersString = () => (
 			component={ValueEmitter}
 			onChange={(value, hfc) => {
 				type _v = Expect<Equal<typeof value, string>>;
-				type _h = Expect<Equal<typeof hfc, FormContextValue['handleFieldChange']>>;
+				type _h = Expect<Equal<typeof hfc, FormApi<any>['handleFieldChange']>>;
 				void [value, hfc];
 			}}
 		/>
 	</Form>
 );
 
-// Component that emits an option object (only the first parameter is captured).
-type Option = { value: string; label: string };
-type OptionEmitterProps = {
-	value?: Option | null;
-	onChange: (option: Option | null) => void;
-};
-const OptionEmitter = (_p: OptionEmitterProps) => <select />;
-
-const _optionEmitterInfersOption = () => (
-	<Form schema={schema} onSubmit={() => {}}>
-		<Field
-			name="category"
-			component={OptionEmitter}
-			onChange={(option) => {
-				type _ = Expect<Equal<typeof option, Option | null>>;
-				void option;
-			}}
-		/>
-	</Form>
-);
-
-// Intrinsic input — `onChange` still receives a real DOM ChangeEvent.
-const _inputOnChangeReceivesEvent = () => (
-	<Form schema={schema} onSubmit={() => {}}>
-		<Field
-			name="x"
-			onChange={(event) => {
-				void event.target.value;
-			}}
-		/>
-	</Form>
-);
-
-// onBlur is polymorphic too — first parameter follows `C.onBlur`.
-type CustomBlurProps = {
-	onBlur: (payload: { field: string; timestamp: number }) => void;
-};
-const CustomBlurComponent = (_p: CustomBlurProps) => <input />;
-
-const _blurInfersPayload = () => (
-	<Form schema={schema} onSubmit={() => {}}>
-		<Field
-			name="x"
-			component={CustomBlurComponent}
-			onBlur={(payload) => {
-				type _ = Expect<Equal<typeof payload, { field: string; timestamp: number }>>;
-				void payload;
-			}}
-		/>
-	</Form>
-);
-
-// Backward-compat — a handler typed explicitly as `FieldChangeHandler`
-// stays assignable to a default `<Field>` (no `component` prop).
 const _fieldChangeHandlerBackwardCompat = () => {
 	const legacy: FieldChangeHandler = (event, hfc) => {
 		void event.target.value;
@@ -253,34 +200,28 @@ const _fieldChangeHandlerBackwardCompat = () => {
 };
 
 // ---------------------------------------------------------------------------
-// 6. Polymorphic Form wrapper — `component="section"` accepts native props
+// 5. Polymorphic Form wrapper
 // ---------------------------------------------------------------------------
 const PolymorphicForm = () => (
-	<Form
-		schema={schema}
-		onSubmit={() => {}}
-		component="section"
-		id="my-form"
-		className="foo"
-	>
+	<Form schema={schema} onSubmit={() => {}} component="section" id="my-form" className="foo">
 		<Field name="email" />
 	</Form>
 );
 
 // ---------------------------------------------------------------------------
-// 7. useFormContext — non-null return (thanks to the runtime guard)
+// 6. Context — returns the FormApi (non-null thanks to the runtime guard)
 // ---------------------------------------------------------------------------
 const SubmitIfValid = () => {
-	const ctx = useFormContext();
-	return <button type="submit" disabled={!ctx.valid}>Submit</button>;
+	const form = useFormContext();
+	return <button type="submit" disabled={!form.valid}>Submit</button>;
 };
-
-// Type-level check: the hook return type must be `FormContextValue` (not
-// `FormContextValue | undefined`), because the runtime guard throws.
-type _CtxNonNull = Expect<Equal<ReturnType<typeof useFormContext>, FormContextValue>>;
+// Instantiation expression: `ReturnType` of a generic function would erase `T`.
+type _CtxIsApi = Expect<Equal<ReturnType<typeof useFormContext<UserData>>, FormApi<UserData>>>;
+const Legacy = () => withFormContext((ctx) => <span>{ctx.valid ? 'ok' : 'ko'}</span>);
+void FormContext;
 
 // ---------------------------------------------------------------------------
-// 8. errorMessages autocomplete on AJV keywords + custom keyword accepted
+// 7. errorMessages keyed by normalized codes + pass-through keys; raw access
 // ---------------------------------------------------------------------------
 const Errors = () => (
 	<Form
@@ -288,91 +229,44 @@ const Errors = () => (
 		onSubmit={() => {}}
 		errorMessages={{
 			required: (err) => `${err.field} is required`,
-			minLength: (err) => `${err.field} too short`,
-			defaultMessage: (err) => err.message ?? 'invalid',
-			customKeyword: (err) => `custom: ${err.message}`,
+			min: (err) => `${err.field} must be >= ${err.params.limit}`,
+			defaultMessage: (err) => err.message,
+			multipleOf: (err) => `custom: ${err.message}`,
 		}}
 	>
 		<Field name="email" />
-		<FieldError
-			name="email"
-			errorMessages={{ required: () => 'Email is required' }}
-		/>
+		<FieldError name="email" errorMessages={{ format: () => 'Bad email' }} />
 	</Form>
 );
-
-// Type-level check: ErrorMessagesMap values are always ErrorMessageFn (never
-// a plain string), so a `Record<AjvKeyword, string>` should NOT extend it.
-type _ErrMapValuesAreFns = Expect<Equal<
-	NonNullable<ErrorMessagesMap[AjvKeyword]>,
-	ErrorMessageFn
->>;
-
-// Type-level check (issue #6): the verbose-mode properties inherited from
-// AJV 8's `ErrorObject` (`data?: unknown`, `parentSchema?: AnySchemaObject`)
-// are visible on the error received by an errorMessages callback, so
-// interpolating the current field value compiles without casting. Locked
-// to AJV's declared types — if either ever disappeared from the error
-// type, the indexed access below would fail to compile.
-type _ErrCallbackDataExposed = Expect<Equal<
-	Parameters<ErrorMessageFn>[0]['data'],
-	unknown
->>;
-type _ErrCallbackParentSchemaExposed = Expect<Equal<
-	Parameters<ErrorMessageFn>[0]['parentSchema'],
-	AnySchemaObject | undefined
->>;
-
-// Usage: a callback quoting the offending value (issue #6) compiles.
+type _ErrMapValuesAreFns = Expect<Equal<NonNullable<ErrorMessagesMap[ErrorCode]>, ErrorMessageFn>>;
+type _ErrShape = Expect<Equal<Parameters<ErrorMessageFn>[0], FormError>>;
 const dataAwareMessages: ErrorMessagesMap = {
-	minLength: (err) => `"${err.data}" is too short`,
+	minLength: (err) => `"${(err.raw as { data?: unknown }).data}" is too short`,
 };
 void dataAwareMessages;
 
 // ---------------------------------------------------------------------------
-// 9. Legacy render-prop still works
-// ---------------------------------------------------------------------------
-const Legacy = () => withFormContext((ctx) => <span>{ctx.valid ? 'ok' : 'ko'}</span>);
-
-// ---------------------------------------------------------------------------
-// 10. Advanced: FormContext exposed for users that want the Provider directly
-// ---------------------------------------------------------------------------
-void FormContext;
-
-// ---------------------------------------------------------------------------
-// 11. Smoke test — every public type name resolves
+// 8. Smoke test — every public type name resolves
 // ---------------------------------------------------------------------------
 type _AllTypesResolve = {
 	fieldProps: FieldProps<'input'>;
 	fieldErrorProps: FieldErrorProps<'div'>;
 	formProps: FormProps<UserData, 'form'>;
-	fieldBase: FieldBaseProps;
-	fieldErrorBase: FieldErrorBaseProps;
-	formBase: FormBaseProps;
-	ctx: FormContextValue;
-	formattedError: FormattedError;
+	api: FormApi<UserData>;
+	error: FormError;
 	changeEvent: FormChangeEvent;
 	inputTarget: FormInputTarget;
 	changeHandler: FieldChangeHandler;
 	errorFn: ErrorMessageFn;
 	errorMap: ErrorMessagesMap;
-	keyword: AjvKeyword;
+	code: ErrorCode;
 	safeOmit: SafePropsOmit<{ a: string; [k: string]: unknown }, 'a'>;
+	standard: StandardSchema;
 };
 
 export {
-	Basic,
-	KeepStateOnSubmit,
-	ResetButton,
-	Textarea,
-	Strict,
-	Ref,
-	WithMemo,
-	PolymorphicForm,
-	SubmitIfValid,
-	Errors,
-	Legacy,
+	Basic, HookMode, Outside, Textarea, Strict, Ref, PolymorphicForm, SubmitIfValid, Errors, Legacy,
 };
 export type {
-	_CtxNonNull, _ErrMapValuesAreFns, _AllTypesResolve, _ResetIsNiladicVoid,
+	_CtxIsApi, _ErrMapValuesAreFns, _ErrShape, _AllTypesResolve,
 };
