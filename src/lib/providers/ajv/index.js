@@ -19,7 +19,7 @@ import {
 	dataPathToFieldPath,
 	formatData,
 	pointerToSegments,
-} from '../../Form/helpers';
+} from './helpers';
 
 // Re-exported so a custom instance can be built from the subpath alone:
 // `import { ajvSchema, createAjv } from '…/providers/ajv'`.

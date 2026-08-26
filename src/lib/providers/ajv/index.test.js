@@ -2,7 +2,7 @@ import Ajv2020 from 'ajv/dist/2020';
 
 import { runSchema, SYNC_ONLY_ERROR_MESSAGE } from '../../core/errors';
 import { isStandardSchema } from '../../core/standard-schema';
-import { createAjv as createAjvFromHelpers } from '../../Form/helpers';
+import { createAjv as createAjvFromHelpers } from './helpers';
 import { ajvSchema, createAjv } from '.';
 
 const run = (schema, data, options) => runSchema(ajvSchema(schema, options), data);
