@@ -12,6 +12,10 @@ and dependency-only bumps are omitted.
 
 ### Breaking
 
+- **React 18 is now the minimum supported version** (`peerDependencies:
+  react >=18`), in preparation for the v1 hooks architecture (`useId`,
+  `useSyncExternalStore` — no shims). React 16.8/17 stay served by the
+  0.x line.
 - **AJV upgraded from v6 to v8** (`ajv@^8.17.0`). No code change is needed
   if you only pass `schema`/`data` and read errors through `<FieldError>`
   or `error.field`. Otherwise, see the "Migrating to v1 (AJV 8)" section

@@ -3,7 +3,7 @@ import { coverageConfigDefaults, defineConfig, mergeConfig } from 'vitest/config
 import viteConfig from './vite.config';
 
 // Reuses the demo's Vite config (JSX-in-.js esbuild recipe, classic JSX
-// runtime for React 16) so the tests parse the exact same sources as the
+// runtime) so the tests parse the exact same sources as the
 // bundler, and only adds the test-specific settings on top.
 export default mergeConfig(viteConfig, defineConfig({
 	test: {

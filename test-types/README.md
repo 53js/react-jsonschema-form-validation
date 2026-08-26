@@ -5,7 +5,7 @@ regressions invisible from inside the repo — return-type incompatibilities,
 missing dependency imports, ambient module leaks, over-loose props, etc.
 
 Deliberately non-executable — the suite only needs to type-check. It's
-run against `@types/react` 16, 17, 18 and 19 (see `check-matrix.sh` for
+run against `@types/react` 18 and 19 (see `check-matrix.sh` for
 local, `.github/workflows/ci.yml` for CI matrix).
 
 ## Files
@@ -25,20 +25,20 @@ local, `.github/workflows/ci.yml` for CI matrix).
   isolates the fixture's `node_modules` from the parent repo's so
   `@types/react` resolves to the version the fixture pins.
 - `check-matrix.sh` — runs `setup.sh` once, then loops `yarn test` across
-  every supported `@types/react` major. Restores the default (16) on exit
+  every supported `@types/react` major. Restores the default (18) on exit
   via `trap`, so a mid-run failure doesn't leave `package.json` dirty.
 
 ## Running locally
 
 ```bash
 # From repo root
-yarn test:types    # checks the bundle against @types/react 16 + 17 + 18 + 19
+yarn test:types    # checks the bundle against @types/react 18 + 19
 yarn test          # unit tests + type tests
 ```
 
 ## CI
 
 Each `@types/react` version runs as a **separate GitHub Actions job** through
-the `types` matrix in `.github/workflows/ci.yml` (`types (@types/react 16)` …
+the `types` matrix in `.github/workflows/ci.yml` (`types (@types/react 18)`,
 `types (@types/react 19)`) — parallel, no shell mutation, extends in one line
 if a new major lands.

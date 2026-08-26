@@ -21,7 +21,8 @@ export default defineConfig({
 	// only asset URLs are affected.
 	base: '/react-jsonschema-form-validation/',
 	plugins: [
-		// react 16.12 predates react/jsx-runtime -> classic runtime.
+		// Classic JSX runtime (React.createElement): the sources import React
+		// explicitly, matching the library build (vite.lib.config.js).
 		react({ jsxRuntime: 'classic' }),
 	],
 	esbuild: {

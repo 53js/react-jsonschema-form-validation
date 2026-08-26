@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 
 /**
- * @import { ReactElement } from 'react'
+ * @import { ReactElement, ReactNode } from 'react'
  * @import { FormContextValue } from './Context.types'
  */
 
@@ -44,7 +44,9 @@ export const useFormContext = () => {
  * rendered outside a `<Form>` so the callback always receives a defined
  * context value.
  *
- * @template T
+ * @template {ReactNode} T `@types/react` >= 18 types the Consumer render prop as
+ *   returning `ReactNode`; the constraint keeps `withFormContext` callbacks
+ *   assignable to it without a cast.
  * @param {(ctx: FormContextValue) => T} cb
  * @returns {ReactElement}
  */

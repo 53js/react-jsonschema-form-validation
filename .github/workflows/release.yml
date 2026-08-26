@@ -39,12 +39,12 @@ jobs:
       - run: yarn lint
       - run: yarn type-check
       - run: yarn test:runtime
-      # The @types/react 16-19 matrix is part of the release gate: fail
+      # The @types/react 18-19 matrix is part of the release gate: fail
       # here, before publish gets anywhere near npm.
       - run: yarn test:types
       - run: yarn dist
 
-  # Full unit-test suite on real React 18 and 19, same fixtures as ci.yml
+  # Full unit-test suite on real React 19, same fixture as ci.yml
   # (test-runtime/setup.sh + aliased vitest config). Blocking.
   runtime:
     name: runtime (react ${{ matrix.react }})
@@ -53,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        react: ['18', '19']
+        react: ['19']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -99,7 +99,7 @@ jobs:
       #     the NPM_TOKEN repository secret. The step below picks it up.
       #
       # `npm publish` runs `prepublishOnly` first (unit tests --bail 1,
-      # the @types/react 16-19 matrix, then `yarn dist`), so the published
+      # the @types/react 18-19 matrix, then `yarn dist`), so the published
       # tarball is built and tested by npm itself, exactly like a local
       # `npm publish` would.
       - name: Publish to npm

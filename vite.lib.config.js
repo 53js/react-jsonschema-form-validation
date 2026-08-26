@@ -23,8 +23,8 @@ export default defineConfig({
 		// Vite's esbuild plugin excludes .js files by default; the default
 		// exclude wins over include, so it must be reset explicitly.
 		exclude: [],
-		// react 16.12 predates react/jsx-runtime -> classic runtime
-		// (React.createElement), like the Babel build before.
+		// Classic JSX runtime (React.createElement): the sources import React
+		// explicitly, like the Babel build before.
 		jsx: 'transform',
 	},
 	build: {

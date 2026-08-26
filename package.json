@@ -66,10 +66,10 @@
 		"prop-types": "^15.7.2"
 	},
 	"devDependencies": {
-		"@testing-library/react": "^12.1.5",
+		"@testing-library/react": "^16.3.2",
 		"@types/prop-types": "^15.7.15",
-		"@types/react": "^16.14.70",
-		"@types/react-dom": "^16.9.25",
+		"@types/react": "^18.3.28",
+		"@types/react-dom": "^18.3.7",
 		"@vitejs/plugin-react": "^4.3.0",
 		"@vitest/coverage-istanbul": "^3.2.6",
 		"babel-eslint": "10.0.3",
@@ -85,8 +85,8 @@
 		"eslint-plugin-react": "7.18.3",
 		"eslint-plugin-react-hooks": "1.7.0",
 		"jsdom": "^25.0.1",
-		"react": "^16.12.0",
-		"react-dom": "^16.12.0",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1",
 		"react-prism": "^4.3.2",
 		"react-router-dom": "^5.1.2",
 		"react-select": "^3.0.8",
@@ -94,10 +94,11 @@
 		"sass": "^1.101.7",
 		"typescript": "^6.0.3",
 		"vite": "^6.4.3",
-		"vitest": "^3.2.6"
+		"vitest": "^3.2.6",
+		"@testing-library/dom": "^10.4.1"
 	},
 	"peerDependencies": {
-		"react": ">=16.8"
+		"react": ">=18"
 	},
 	"resolutions": {
 		"dts-bundle-generator/typescript": "^6.0.3",
