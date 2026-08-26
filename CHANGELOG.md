@@ -12,6 +12,27 @@ and dependency-only bumps are omitted.
 
 ### Added
 
+- **`useForm()` and the hook mode of `<Form>`**: own the form state in the
+  component that renders the form — `const form = useForm({ schema, data,
+  onChange }); <Form form={form} onSubmit={…}>` — and read `form.valid`,
+  `form.errors`, `form.touchedFields`, `form.isSubmitted` right where the
+  submit button lives. The 5-line sugar mode (`<Form schema data onChange>`)
+  is unchanged.
+- Imperative API named after `HTMLFormElement`: `form.checkValidity()`,
+  `form.reportValidity()` (reveal + focus the first invalid field),
+  `form.requestSubmit()`, `form.reset()`.
+- `<Field form={form}>` / `<FieldError form={form}>`: explicit association
+  for fields rendered outside the `<Form>` subtree (portals); native
+  controls always carry `form={form.id}`, so the DOM association (Enter to
+  submit, `form.elements`) follows the React one. Ids come from `useId()`
+  or `useForm({ id })` / `<Form id>`.
+- Per-field subscriptions: `<Field>` / `<FieldError>` re-render only when
+  their own state changes (`useFormSelector(form, selector)` is exported for
+  custom consumers).
+- `react-jsonschema-form-validation/core`: the library without the AJV
+  provider, for Standard Schema validators (Zod, Valibot, ArkType…).
+- Server rendering: the first validation runs during `renderToString`; the
+  client-boundary modules carry `'use client'`.
 - **Standard Schema groundwork (RFC 0001).** New subpath
   `react-jsonschema-form-validation/providers/ajv` exporting `ajvSchema(jsonSchema, { ajv })`,
   which wraps a JSON Schema into a [Standard Schema v1](https://standardschema.dev)
@@ -27,6 +48,29 @@ and dependency-only bumps are omitted.
 
 ### Breaking
 
+- **`<Form>`, `<Field>` and `<FieldError>` are function components on a
+  form store (RFC 0001).** The class components are gone: `ref`s on
+  `<Form>` now yield the `<form>` DOM element, and the instance methods /
+  `state` that tests or code may have reached through a ref are replaced by
+  the `useForm()` api (`form.valid`, `form.errors`, `form.reset()`…).
+- **The form context value is the `FormApi`** (`useFormContext()` /
+  `withFormContext()`): `FormContextValue` is replaced by `FormApi`,
+  `formId` by `form.id`; `isTouched`, `getFieldErrors`, `touch`,
+  `reset`… are unchanged.
+- **Errors are normalized `FormError`s** everywhere: `errorMessages` maps
+  (form-level and `<FieldError>`-level) are keyed by `error.code` instead of
+  the AJV keyword — for AJV users only `minimum`/`exclusiveMinimum` → `min`
+  and `maximum`/`exclusiveMaximum` → `max` change — and message callbacks
+  receive `{ field, code, message, params, raw }`: `error.keyword` becomes
+  `error.code`, `error.data` (the current value) becomes `error.raw.data`.
+- **Deep imports removed**: only the package entries are supported
+  (`react-jsonschema-form-validation`, `…/core`, `…/providers/ajv`);
+  `…/dist/Form/Form` & co never were documented and no longer exist.
+- `prop-types` is no longer a dependency (props are typed by the shipped
+  `.d.ts`); the runtime `ajv` duck-typing check is now a thrown error.
+- `reset()` clears the touched/submitted state only: `errors` / `valid`
+  keep describing the current `data` (0.x reported `valid: true` until the
+  next change). Submitting always re-validates synchronously first.
 - **React 18 is now the minimum supported version** (`peerDependencies:
   react >=18`), in preparation for the v1 hooks architecture (`useId`,
   `useSyncExternalStore` — no shims). React 16.8/17 stay served by the
