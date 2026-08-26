@@ -17,6 +17,7 @@ import BasicForm from '../demo/basic';
 import ContextForm from '../demo/context';
 import CustomMessageForm from '../demo/custom-error';
 import ErrorMarkerForm from '../demo/error-marker';
+import HookModeForm from '../demo/hook-mode';
 import HooksForm from '../demo/hooks';
 import SimpleForm from '../demo/simple';
 import ReactSelectForm from '../demo/react-select';
@@ -32,6 +33,11 @@ const items = [
 		Component: HooksForm,
 		name: 'Hooks',
 		to: '/examples/hooks',
+	},
+	{
+		Component: HookModeForm,
+		name: 'Hook mode (useForm)',
+		to: '/examples/hook-mode',
 	},
 	{
 		Component: BasicForm,

@@ -326,8 +326,8 @@ function handleChange(event, handleFieldChange) {
 <FieldError
 	errorMessages={{
 		enum: () => 'Value does not match any value among those allowed'
-		minimum: () => 'You must be over 18',
-		maximum: () => 'Too old',
+		min: () => 'You must be over 18',
+		max: () => 'Too old',
 	}}
 	name="ageCustom"
 />
