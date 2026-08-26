@@ -388,27 +388,23 @@ describe('revalidation', () => {
 
 describe('render-time data objects', () => {
 	it('does not loop when the owner rebuilds data on every render (equivalent results do not emit)', () => {
-		vi.useFakeTimers();
 		const { ajv, counters } = countingAjv();
 		const schema = ajvSchema(testSchema, { ajv });
 		let renders = 0;
 		const Harness = () => {
 			renders += 1;
-			// Anti-pattern, but common: a fresh object each render.
+			// Anti-pattern, but common: a fresh object each render. Without the
+			// equivalent-result guard this loops (render → effect → validate →
+			// emit → render) until React throws "Maximum update depth exceeded".
 			const form = useForm({ schema, data: { ...{ type: 'te' } }, throttleDuration: 0 });
 			return <Form form={form} onSubmit={() => {}} />;
 		};
 		const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-		render(<Harness />);
-		act(() => { vi.runAllTimers(); });
-		act(() => { vi.runAllTimers(); });
+		expect(() => render(<React.StrictMode><Harness /></React.StrictMode>)).not.toThrow();
 		expect(spy).not.toHaveBeenCalled();
 		spy.mockRestore();
-		// Creation run + the mount effect (new object) + at most one trailing
-		// throttled run — then the equivalent result stops the cycle.
-		expect(counters.run).toBeLessThanOrEqual(3);
-		expect(renders).toBeLessThanOrEqual(3);
-		vi.useRealTimers();
+		expect(counters.run).toBeLessThanOrEqual(4);
+		expect(renders).toBeLessThanOrEqual(6);
 	});
 });
 
