@@ -1,4 +1,3 @@
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -15,19 +14,30 @@ const srcJsRE = new RegExp(`^${escapeRegExp(projectRoot.split(path.sep).join('/'
 // demo site. Replaces the previous Babel CLI build (`babel src/lib --out-dir
 // dist`): same published surface — ESM modules mirroring the src/lib file
 // structure at the root of dist/ — produced by Vite/Rollup instead.
-// Rollup drops module-level directives. Re-add 'use client' on the chunks
-// whose SOURCE module starts with it — the client boundaries (Form, Field,
-// FieldError, useForm, useFormSelector, Context) and nothing else: barrels
-// and pure modules (providers/ajv, errors, store…) stay directive-free.
-// With `preserveModules` every chunk has exactly one facade module.
-const preserveUseClient = () => ({
-	name: 'rjfv-preserve-use-client',
-	renderChunk(code, chunk) {
-		const id = chunk.facadeModuleId;
-		if (!id || !/^'use client';/.test(fs.readFileSync(id, 'utf8'))) return null;
-		return { code: "'use client';\n".concat(code), map: null };
-	},
-});
+// Rollup drops module-level directives (and warns about them). The
+// directive is stripped from the source before Rollup sees it, then
+// re-added on the chunks whose SOURCE module started with it — the client
+// boundaries (Form, Field, FieldError, useForm, useFormSelector, Context)
+// and nothing else: barrels and pure modules (providers/ajv, errors, store…)
+// stay directive-free. With `preserveModules` every chunk has exactly one
+// facade module.
+const USE_CLIENT = /^'use client';\r?\n?/;
+const preserveUseClient = () => {
+	const clientModules = new Set();
+	return {
+		name: 'rjfv-preserve-use-client',
+		enforce: 'pre',
+		transform(code, id) {
+			if (!USE_CLIENT.test(code)) return null;
+			clientModules.add(id);
+			return { code: code.replace(USE_CLIENT, ''), map: null };
+		},
+		renderChunk(code, chunk) {
+			if (!chunk.facadeModuleId || !clientModules.has(chunk.facadeModuleId)) return null;
+			return { code: "'use client';\n".concat(code), map: null };
+		},
+	};
+};
 
 export default defineConfig({
 	plugins: [preserveUseClient()],
@@ -73,12 +83,6 @@ export default defineConfig({
 			fileName: (format, entryName) => entryName.concat('.js'),
 		},
 		rollupOptions: {
-			// The 'use client' directives are handled by preserveUseClient above;
-			// Rollup's own warning about them is expected noise.
-			onwarn(warning, warn) {
-				if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
-				warn(warning);
-			},
 			// Externalize every bare import (dependencies and
 			// peerDependencies): nothing is bundled, exactly like the Babel
 			// per-file transform before.
