@@ -168,9 +168,12 @@ exclusive: passing `form` together with `schema`, `data`, `onChange`,
 
 `data` and `errorMessages` may be inline literals recreated on every render
 (re-validation is skipped when `data` is structurally equal to the last
-validated value). The schema, however, should be stable: with the root
-entry an inline JSON Schema literal is recompiled by AJV on every render of
-the owner — hoist it to a module constant or a `useMemo`.
+validated value). An inline `errorMessages` literal — a new identity on
+every owner render — re-renders every `<FieldError>` of the form each time
+the owner renders: loop-free but wasteful, so hoist the map to a module
+constant or a `useMemo`. The schema must be stable for the same reason,
+and more: with the root entry an inline JSON Schema literal is recompiled
+by AJV on every render of the owner.
 
 ### The `FormApi` object
 
