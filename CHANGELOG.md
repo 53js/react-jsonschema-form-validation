@@ -75,6 +75,9 @@ The README carries a single migration guide, "Migrating from 0.x to 1.0".
   value (`:r0:-error-email`) instead of the `jfv<N>` counter
   (`jfv1-error-email`). Pass `<Form id>` / `useForm({ id })` for
   predictable ids.
+- **Named exports only**: `import Form from 'react-jsonschema-form-validation'`
+  becomes `import { Form } from 'react-jsonschema-form-validation'` (same
+  for `/core`; no default export on any entry).
 - **A custom `<Form component={Wrapper}>` must forward the `id` and
   `onSubmit` props** to the element it renders: native controls are now
   associated through the `form` attribute pointing at `form.id` (0.x

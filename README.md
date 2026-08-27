@@ -222,10 +222,12 @@ default):
 const touchedCount = useFormSelector(form, (state) => state.touchedFields.length);
 ```
 
-The pure selectors the components use (`selectFieldErrors`,
-`selectIsFieldInvalid`, `selectIsFieldTouched`, `selectFieldErrorDescribedBy`),
-`runSchema` / `isStandardSchema`, `createFormStore` and the `deepEqual` /
-`shallowEqual` comparators are exported too, for such subscribers.
+The whole runtime surface of the root and `/core` entries is: `Form`,
+`Field`, `FieldError`, `useForm`, `useFormContext`, `withFormContext`,
+`FormContext`, `useFormSelector`, `shallowEqual` (its default `isEqual`),
+`getFieldErrorId` and `isStandardSchema` — named exports only — plus the
+types listed under [TypeScript](#typescript). `/providers/ajv` adds
+`ajvSchema` and `createAjv`.
 
 (`handleSubmit`, `getFieldErrorDescribedBy`, `registerFieldError` and
 `unregisterFieldError` are also on the object — internal wiring between
@@ -637,9 +639,20 @@ same in sugar mode. The `/core` entry's `schema` only accepts a
 > (DOM-first form API). One difference from the RFC text: the AJV provider
 > ships as `react-jsonschema-form-validation/providers/ajv`, not `/ajv`.
 
-If you only pass `schema` / `data` / `onChange` / `onSubmit` and read errors
-through `<FieldError>`, the 5-line usage is unchanged and no code change is
-required. Otherwise, go through the list:
+If you import `{ Form }` by name, only pass `schema` / `data` / `onChange` /
+`onSubmit` and read errors through `<FieldError>`, the 5-line usage is
+unchanged and no code change is required. Otherwise, go through the list:
+
+- **Named exports only.** The default export is gone from every entry:
+  `import Form from 'react-jsonschema-form-validation'` becomes
+  `import { Form } from 'react-jsonschema-form-validation'` (same for
+  `/core`). Codemod (GNU sed; on macOS use `sed -i ''`):
+
+  ```bash
+  grep -rl "import Form" src | xargs sed -i -E \
+    -e "/react-jsonschema-form-validation/ s/import Form, \{ *([^}]*)\} from/import { Form, \1} from/" \
+    -e "/react-jsonschema-form-validation/ s/import Form from/import { Form } from/"
+  ```
 
 - **React 18 is the minimum** (`peerDependencies: react >= 18`): the
   library relies on `useId` and `useSyncExternalStore`, without shims.
