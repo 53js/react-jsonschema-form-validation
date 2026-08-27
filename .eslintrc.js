@@ -18,8 +18,9 @@ module.exports = {
 	},
 	overrides: [
 		{
-			// The published library: no default export anywhere (config files
-			// keep the default their tooling requires).
+			// The published library: no default export anywhere. Config files
+			// keep the default their tooling requires; the demo and the docs
+			// site (not published) keep theirs too.
 			files: ['src/lib/**/*.js'],
 			rules: {
 				'import/no-default-export': 'error',

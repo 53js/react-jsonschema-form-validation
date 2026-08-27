@@ -260,7 +260,7 @@ describe('modes', () => {
 
 describe('server rendering', () => {
 	// Like a real server: no `window` / `document` at all (any access throws
-	// a TypeError), so `useIsomorphicLayoutEffect` takes the server branch.
+	// a TypeError), so nothing may touch the DOM at render.
 	const withoutDom = (fn) => {
 		const saved = { document: global.document, window: global.window };
 		Object.defineProperty(global, 'document', { value: undefined, configurable: true });

@@ -12,12 +12,13 @@
 import {
 	useEffect,
 	useId,
+	useInsertionEffect,
 	useRef,
 	useState,
 } from 'react';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector';
 
-import { deepEqual } from './deepEqual';
+import { clonePlain, deepEqual } from './deepEqual';
 
 import { runSchema } from './errors';
 import { updateDataFromEvents } from './helpers';
@@ -169,6 +170,7 @@ const findControl = (formId, field) => {
  */
 const createFormApi = (id, initialConfig) => {
 	let config = initialConfig;
+	let notifiedErrorMessages = initialConfig.errorMessages;
 	const getConfig = () => config;
 	/** @type {Set<() => void>} */
 	const configListeners = new Set();
@@ -190,7 +192,12 @@ const createFormApi = (id, initialConfig) => {
 	/** @param {unknown} data */
 	const validateNow = (data) => {
 		const result = runSchema(getConfig().schema, data);
-		store.setState(result);
+		const current = store.getState();
+		// An equal result (deeply — `raw.data` included) is not re-emitted:
+		// subscribers would only re-render into the very same state.
+		if (current.valid !== result.valid || !deepEqual(current.errors, result.errors)) {
+			store.setState(result);
+		}
 		return result.valid;
 	};
 
@@ -333,14 +340,15 @@ const createFormApi = (id, initialConfig) => {
 	// Hooks-only members (see internals.js): never on the public api object.
 	setInternals(api, {
 		bindSubmit: (next) => { bindings = next; },
-		setConfig: (next) => {
-			const previous = config;
-			config = next;
-			// Only `errorMessages` has render-time readers (<Form> provides it
-			// through a context): notify them when its identity changes.
-			if (previous.errorMessages !== next.errorMessages) {
-				configListeners.forEach((listener) => listener());
-			}
+		setConfig: (next) => { config = next; },
+		// Only `errorMessages` has render-time readers (<FieldError>, through
+		// the config channel): notify them when its identity changed since
+		// the last notification. Separate from `setConfig` because React
+		// forbids scheduling updates from an insertion effect.
+		notifyConfig: () => {
+			if (config.errorMessages === notifiedErrorMessages) return;
+			notifiedErrorMessages = config.errorMessages;
+			configListeners.forEach((listener) => listener());
 		},
 		subscribeConfig: (listener) => {
 			configListeners.add(listener);
@@ -380,8 +388,16 @@ export const useFormStore = (config) => {
 
 	// The api reads the configuration at call time: refresh it once the
 	// render is committed (never during render), before any event can fire.
-	useIsomorphicLayoutEffect(() => {
+	// An insertion effect runs before every layout effect of the commit, so
+	// a child calling `checkValidity()` from its own layout effect already
+	// sees the new `data`.
+	useInsertionEffect(() => {
 		if (api && config) getInternals(api).setConfig(config);
+	});
+	// The <FieldError>s subscribed to `errorMessages` are told afterwards:
+	// an insertion effect may not schedule updates, a layout effect may.
+	useIsomorphicLayoutEffect(() => {
+		if (api) getInternals(api).notifyConfig();
 	});
 
 	// Subscribe the owner to the form state (`form.valid` in the parent must
@@ -410,15 +426,19 @@ export const useFormStore = (config) => {
 	// snapshot, re-render the owner into another fresh object: a loop. The
 	// inputs validated synchronously at store creation are remembered, so
 	// the mount-time run of this effect (and its StrictMode re-run) does not
-	// repeat that first validation either.
-	const lastValidated = useRef(config ? { data, schema, throttleDuration } : null);
+	// repeat that first validation either. The data is remembered by VALUE
+	// (plain copy): an in-place mutation followed by a shallow copy
+	// (`data.tags.push(x); setData({ ...data })`) is still seen as a change.
+	const lastValidated = useRef(
+		config ? { data: clonePlain(data), schema, throttleDuration } : null,
+	);
 	useEffect(() => {
 		if (!api) return;
 		const last = lastValidated.current;
 		if (last && last.schema === schema
 			&& last.throttleDuration === throttleDuration
 			&& deepEqual(last.data, data)) return;
-		lastValidated.current = { data, schema, throttleDuration };
+		lastValidated.current = { data: clonePlain(data), schema, throttleDuration };
 		getInternals(api).revalidate(data);
 	}, [api, data, schema, throttleDuration]);
 

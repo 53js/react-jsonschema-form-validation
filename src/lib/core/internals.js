@@ -11,6 +11,7 @@
  * @typedef {{
  *   bindSubmit: (bindings: FormBindings) => void,
  *   setConfig: (config: UseFormConfig<any>) => void,
+ *   notifyConfig: () => void,
  *   subscribeConfig: (listener: () => void) => () => void,
  *   getErrorMessages: () => ErrorMessagesMap | undefined,
  *   revalidate: (data: unknown) => void,

@@ -43,3 +43,28 @@ export const deepEqual = (a, b) => {
 		&& keysA.every((key) => Object.prototype.hasOwnProperty.call(recordB, key)
 			&& deepEqual(recordA[key], recordB[key]));
 };
+
+/**
+ * Copy of `value` under the same policy as `deepEqual`: plain objects and
+ * arrays are copied recursively, everything else is kept by reference. Lets
+ * the last validated data be remembered by value, so that an in-place
+ * mutation of the previous object is still detected by `deepEqual`.
+ *
+ * @template T
+ * @param {T} value
+ * @returns {T}
+ */
+export const clonePlain = (value) => {
+	if (typeof value !== 'object' || value === null) return value;
+	if (Array.isArray(value)) {
+		return /** @type {T} */ (value.map(clonePlain));
+	}
+	if (!isPlainObject(value)) return value;
+	const record = /** @type {Record<string, unknown>} */ (value);
+	/** @type {Record<string, unknown>} */
+	const copy = {};
+	Object.keys(record).forEach((key) => {
+		copy[key] = clonePlain(record[key]);
+	});
+	return /** @type {T} */ (copy);
+};

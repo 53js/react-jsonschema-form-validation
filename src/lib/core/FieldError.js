@@ -10,13 +10,14 @@
 
 import classnames from 'classnames';
 import React, {
-	memo, useCallback, useContext, useEffect, useId,
+	memo, useCallback, useEffect, useId, useSyncExternalStore,
 } from 'react';
 
 import { getFieldErrorId } from '../a11y';
-import { ErrorMessagesContext, useResolvedForm } from './Context';
+import { useResolvedForm } from './Context';
 import { deepEqual } from './deepEqual';
 import { getErrorMessage } from './getErrorMessage';
+import { getInternals } from './internals';
 import { selectFieldErrors, selectIsFieldTouched } from './selectors';
 import { useFormSelector } from './useFormSelector';
 
@@ -92,7 +93,17 @@ const FieldErrorRender = (props) => {
 		form.registerFieldError(registryKey, name, effectiveId);
 	}, [form, registryKey, name, effectiveId]);
 
-	const formErrorMessages = useContext(ErrorMessagesContext);
+	// Form-level messages come from THIS form's configuration (an explicit
+	// `form` prop may target another form than the enclosing <Form>), read
+	// through the api's config channel rather than the store: an inline map
+	// literal is a new value on every render of its owner, and a store
+	// write per render would loop.
+	const internals = getInternals(form);
+	const formErrorMessages = useSyncExternalStore(
+		internals.subscribeConfig,
+		internals.getErrorMessages,
+		internals.getErrorMessages,
+	);
 
 	const selector = useCallback(
 		/** @param {FormState} state @returns {FieldErrorSelection} */

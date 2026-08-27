@@ -14,14 +14,13 @@
 
 import classnames from 'classnames';
 import React, {
-	forwardRef, useCallback, useEffect, useRef, useSyncExternalStore,
+	forwardRef, useCallback, useEffect, useInsertionEffect, useRef,
 } from 'react';
 
-import { FormContext, ErrorMessagesContext } from './Context';
+import { FormContext } from './Context';
 import { getInternals } from './internals';
 import { useFormStore } from './useForm';
 import { useFormSelector } from './useFormSelector';
-import { useIsomorphicLayoutEffect } from './useIsomorphicLayoutEffect';
 
 /**
  * Validation configuration accepted by `<Form>` in sugar mode — forwarded
@@ -183,8 +182,9 @@ const FormRender = (props, ref) => {
 
 	// Latest-props binding for the submit path (`handleSubmit`,
 	// `reportValidity` read them at call time) — after commit, never during
-	// render.
-	useIsomorphicLayoutEffect(() => {
+	// render. An insertion effect runs before every layout effect of the
+	// commit, so even a child's layout effect sees the new bindings.
+	useInsertionEffect(() => {
 		internals.bindSubmit({
 			onSubmit,
 			resetOnSubmit,
@@ -192,16 +192,6 @@ const FormRender = (props, ref) => {
 			scrollOptions,
 		});
 	});
-
-	// Form-level errorMessages for the <FieldError>s: the prop in sugar mode;
-	// in hook mode the owner's latest map, read through the api's config
-	// channel so a change re-renders this provider once committed.
-	const ownerErrorMessages = useSyncExternalStore(
-		internals.subscribeConfig,
-		internals.getErrorMessages,
-		internals.getErrorMessages,
-	);
-	const providedErrorMessages = externalForm ? ownerErrorMessages : errorMessages;
 
 	const isSubmitted = useFormSelector(form, selectIsSubmitted, Object.is);
 
@@ -237,18 +227,16 @@ const FormRender = (props, ref) => {
 
 	return (
 		<FormContext.Provider value={form}>
-			<ErrorMessagesContext.Provider value={providedErrorMessages}>
-				<FormComponent
-					id={form.id}
-					className={classnames('Jfv_Form', className, { isSubmitted })}
-					onSubmit={form.handleSubmit}
-					ref={setElement}
-					{...nativeProps}
-					{...rest}
-				>
-					{children}
-				</FormComponent>
-			</ErrorMessagesContext.Provider>
+			<FormComponent
+				id={form.id}
+				className={classnames('Jfv_Form', className, { isSubmitted })}
+				onSubmit={form.handleSubmit}
+				ref={setElement}
+				{...nativeProps}
+				{...rest}
+			>
+				{children}
+			</FormComponent>
 		</FormContext.Provider>
 	);
 };
