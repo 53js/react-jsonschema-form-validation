@@ -413,8 +413,8 @@ custom keyword. Zod issues keep Zod's codes (`invalid_type`, `too_small`,
 
 Pass an `errorMessages` map (code → function) to `<Form>` / `useForm` —
 or to a single `<FieldError>` — to replace the validator's messages. Each
-function receives the `FormError`. The form-level map reaches every
-`<FieldError>` through the context (portals included). Resolution order:
+function receives the `FormError`. Each `<FieldError>` reads the
+form-level map from its associated form's configuration (portals included). Resolution order:
 the `<FieldError>` map, then the form map, then the `defaultMessage`
 catch-all, then the provider's message.
 
