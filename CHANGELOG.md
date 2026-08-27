@@ -10,6 +10,81 @@ and dependency-only bumps are omitted.
 
 ## [Unreleased]
 
+The 1.0 line implements [RFC 0001](https://github.com/53js/react-jsonschema-form-validation/pull/58)
+(DOM-first form API): `useForm`, Standard Schema validators, one form store.
+The README carries a single migration guide, "Migrating from 0.x to 1.0".
+
+### Breaking
+
+- **React 18 is the minimum supported version** (`peerDependencies:
+  react >=18`): the hooks architecture relies on `useId` and
+  `useSyncExternalStore`, without shims. React 16.8 / 17 stay served by
+  the 0.x line.
+- **AJV upgraded from v6 to v8** (`ajv@^8.17.0`). No code change is needed
+  if you only pass `schema`/`data` and read errors through `<FieldError>`
+  or `error.field`. Otherwise:
+  - Raw errors carry the AJV 8 shape: `instancePath` (JSON Pointer, e.g.
+    `/user/email`) replaces `dataPath` (`.user.email`). The normalized
+    `field` (`user.email`) is unchanged.
+  - Default message wording changed in AJV 8 (`should …` → `must …`, e.g.
+    `must have required property 'email'`). Code or tests matching on
+    default messages must be updated; `errorMessages` maps are immune.
+  - String formats (`email`, `date`, `uri`…) now come from the new
+    `ajv-formats` dependency (AJV 8 removed them from core), registered on
+    the default instance in its default `full` mode — stricter than AJV 6
+    on some edge values. Custom instances must call `addFormats(ajv)`
+    themselves if they rely on formats.
+  - The default instance is created with `strict: false`, keeping AJV 6's
+    permissive behavior (unknown keywords compile instead of throwing).
+    One safety net is lost: AJV 6 threw at compile time on an unknown
+    **format name** (`format: 'emial'`), whereas AJV 8 with
+    `strict: false` only logs a warning and ignores the format — every
+    value then passes silently. Pass your own strict-mode instance to
+    restore compile-time typo detection.
+  - AJV ≥ 8 is required for a custom instance passed through `ajv`:
+    errors in the AJV 6 shape (`dataPath`) are still understood as a soft
+    landing, but AJV 6 instances are unsupported. The option is duck-typed (any object
+    exposing `compile(schema)`), so `Ajv2019` / `Ajv2020` instances — e.g.
+    for JSON Schema draft 2020-12 — are accepted; a non-validator throws.
+- **`<Form>`, `<Field>` and `<FieldError>` are function components on a
+  form store.** The class components are gone: a `ref` on `<Form>` now
+  yields the `<form>` DOM element, and the instance methods / `state`
+  reached through a ref are replaced by the `useForm()` api
+  (`form.valid`, `form.errors`, `form.reset()`…).
+- **The form context value is the `FormApi`** (`useFormContext()` /
+  `withFormContext()`): the `FormContextValue` type is replaced by
+  `FormApi`, `formId` by `id`, and the internal `fieldErrorsVersion` is
+  gone; `valid`, `errors`, `isSubmitted`, `touchedFields`, `reset`,
+  `getFieldErrors`, `isFieldInvalid`, `isFieldTouched`, `isTouched`,
+  `touch`, `handleFieldChange`, `errorMessages` are unchanged.
+- **Errors are normalized `FormError`s** everywhere
+  (`{ field, code, message, params, raw }`, the `FormattedError` type is
+  gone): `errorMessages` maps (form-level and `<FieldError>`-level) are
+  keyed by `error.code` instead of the AJV keyword — for AJV users only
+  `minimum`/`exclusiveMinimum` → `min` and `maximum`/`exclusiveMaximum` →
+  `max` change — and message callbacks receive the `FormError`:
+  `error.keyword` becomes `error.code`, `error.data` (the current value)
+  becomes `error.raw.data`, `error.schema` / `error.parentSchema` become
+  `error.raw.schema` / `error.raw.parentSchema`.
+- **`reset()` is presentation-only**: it clears `touchedFields` /
+  `isSubmitted` and keeps `errors` / `valid` describing the current `data`
+  (0.x reported `valid: true` until the next change). **Submitting always
+  re-validates synchronously first** (0.x trusted the last throttled
+  result).
+- **`<FieldError>` default ids** derive from the form id, now a `useId()`
+  value (`:r0:-error-email`) instead of the `jfv<N>` counter
+  (`jfv1-error-email`). Pass `<Form id>` / `useForm({ id })` for
+  predictable ids.
+- **Named exports only**: `import Form from 'react-jsonschema-form-validation'`
+  becomes `import { Form } from 'react-jsonschema-form-validation'` (same
+  for `/core`; no default export on any entry).
+- **A custom `<Form component={Wrapper}>` must forward the `id` and
+  `onSubmit` props** to the element it renders: native controls are now
+  associated through the `form` attribute pointing at `form.id` (0.x
+  associated by ancestry only). A wrapper swallowing `id` de-associates
+  its fields (Enter-to-submit, `form.elements`, `requestSubmit()`); a
+  dev-time `console.error` flags it.
+
 ### Added
 
 - **`useForm()` and the hook mode of `<Form>`**: own the form state in the
@@ -17,100 +92,55 @@ and dependency-only bumps are omitted.
   onChange }); <Form form={form} onSubmit={…}>` — and read `form.valid`,
   `form.errors`, `form.touchedFields`, `form.isSubmitted` right where the
   submit button lives. The 5-line sugar mode (`<Form schema data onChange>`)
-  is unchanged.
+  is unchanged. The two modes are mutually exclusive at the type level.
 - Imperative API named after `HTMLFormElement`: `form.checkValidity()`,
-  `form.reportValidity()` (reveal + focus the first invalid field),
-  `form.requestSubmit()`, `form.reset()`.
+  `form.reportValidity()` (reveal + focus the first invalid control of
+  this form), `form.requestSubmit()`, `form.reset()`.
 - `<Field form={form}>` / `<FieldError form={form}>`: explicit association
   for fields rendered outside the `<Form>` subtree (portals); native
   controls always carry `form={form.id}`, so the DOM association (Enter to
   submit, `form.elements`) follows the React one. Ids come from `useId()`
   or `useForm({ id })` / `<Form id>`.
 - Per-field subscriptions: `<Field>` / `<FieldError>` re-render only when
-  their own state changes (`useFormSelector(form, selector)` is exported for
-  custom consumers).
-- `react-jsonschema-form-validation/core`: the library without the AJV
-  provider, for Standard Schema validators (Zod, Valibot, ArkType…).
-- Server rendering: the first validation runs during `renderToString`; the
-  client-boundary modules carry `'use client'`.
-- **Standard Schema groundwork (RFC 0001).** New subpath
-  `react-jsonschema-form-validation/providers/ajv` exporting `ajvSchema(jsonSchema, { ajv })`,
-  which wraps a JSON Schema into a [Standard Schema v1](https://standardschema.dev)
-  object (plus `createAjv()` to build a custom AJV 8 instance). Its errors
-  use the normalized `FormError` shape (`{ field, code, message, params, raw }`;
-  `code` maps `minimum`/`exclusiveMinimum` → `min` and `maximum`/`exclusiveMaximum`
-  → `max`, every other AJV keyword passes through; `raw` is the verbose AJV
-  error, so `raw.data` is the current field value). The root entry exports the
-  `FormError` / `ErrorCode` / `StandardSchema` types (types only). Validation
-  is synchronous only: a schema returning a Promise (an `$async` JSON Schema,
-  an async refinement) throws. `<Form>` is not wired to it yet — that lands
-  with `useForm`.
+  their own state changes; `useFormSelector(form, selector, isEqual?)` is
+  exported for custom consumers, and `form.subscribe()` / `form.getState()`
+  expose the store to external subscribers.
+- **Standard Schema validators.** `schema` accepts any object implementing
+  [Standard Schema v1](https://standardschema.dev) (`~standard`): Zod,
+  Valibot, ArkType, Effect Schema… Their error codes pass through as-is.
+- New entry `react-jsonschema-form-validation/core`: the library without
+  the AJV provider, for Standard Schema users (AJV never enters the bundle).
+- New entry `react-jsonschema-form-validation/providers/ajv`:
+  `ajvSchema(jsonSchema, { ajv })` wraps a JSON Schema into a Standard
+  Schema object (compiled once; `createAjv()` builds an instance configured
+  like the default one). The root entry wraps a plain JSON Schema
+  automatically, once per `(schema, ajv)` identity.
+- Normalized error-code core (`required`, `type`, `min`, `max`,
+  `minLength`, `maxLength`, `pattern`, `format`, `enum`); AJV keywords
+  outside it (`const`, `multipleOf`, `uniqueItems`, `minItems`,
+  `maxItems`, `oneOf`/`anyOf`, `additionalProperties`…) pass through under
+  their own name. `raw` keeps the verbose AJV error, so `raw.data` is the
+  current field value (issue #6).
+- Types: `FormApi`, `FormState`, `FormError`, `ErrorCode`,
+  `StandardSchema`, `AjvLike`; runtime guards `isStandardSchema` /
+  `runSchema`.
+- Server rendering: the first validation runs synchronously when the form
+  is created, so `renderToString` outputs the right `valid` / errors with
+  `useId`-stable ids; the client-boundary modules carry `'use client'`
+  (Next.js App Router).
+- Sync-only guard: a schema whose `validate()` returns a Promise (async
+  refinement, AJV `$async`) throws an explicit error instead of
+  validating stale data.
 
-### Breaking
+### Removed
 
-- **`<Form>`, `<Field>` and `<FieldError>` are function components on a
-  form store (RFC 0001).** The class components are gone: `ref`s on
-  `<Form>` now yield the `<form>` DOM element, and the instance methods /
-  `state` that tests or code may have reached through a ref are replaced by
-  the `useForm()` api (`form.valid`, `form.errors`, `form.reset()`…).
-- **The form context value is the `FormApi`** (`useFormContext()` /
-  `withFormContext()`): `FormContextValue` is replaced by `FormApi`,
-  `formId` by `form.id`; `isTouched`, `getFieldErrors`, `touch`,
-  `reset`… are unchanged.
-- **Errors are normalized `FormError`s** everywhere: `errorMessages` maps
-  (form-level and `<FieldError>`-level) are keyed by `error.code` instead of
-  the AJV keyword — for AJV users only `minimum`/`exclusiveMinimum` → `min`
-  and `maximum`/`exclusiveMaximum` → `max` change — and message callbacks
-  receive `{ field, code, message, params, raw }`: `error.keyword` becomes
-  `error.code`, `error.data` (the current value) becomes `error.raw.data`.
-- **Named exports only**: `import Form from 'react-jsonschema-form-validation'`
-  becomes `import { Form } from 'react-jsonschema-form-validation'` (no
-  default export on any entry).
-- **Deep imports removed**: only the package entries are supported
-  (`react-jsonschema-form-validation`, `…/core`, `…/providers/ajv`);
-  `…/dist/Form/Form` & co never were documented and no longer exist.
 - `prop-types` is no longer a dependency (props are typed by the shipped
   `.d.ts`); the runtime `ajv` duck-typing check is now a thrown error.
-- `reset()` clears the touched/submitted state only: `errors` / `valid`
-  keep describing the current `data` (0.x reported `valid: true` until the
-  next change). Submitting always re-validates synchronously first.
-- **React 18 is now the minimum supported version** (`peerDependencies:
-  react >=18`), in preparation for the v1 hooks architecture (`useId`,
-  `useSyncExternalStore` — no shims). React 16.8/17 stay served by the
-  0.x line.
-- **AJV upgraded from v6 to v8** (`ajv@^8.17.0`). No code change is needed
-  if you only pass `schema`/`data` and read errors through `<FieldError>`
-  or `error.field`. Otherwise, see the "Migrating to v1 (AJV 8)" section
-  of the README. In short:
-  - Raw errors now carry the AJV 8 shape: `instancePath` (JSON Pointer,
-    e.g. `/user/email`) replaces `dataPath` (`.user.email`). The
-    normalized `field` property (`user.email`) is unchanged.
-  - Default error message wording changed in AJV 8 (`should …` →
-    `must …`, e.g. `must have required property 'email'`). Code or tests
-    matching on default messages must be updated; the `errorMessages`
-    prop (keyed by `error.keyword`) is immune.
-  - String formats (`email`, `date`, `uri`…) now come from the new
-    `ajv-formats` dependency (AJV 8 removed them from core), registered
-    on the default instance in its default `full` mode — stricter than
-    AJV 6 on some edge values, so a few borderline strings that used to
-    pass may now be rejected. Custom instances passed via the `ajv` prop
-    must call `addFormats(ajv)` themselves if they rely on formats.
-  - The default instance is created with `strict: false`, keeping AJV 6's
-    permissive behavior (unknown keywords compile instead of throwing).
-    One safety net is lost in the process: AJV 6 threw at compile time on
-    an unknown **format name** (a typo like `format: 'emial'` crashed
-    immediately), whereas AJV 8 with `strict: false` only logs a warning
-    and ignores the format — every value then passes silently. Pass your
-    own strict-mode instance via the `ajv` prop to restore
-    compile-time typo detection.
-  - A custom instance passed through the `ajv` prop should now be AJV 8+.
-    AJV 6 instances keep working for the transition thanks to the
-    `dataPath` fallback, which is deprecated and will be removed in the
-    final 1.0.
-  - The `ajv` prop is now duck-typed (any object exposing a
-    `compile(schema)` function) instead of `instanceOf(Ajv)`: `Ajv2019` /
-    `Ajv2020` instances — e.g. for JSON Schema draft 2020-12 — are
-    accepted.
+- Deep imports: only the package entries exist
+  (`react-jsonschema-form-validation`, `…/core`, `…/providers/ajv`);
+  `…/dist/Form/Form` & co were never documented, were already outside the
+  `exports` map since 0.7, and no longer exist.
+
 ## [0.7.0] — 2026-08-25
 
 ### Added
