@@ -258,8 +258,13 @@ FormElement.displayName = 'Form';
 
 // Polymorphic re-typing: the implementation is loosely typed; the cast on
 // the export restores the discriminated union and both generics.
-export const Form = /** @type {<T = Record<string, unknown>, C extends ElementType = 'form'>(
-	props: FormProps<T, C> & { ref?: React.Ref<HTMLFormElement> }
-) => JSX.Element | null} */ (
-	/** @type {unknown} */ (FormElement)
-);
+/**
+ * Public signature of the core `<Form>`: polymorphic on `T` (data shape) and
+ * `C` (wrapper element), dual-mode union enforced through `FormProps`.
+ *
+ * @typedef {<T = Record<string, unknown>, C extends ElementType = 'form'>(
+ *   props: FormProps<T, C> & { ref?: React.Ref<HTMLFormElement> }
+ * ) => JSX.Element | null} FormComponentType
+ */
+
+export const Form = /** @type {FormComponentType} */ (/** @type {unknown} */ (FormElement));

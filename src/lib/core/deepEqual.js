@@ -43,4 +43,3 @@ export const deepEqual = (a, b) => {
 		&& keysA.every((key) => Object.prototype.hasOwnProperty.call(recordB, key)
 			&& deepEqual(recordA[key], recordB[key]));
 };
-

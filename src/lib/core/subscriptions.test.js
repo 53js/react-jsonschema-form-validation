@@ -146,6 +146,21 @@ describe('useFormSelector', () => {
 		expect(container.querySelector('output').textContent).toBe('1');
 	});
 
+	it('re-renders on a primitive selection change (default equality is identity for primitives)', () => {
+		let form;
+		const Probe = () => {
+			form = React.useContext(FormContext);
+			const count = useFormSelector(form, (s) => s.touchedFields.length);
+			return <output>{count}</output>;
+		};
+		const { container } = render(<Form onSubmit={() => {}} schema={schema}><Probe /></Form>);
+		expect(container.querySelector('output').textContent).toBe('0');
+		act(() => form.touch('a'));
+		expect(container.querySelector('output').textContent).toBe('1');
+		act(() => form.touch('b'));
+		expect(container.querySelector('output').textContent).toBe('2');
+	});
+
 	it('accepts a custom equality function', () => {
 		let renders = 0;
 		let form;

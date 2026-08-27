@@ -79,6 +79,9 @@ export const selectFormState = (state) => ({
  */
 export const shallowEqual = (a, b) => {
 	if (Object.is(a, b)) return true;
+	// Primitives (a selector returning a number, a string…) and null: only
+	// identity counts — two different numbers have no keys to compare.
+	if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
 	const keysA = Object.keys(a);
 	const keysB = Object.keys(b);
 	return keysA.length === keysB.length && keysA.every((key) => Object.is(a[key], b[key]));

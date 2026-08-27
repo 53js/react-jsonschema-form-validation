@@ -147,4 +147,3 @@ export const setIn = (data, path, value) => {
 
 	return /** @type {T} */ (setInRec(data, 0));
 };
-

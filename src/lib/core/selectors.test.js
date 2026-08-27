@@ -78,5 +78,10 @@ describe('shallowEqual', () => {
 		expect(shallowEqual({ a: 1 }, { a: 1, b: 2 })).toBe(false);
 		expect(shallowEqual({ a: {} }, { a: {} })).toBe(false);
 		expect(shallowEqual({ a: NaN }, { a: NaN })).toBe(true);
+		// Primitive selections: identity only (0 and 1 both have no keys).
+		expect(shallowEqual(0, 1)).toBe(false);
+		expect(shallowEqual('a', 'a')).toBe(true);
+		expect(shallowEqual(null, {})).toBe(false);
+		expect(shallowEqual({}, null)).toBe(false);
 	});
 });

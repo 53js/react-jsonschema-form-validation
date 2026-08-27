@@ -30,4 +30,3 @@ export const getErrorMessage = (error, errorMessages) => {
 
 	return message;
 };
-

@@ -61,4 +61,3 @@ export const throttle = (func, wait = 0) => {
 
 	return /** @type {ThrottledFunc<T>} */ (throttled);
 };
-

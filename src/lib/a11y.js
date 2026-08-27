@@ -33,4 +33,3 @@
  * @returns {string}
  */
 export const getFieldErrorId = (formId, name) => `${formId}-error-${name}`;
-

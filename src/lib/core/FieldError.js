@@ -123,8 +123,15 @@ const FieldErrorRender = (props) => {
 const FieldErrorComponent = memo(FieldErrorRender);
 FieldErrorComponent.displayName = 'FieldError';
 
-export const FieldError = /** @type {<C extends ElementType = 'div'>(
-	props: FieldErrorProps<C>
-) => JSX.Element | null} */ (
+/**
+ * Public signature of `<FieldError>`: polymorphic on the rendered
+ * component `C`.
+ *
+ * @typedef {<C extends ElementType = 'div'>(
+ *   props: FieldErrorProps<C>
+ * ) => JSX.Element | null} FieldErrorComponentType
+ */
+
+export const FieldError = /** @type {FieldErrorComponentType} */ (
 	/** @type {unknown} */ (FieldErrorComponent)
 );

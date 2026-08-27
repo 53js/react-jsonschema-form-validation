@@ -16,9 +16,9 @@
 
 import React, { forwardRef, useMemo } from 'react';
 
-import CoreForm from './core/Form';
+import { Form as CoreForm } from './core/Form';
 import { isStandardSchema } from './core/standard-schema';
-import coreUseForm from './core/useForm';
+import { useForm as coreUseForm } from './core/useForm';
 import { ajvSchema } from './providers/ajv';
 
 // Star re-export so every core TYPE reaches the root entry too (a JS

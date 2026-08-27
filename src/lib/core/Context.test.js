@@ -2,7 +2,9 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react';
 
 import { ajvSchema } from '../providers/ajv';
-import { FormContext, useFormContext, useResolvedForm, withFormContext } from './Context';
+import {
+	FormContext, useFormContext, useResolvedForm, withFormContext,
+} from './Context';
 import { Field } from './Field';
 import { Form } from './Form';
 import { useForm } from './useForm';

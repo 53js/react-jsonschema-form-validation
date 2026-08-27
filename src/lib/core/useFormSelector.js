@@ -30,4 +30,3 @@ export const useFormSelector = (form, selector, isEqual) => useSyncExternalStore
 		/** @type {unknown} */ (shallowEqual)
 	),
 );
-

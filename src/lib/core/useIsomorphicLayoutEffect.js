@@ -15,4 +15,3 @@ import { useEffect, useLayoutEffect } from 'react';
 export const useIsomorphicLayoutEffect = (effect, deps) => (
 	typeof window === 'undefined' ? useEffect(effect, deps) : useLayoutEffect(effect, deps)
 );
-
