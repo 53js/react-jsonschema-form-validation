@@ -110,8 +110,8 @@ class CustomMessageForm extends React.Component {
 						/>
 						<FieldError
 							errorMessages={{
-								minimum: () => formData.minAgeCustomMessage,
-								maximum: () => formData.maxAgeCustomMessage,
+								min: () => formData.minAgeCustomMessage,
+								max: () => formData.maxAgeCustomMessage,
 							}}
 							name="ageCustom"
 						/>

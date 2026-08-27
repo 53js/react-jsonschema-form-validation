@@ -14,7 +14,33 @@ const srcJsRE = new RegExp(`^${escapeRegExp(projectRoot.split(path.sep).join('/'
 // demo site. Replaces the previous Babel CLI build (`babel src/lib --out-dir
 // dist`): same published surface — ESM modules mirroring the src/lib file
 // structure at the root of dist/ — produced by Vite/Rollup instead.
+// Rollup drops module-level directives (and warns about them). The
+// directive is stripped from the source before Rollup sees it, then
+// re-added on the chunks whose SOURCE module started with it — the client
+// boundaries (Form, Field, FieldError, useForm, useFormSelector, Context)
+// and nothing else: barrels and pure modules (providers/ajv, errors, store…)
+// stay directive-free. With `preserveModules` every chunk has exactly one
+// facade module.
+const USE_CLIENT = /^'use client';\r?\n?/;
+const preserveUseClient = () => {
+	const clientModules = new Set();
+	return {
+		name: 'rjfv-preserve-use-client',
+		enforce: 'pre',
+		transform(code, id) {
+			if (!USE_CLIENT.test(code)) return null;
+			clientModules.add(id);
+			return { code: code.replace(USE_CLIENT, ''), map: null };
+		},
+		renderChunk(code, chunk) {
+			if (!chunk.facadeModuleId || !clientModules.has(chunk.facadeModuleId)) return null;
+			return { code: "'use client';\n".concat(code), map: null };
+		},
+	};
+};
+
 export default defineConfig({
+	plugins: [preserveUseClient()],
 	esbuild: {
 		// The library uses JSX inside plain .js files (same recipe as the
 		// demo/test configs).
@@ -46,6 +72,7 @@ export default defineConfig({
 			entry: {
 				index: path.resolve(projectRoot, 'src/lib/index.js'),
 				'providers/ajv/index': path.resolve(projectRoot, 'src/lib/providers/ajv/index.js'),
+				'core/index': path.resolve(projectRoot, 'src/lib/core/index.js'),
 			},
 			formats: ['es'],
 			// Emit .js (not Vite's default .mjs for an ES build): the

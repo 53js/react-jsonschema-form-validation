@@ -11,8 +11,21 @@ module.exports = {
 		'react/jsx-one-expression-per-line': 0, // Buggy
 		'react/jsx-props-no-spreading': 'off',
 		'react/state-in-constructor': 'off',
+		// v1 drops prop-types (RFC 0001): props are typed by JSDoc + tsc.
+		'react/prop-types': 'off',
+		// v1 ships named exports only (tree-shaking, one import style).
+		'import/prefer-default-export': 'off',
 	},
 	overrides: [
+		{
+			// The published library: no default export anywhere. Config files
+			// keep the default their tooling requires; the demo and the docs
+			// site (not published) keep theirs too.
+			files: ['src/lib/**/*.js'],
+			rules: {
+				'import/no-default-export': 'error',
+			},
+		},
 		{
 			// The demo app is not published to npm; it imports its UI stack
 			// (reactstrap, react-select, ...) from devDependencies by design.

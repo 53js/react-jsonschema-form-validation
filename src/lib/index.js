@@ -1,75 +1,113 @@
-export { default as getFieldErrorId } from './a11y';
-export { default as Field } from './Field';
-export { default as FieldError } from './FieldError';
-export * from './Form';
-export { default, default as Form } from './Form';
+/**
+ * Root entry: the core plus JSON Schema batteries — a plain JSON Schema
+ * passed as `schema` (to `useForm` or `<Form>`) is wrapped by the AJV
+ * provider automatically, so the 5-line getting started stays unchanged.
+ * Consumers of other Standard Schema providers (Zod, Valibot…) can import
+ * from `react-jsonschema-form-validation/core` instead and never bundle AJV.
+ *
+ * @import { ElementType, ComponentProps, ForwardRefRenderFunction } from 'react'
+ * @import { JSONSchema7Definition } from 'json-schema'
+ * @import { StandardSchema } from './core/standard-schema'
+ * @import { SafePropsOmit } from './core/types'
+ * @import { UseFormConfig, FormApi } from './core/useForm'
+ * @import { FormHookModeProps, FormSugarModeProps, ReservedFormPropKeys } from './core/Form'
+ * @import { AjvLike } from './providers/ajv'
+ */
 
-// Public type surface, re-declared here so the per-file `.d.ts` build keeps
-// exporting from the root exactly what the former bundled `index.d.ts`
-// hoisted, plus the Standard Schema groundwork types (RFC 0001). A JS
-// module cannot `export type`; a JSDoc typedef aliasing an `import()` type
-// is the equivalent. Runtime surface unchanged: the core protocol
-// functions stay internal until the `/core` entry lands with `useForm`,
-// and the AJV provider lives on its own subpath
-// (`react-jsonschema-form-validation/providers/ajv`) so consumers of other
-// Standard Schema providers never bundle AJV.
+import React, { forwardRef, useMemo } from 'react';
 
-/** @import { ElementType } from 'react' */
+import { Form as CoreForm } from './core/Form';
+import { isStandardSchema } from './core/standard-schema';
+import { useForm as coreUseForm } from './core/useForm';
+import { ajvSchema } from './providers/ajv';
 
-/** @typedef {import('./Form/Context.types').AjvKeyword} AjvKeyword */
-/** @typedef {import('./Form/Context.types').ErrorMessageFn} ErrorMessageFn */
-/** @typedef {import('./Form/Context.types').ErrorMessagesMap} ErrorMessagesMap */
-/** @typedef {import('./Form/Context.types').FormContextValue} FormContextValue */
-/** @typedef {import('./Form/helpers').FormattedError} FormattedError */
-/** @typedef {import('./Form/helpers').FormChangeEvent} FormChangeEvent */
-/** @typedef {import('./Form/helpers').FormInputTarget} FormInputTarget */
-/** @typedef {import('./Form/Form').FormBaseProps} FormBaseProps */
-/** @typedef {import('./Form/Form').JfvScrollOptions} JfvScrollOptions */
-/** @typedef {import('./Field/Field').FieldBaseProps} FieldBaseProps */
-/** @typedef {import('./Field/Field').FieldChangeHandler} FieldChangeHandler */
-/** @typedef {import('./FieldError/FieldError').FieldErrorBaseProps} FieldErrorBaseProps */
-
-/** @typedef {import('./core/errors').FormError} FormError */
-/** @typedef {import('./core/errors').ErrorCode} ErrorCode */
-/** @typedef {import('./core/errors').ProviderIssue} ProviderIssue */
-/** @typedef {import('./core/standard-schema').StandardSchemaIssue} StandardSchemaIssue */
+// Star re-export so every core TYPE reaches the root entry too (a JS
+// module cannot `export type`). The two runtime names this module
+// redefines (`Form`, `useForm`) shadow the star per the ES spec — local
+// exports always win — which is exactly the sugar layering wanted here.
+// `import/export` is silenced file-wide: it flags that shadowing.
+/* eslint-disable import/export */
+export * from './core';
 
 /**
- * @template T
- * @template {PropertyKey} K
- * @typedef {import('./Form/helpers').SafePropsOmit<T, K>} SafePropsOmit
+ * `useForm` configuration of the root entry: `schema` also accepts a plain
+ * JSON Schema, `ajv` a custom AJV instance (v8) for it.
+ *
+ * @template [T = Record<string, unknown>]
+ * @typedef {Omit<UseFormConfig<T>, 'schema'> & {
+ *   schema: StandardSchema | JSONSchema7Definition,
+ *   ajv?: AjvLike,
+ * }} JsonSchemaUseFormConfig
  */
+
+/**
+ * Props of the root `<Form>`: the core union with `schema` widened to plain
+ * JSON Schema (+ `ajv`) in sugar mode, both masked in hook mode.
+ *
+ * @template [T = Record<string, unknown>]
+ * @template {ElementType} [C = 'form']
+ * @typedef {(
+ *   (FormHookModeProps<T, C> & { ajv?: never })
+ *   | (Omit<FormSugarModeProps<T, C>, 'schema'> & {
+ *     schema: StandardSchema | JSONSchema7Definition,
+ *     ajv?: AjvLike,
+ *   })
+ * ) & SafePropsOmit<ComponentProps<C>, ReservedFormPropKeys | 'ajv'>} FormProps
+ */
+
+/**
+ * Memoized per `(schema, ajv)` identity so the compiled validator stays
+ * stable across renders — the same guarantee `memoize-one` gave in 0.x.
+ *
+ * @param {StandardSchema | JSONSchema7Definition | undefined} schema
+ * @param {AjvLike | undefined} ajv
+ * @returns {StandardSchema | undefined}
+ */
+const useResolvedSchema = (schema, ajv) => useMemo(
+	() => {
+		if (schema === undefined || isStandardSchema(schema)) return schema;
+		return ajvSchema(schema, ajv ? { ajv } : {});
+	},
+	[schema, ajv],
+);
 
 /**
  * @template [T = Record<string, unknown>]
- * @template {ElementType} [C = 'form']
- * @typedef {import('./Form/Form').FormProps<T, C>} FormProps
+ * @param {JsonSchemaUseFormConfig<T>} config
+ * @returns {FormApi<T>}
  */
+export const useForm = (config) => {
+	const schema = /** @type {StandardSchema} */ (useResolvedSchema(config.schema, config.ajv));
+	return coreUseForm({ ...config, schema });
+};
 
 /**
- * @template {ElementType} [C = 'input']
- * @typedef {import('./Field/Field').FieldProps<C>} FieldProps
+ * @type {ForwardRefRenderFunction<HTMLFormElement, {
+ *   schema?: StandardSchema | JSONSchema7Definition,
+ *   ajv?: AjvLike,
+ *   [key: string]: unknown,
+ * }>}
  */
+const FormRender = ({ ajv, schema, ...rest }, ref) => {
+	const resolved = useResolvedSchema(schema, ajv);
+	// Cast: the discriminated union is enforced on the public export, the
+	// pass-through itself is untyped by design.
+	const coreProps = /** @type {any} */ ({ ...rest, schema: resolved });
+	return <CoreForm {...coreProps} ref={ref} />;
+};
+
+const Form = forwardRef(FormRender);
+Form.displayName = 'Form';
 
 /**
- * @template {ElementType} [C = 'div']
- * @typedef {import('./FieldError/FieldError').FieldErrorProps<C>} FieldErrorProps
+ * Public signature of the root `<Form>`: polymorphic on `T` (data shape)
+ * and `C` (wrapper element), dual-mode union enforced through `FormProps`.
+ *
+ * @typedef {<T = Record<string, unknown>, C extends ElementType = 'form'>(
+ *   props: FormProps<T, C> & { ref?: React.Ref<HTMLFormElement> }
+ * ) => JSX.Element | null} FormComponent
  */
 
-/**
- * @template Output
- * @typedef {import('./core/standard-schema').StandardSchemaResult<Output>} StandardSchemaResult
- */
+const TypedForm = /** @type {FormComponent} */ (/** @type {unknown} */ (Form));
 
-/**
- * @template [Input = unknown]
- * @template [Output = Input]
- * @typedef {import('./core/standard-schema').StandardSchemaProps<Input, Output>
- * } StandardSchemaProps
- */
-
-/**
- * @template [Input = unknown]
- * @template [Output = Input]
- * @typedef {import('./core/standard-schema').StandardSchema<Input, Output>} StandardSchema
- */
+export { TypedForm as Form };

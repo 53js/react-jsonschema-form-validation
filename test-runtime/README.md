@@ -8,15 +8,17 @@ changes.
 ## Mechanics
 
 - `react-19/` — one fixture per React major beyond the root's, a mini
-  `package.json` pinning `react`, `react-dom`, `@testing-library/react` 16
-  and its explicit `@testing-library/dom` peer to **exact versions** (no
+  `package.json` pinning `react`, `react-dom`, `@testing-library/react` 16,
+  its explicit `@testing-library/dom` peer and `use-sync-external-store`
+  (the with-selector shim requires `react` itself) to **exact versions** (no
   carets): the fixtures have no committed lockfile, so exact versions are
   what keeps the matrix reproducible across runs. Bump them deliberately,
   in their own commit. `setup.sh <19>` installs the fixture in place; its
   `node_modules` never touches the root tree.
 - `vitest.config.js` — extends the root `vitest.config.js` and aliases the
-  four React-coupled bare imports (`react`, `react-dom`,
-  `@testing-library/react`, `@testing-library/dom`) to the fixture selected
+  five React-coupled bare imports (`react`, `react-dom`,
+  `@testing-library/react`, `@testing-library/dom`,
+  `use-sync-external-store`) to the fixture selected
   by `$REACT_VERSION`. The aliased packages are externalized, so their own
   imports resolve with plain Node resolution from inside the fixture — one
   React instance per run, no changes to the root `package.json` under

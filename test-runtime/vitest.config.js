@@ -41,6 +41,9 @@ export default mergeConfig(baseConfig, defineConfig({
 			'@testing-library/react': fromFixture('@testing-library/react'),
 			'react-dom': fromFixture('react-dom'),
 			react: fromFixture('react'),
+			// The with-selector shim requires `react` itself: it must live next
+			// to the fixture's React, or it would pull the root React 18 in.
+			'use-sync-external-store': fromFixture('use-sync-external-store'),
 		},
 	},
 }));

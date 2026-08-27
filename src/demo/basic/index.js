@@ -167,7 +167,7 @@ class BasicForm extends React.Component {
 						<FieldError
 							name="ageCustom"
 							errorMessages={{
-								minimum: () => 'Too young sorry',
+								min: () => 'Too young sorry',
 							}}
 						/>
 					</Col>
