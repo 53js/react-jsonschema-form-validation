@@ -8,7 +8,6 @@ import { selectFormState, shallowEqual } from './selectors';
 /**
  * @import { ReactElement, ReactNode } from 'react'
  * @import { FormApi } from './useForm'
- * @import { ErrorMessagesMap } from './types'
  */
 
 /**
@@ -22,16 +21,6 @@ export const FormContext = React.createContext(
 	/** @type {FormApi<any> | undefined} */ (undefined),
 );
 
-
-/**
- * Form-level `errorMessages` map, provided by `<Form>` (its prop in sugar
- * mode, the owner's latest config in hook mode) and read by `<FieldError>`.
- * A context rather than store state: an inline map literal is a new value
- * on every render of its owner, and a store write per render would loop.
- */
-export const ErrorMessagesContext = React.createContext(
-	/** @type {ErrorMessagesMap | undefined} */ (undefined),
-);
 
 const OUTSIDE_FORM_ERROR = (
 	'react-jsonschema-form-validation: '

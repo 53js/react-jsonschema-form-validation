@@ -1,4 +1,4 @@
-import { deepEqual } from './deepEqual';
+import { clonePlain, deepEqual } from './deepEqual';
 
 describe('deepEqual(a, b)', () => {
 	it('should compare primitives with Object.is', () => {
@@ -52,5 +52,28 @@ describe('deepEqual(a, b)', () => {
 			{ ...base, params: { passingSchemas: [0, 1] } },
 			{ ...base, params: { passingSchemas: [0, 2] } },
 		)).toBe(false);
+	});
+});
+
+describe('clonePlain', () => {
+	it('copies plain objects and arrays recursively, keeps everything else by reference', () => {
+		const file = new File(['x'], 'x.txt');
+		const date = new Date(0);
+		const source = {
+			list: [1, { deep: 'a' }], nested: { file, date }, n: 1, s: 's', nil: null,
+		};
+		const copy = clonePlain(source);
+		expect(copy).toEqual(source);
+		expect(copy).not.toBe(source);
+		expect(copy.list).not.toBe(source.list);
+		expect(copy.list[1]).not.toBe(source.list[1]);
+		expect(copy.nested).not.toBe(source.nested);
+		expect(copy.nested.file).toBe(file);
+		expect(copy.nested.date).toBe(date);
+		expect(clonePlain(3)).toBe(3);
+		expect(clonePlain(undefined)).toBe(undefined);
+		// A later in-place mutation of the source is not visible in the copy.
+		source.list[1].deep = 'b';
+		expect(copy.list[1].deep).toBe('a');
 	});
 });

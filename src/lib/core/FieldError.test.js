@@ -276,3 +276,40 @@ describe('registration', () => {
 		expect(renders).toBe(2);
 	});
 });
+
+describe('form-level errorMessages of the associated form', () => {
+	it('reads the map of the `form` prop, not the one of the enclosing <Form>', () => {
+		let outer;
+		let inner;
+		const Harness = ({ innerMessages }) => {
+			outer = useForm({ schema, data: { username: 'ab' }, errorMessages: { minLength: () => 'outer' } });
+			inner = useForm({
+				schema, data: { username: 'ab' }, errorMessages: innerMessages, id: 'inner',
+			});
+			return (
+				<Form form={outer} onSubmit={() => {}}>
+					<FieldError name="username" form={inner} />
+				</Form>
+			);
+		};
+		const first = { minLength: () => 'inner' };
+		const { container, rerender } = render(<Harness innerMessages={first} />);
+		expect(container.querySelector('.Jfv_FieldError').textContent).toBe('inner');
+		// Follows the identity of ITS form's map.
+		rerender(<Harness innerMessages={{ minLength: () => 'inner2' }} />);
+		expect(container.querySelector('.Jfv_FieldError').textContent).toBe('inner2');
+		expect(outer.errorMessages.minLength()).toBe('outer');
+	});
+
+	it('reads the map of the `form` prop when rendered outside any <Form>', () => {
+		let inner;
+		const Harness = () => {
+			inner = useForm({
+				schema, data: { username: 'ab' }, errorMessages: { minLength: () => 'inner' }, id: 'inner',
+			});
+			return <FieldError name="username" form={inner} />;
+		};
+		const { container } = render(<Harness />);
+		expect(container.querySelector('.Jfv_FieldError').textContent).toBe('inner');
+	});
+});

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useState } from 'react';
 import { act, fireEvent, render } from '@testing-library/react';
 
 import { createAjv, ajvSchema } from '../providers/ajv';
@@ -433,6 +433,70 @@ describe('render-time data objects', () => {
 		expect(counters.run).toBe(2);
 		// StrictMode double-renders: mount (2) + one state update (2).
 		expect(renders).toBeLessThanOrEqual(4);
+	});
+
+	it('re-validates after an in-place mutation followed by a shallow copy', () => {
+		// Anti-pattern (React state must be updated immutably), but 0.x
+		// re-validated on any new reference: the last validated data is
+		// remembered by value, so the mutation is still seen.
+		const data = { type: 'te' };
+		let api;
+		const Harness = ({ value }) => {
+			api = useForm({ schema: stableSchema, data: value, throttleDuration: 0 });
+			return <Form form={api} onSubmit={() => {}} />;
+		};
+		const { rerender } = render(<Harness value={data} />);
+		expect(api.valid).toBe(true);
+		data.type = 'nope';
+		rerender(<Harness value={{ ...data }} />);
+		expect(api.valid).toBe(false);
+	});
+
+	it('does not emit when a re-validation yields the same errors (owner renders once per change)', () => {
+		let renders = 0;
+		let api;
+		const Owner = () => {
+			renders += 1;
+			const [extra, setExtra] = useState('a');
+			// `type` stays invalid with the very same error; `extra` is not
+			// validated at all.
+			api = useForm({ schema: stableSchema, data: { type: 'nope', extra }, throttleDuration: 0 });
+			return (
+				<Form form={api} onSubmit={() => {}}>
+					<button type="button" onClick={() => setExtra('b')}>x</button>
+				</Form>
+			);
+		};
+		const { container } = render(<Owner />);
+		expect(api.valid).toBe(false);
+		const listener = vi.fn();
+		api.subscribe(listener);
+		const before = renders;
+		fireEvent.click(container.querySelector('button'));
+		// The state update renders the owner once; the re-validation ran but
+		// found the same errors, so nothing was emitted.
+		expect(listener).not.toHaveBeenCalled();
+		expect(renders).toBe(before + 1);
+	});
+
+	it('hands the new config to the api before the children layout effects run', () => {
+		const seen = [];
+		const Child = ({ form }) => {
+			useLayoutEffect(() => { seen.push(form.checkValidity()); });
+			return null;
+		};
+		let api;
+		const Harness = ({ value }) => {
+			api = useForm({ schema: stableSchema, data: { type: value }, throttleDuration: 0 });
+			return <Form form={api} onSubmit={() => {}}><Child form={api} /></Form>;
+		};
+		const { rerender } = render(<Harness value="te" />);
+		rerender(<Harness value="nope" />);
+		// Mount, then the update: the child's layout effect already validates
+		// the NEW data. (The emit of that validation re-renders the owner once
+		// more; the same result is then not re-emitted, so it stops there.)
+		expect(seen.slice(0, 2)).toEqual([true, false]);
+		expect(seen.length).toBeLessThanOrEqual(3);
 	});
 
 	it('re-validates when data changes structurally, even through a fresh object', () => {
