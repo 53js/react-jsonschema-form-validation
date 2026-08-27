@@ -4,32 +4,22 @@
  * Zod, Valibot… The root entry re-exports everything here and adds the
  * JSON Schema sugar.
  *
- * Runtime exports are explicit (no hooks-only member leaks: `useFormStore`,
- * `useResolvedForm`, the internals registry stay private). The public
+ * Runtime exports are explicit and minimal: the components, the hooks, the
+ * context, `shallowEqual` (companion of `useFormSelector`), `getFieldErrorId`
+ * and `isStandardSchema`. The store, the selectors, the error protocol and
+ * the generic helpers stay module-level (reachable through the form api). The public
  * types are re-declared below as typedef aliases — a JS module cannot
  * `export type`.
  */
-export { default as getFieldErrorId } from '../a11y';
-export { default as FormContext, useFormContext, withFormContext } from './Context';
-export { default as deepEqual } from './deepEqual';
-export {
-	assertSyncResult, normalizeIssues, pathToField, runSchema,
-} from './errors';
-export { default as Field } from './Field';
-export { default as FieldError } from './FieldError';
-export { default as Form } from './Form';
-export { filterByFieldNameWithWildcard, getFieldValue, updateDataFromEvents } from './helpers';
-export {
-	selectFieldErrorDescribedBy,
-	selectFieldErrors,
-	selectIsFieldInvalid,
-	selectIsFieldTouched,
-	shallowEqual,
-} from './selectors';
+export { getFieldErrorId } from '../a11y';
+export { FormContext, useFormContext, withFormContext } from './Context';
+export { Field } from './Field';
+export { FieldError } from './FieldError';
+export { Form } from './Form';
+export { shallowEqual } from './selectors';
 export { isStandardSchema } from './standard-schema';
-export { createFormStore } from './store';
-export { default as useForm } from './useForm';
-export { default as useFormSelector } from './useFormSelector';
+export { useForm } from './useForm';
+export { useFormSelector } from './useFormSelector';
 
 /** @import { ElementType } from 'react' */
 

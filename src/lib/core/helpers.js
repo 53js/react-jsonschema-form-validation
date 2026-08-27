@@ -6,7 +6,7 @@
  * @import { FormInputTarget, FormChangeEvent } from './types'
  */
 
-import setIn from './setIn';
+import { setIn } from './setIn';
 
 /**
  * Filters an array of items by their `field` property. The expression can be:

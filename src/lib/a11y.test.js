@@ -5,7 +5,7 @@
 import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react';
 
-import getFieldErrorId from './a11y';
+import { getFieldErrorId } from './a11y';
 import {
 	Field, FieldError, Form, useFormContext,
 } from './core';

@@ -19,7 +19,7 @@
  * @param {number} [wait] The number of milliseconds to throttle invocations to.
  * @returns {ThrottledFunc<T>} The throttled function.
  */
-const throttle = (func, wait = 0) => {
+export const throttle = (func, wait = 0) => {
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let timeout = null;
 	/** @type {Parameters<T> | null} */
@@ -61,5 +61,3 @@ const throttle = (func, wait = 0) => {
 
 	return /** @type {ThrottledFunc<T>} */ (throttled);
 };
-
-export default throttle;

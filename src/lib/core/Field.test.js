@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { act, fireEvent, render } from '@testing-library/react';
 
 import { ajvSchema } from '../providers/ajv';
-import Form from './Form';
-import Field from './Field';
-import FieldError from './FieldError';
-import useForm from './useForm';
+import { Form } from './Form';
+import { Field } from './Field';
+import { FieldError } from './FieldError';
+import { useForm } from './useForm';
 import { useFormContext } from './Context';
 
 const schema = ajvSchema({

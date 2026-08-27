@@ -32,6 +32,4 @@
  * @param {string} name
  * @returns {string}
  */
-const getFieldErrorId = (formId, name) => `${formId}-error-${name}`;
-
-export default getFieldErrorId;
+export const getFieldErrorId = (formId, name) => `${formId}-error-${name}`;

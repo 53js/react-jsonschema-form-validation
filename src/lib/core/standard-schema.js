@@ -53,7 +53,6 @@
  * @param {unknown} value
  * @returns {value is StandardSchema}
  */
-// eslint-disable-next-line import/prefer-default-export
 export const isStandardSchema = (value) => (
 	value !== null
 	&& (typeof value === 'object' || typeof value === 'function')

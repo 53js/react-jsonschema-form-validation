@@ -10,7 +10,8 @@
 import Ajv from 'ajv';
 import Ajv2020 from 'ajv/dist/2020';
 import React, { useRef, useState } from 'react';
-import Form, {
+import {
+	Form,
 	Field,
 	FieldError,
 	FormContext,

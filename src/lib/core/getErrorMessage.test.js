@@ -1,4 +1,4 @@
-import getErrorMessage from './getErrorMessage';
+import { getErrorMessage } from './getErrorMessage';
 
 const error = (code, extra = {}) => ({
 	field: 'x', code, message: code.concat(':message'), params: {}, raw: null, ...extra,

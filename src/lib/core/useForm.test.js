@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { act, fireEvent, render } from '@testing-library/react';
 
 import { createAjv, ajvSchema } from '../providers/ajv';
-import Form from './Form';
-import Field from './Field';
-import useForm from './useForm';
+import { Form } from './Form';
+import { Field } from './Field';
+import { useForm } from './useForm';
 import { useFormContext } from './Context';
 
 const testSchema = {

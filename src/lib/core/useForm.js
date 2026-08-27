@@ -17,7 +17,7 @@ import {
 } from 'react';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector';
 
-import deepEqual from './deepEqual';
+import { deepEqual } from './deepEqual';
 
 import { runSchema } from './errors';
 import { updateDataFromEvents } from './helpers';
@@ -31,8 +31,8 @@ import {
 	shallowEqual,
 } from './selectors';
 import { createFormStore } from './store';
-import throttle from './throttle';
-import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect';
+import { throttle } from './throttle';
+import { useIsomorphicLayoutEffect } from './useIsomorphicLayoutEffect';
 
 /**
  * Options controlling how the form scrolls to the first invalid field on
@@ -436,6 +436,4 @@ export const useFormStore = (config) => {
  * @param {UseFormConfig<T>} config
  * @returns {FormApi<T>}
  */
-const useForm = (config) => /** @type {FormApi<T>} */ (useFormStore(config));
-
-export default useForm;
+export const useForm = (config) => /** @type {FormApi<T>} */ (useFormStore(config));

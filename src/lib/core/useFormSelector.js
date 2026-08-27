@@ -21,7 +21,7 @@ import { shallowEqual } from './selectors';
  * @param {(a: Selection, b: Selection) => boolean} [isEqual]
  * @returns {Selection}
  */
-const useFormSelector = (form, selector, isEqual) => useSyncExternalStoreWithSelector(
+export const useFormSelector = (form, selector, isEqual) => useSyncExternalStoreWithSelector(
 	form.subscribe,
 	form.getState,
 	form.getState,
@@ -30,5 +30,3 @@ const useFormSelector = (form, selector, isEqual) => useSyncExternalStoreWithSel
 		/** @type {unknown} */ (shallowEqual)
 	),
 );
-
-export default useFormSelector;

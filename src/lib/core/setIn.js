@@ -108,7 +108,7 @@ const defineOwn = (target, key, value) => {
  *   the current value at the path.
  * @returns {T}
  */
-const setIn = (data, path, value) => {
+export const setIn = (data, path, value) => {
 	const segments = splitPath(path);
 
 	/**
@@ -147,5 +147,3 @@ const setIn = (data, path, value) => {
 
 	return /** @type {T} */ (setInRec(data, 0));
 };
-
-export default setIn;

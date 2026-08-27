@@ -26,7 +26,7 @@ describe('root entry', () => {
 		expect(root.useFormContext).toBe(core.useFormContext);
 		expect(root.useFormSelector).toBe(core.useFormSelector);
 		expect(root.getFieldErrorId).toBe(core.getFieldErrorId);
-		expect(root.default).toBe(root.Form);
+		expect(root).not.toHaveProperty('default');
 		expect(root.Form).not.toBe(core.Form);
 		expect(root.useForm).not.toBe(core.useForm);
 		expect(root.ajvSchema).toBeUndefined();
